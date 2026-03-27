@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<!--
+  ═══════════════════════════════════════════════════════════════
+  VGC SCORECARD GENERATOR — HTML Structure
+  Victoria Golf Club
+  ═══════════════════════════════════════════════════════════════
+  This file contains only the page structure.
+  Styling is in:  styles.css
+  Logic is in:    app.js
+  ═══════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VGC Scorecard Generator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<style>
+#vgc-gate{position:fixed;inset:0;background:#2b335c;display:flex;align-items:center;justify-content:center;z-index:99999;font-family:'Open Sans',Arial,sans-serif}
+.gate-card{background:#fff;border-radius:4px;padding:40px 44px;width:340px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.gate-logo{margin:0 auto 20px}
+.gate-title{font-size:1.05rem;font-weight:700;color:#2b335c;margin-bottom:4px}
+.gate-sub{font-size:.72rem;color:#6b6d7a;margin-bottom:24px;letter-spacing:.3px}
+.gate-rule{height:3px;background:linear-gradient(90deg,transparent,#898b8d,#b8b9bb,#898b8d,transparent);margin-bottom:24px}
+.gate-input{width:100%;padding:10px 14px;border:1px solid #dddee3;border-radius:3px;font-size:.85rem;font-family:inherit;color:#1a1f3a;outline:none;text-align:center;letter-spacing:2px;margin-bottom:10px;transition:border-color .15s}
+.gate-input:focus{border-color:#2b335c}
+.gate-btn{width:100%;padding:11px;background:#2b335c;color:#fff;border:none;border-radius:3px;font-size:.78rem;font-weight:700;cursor:pointer;letter-spacing:.8px;text-transform:uppercase;font-family:inherit;transition:background .15s;margin-bottom:10px}
+.gate-btn:hover{background:#1e2540}
+.gate-err{font-size:.7rem;color:#8b2535;min-height:18px;font-weight:600}
+.gate-chevron{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='13'%3E%3Cpolyline points='0,13 20,1 40,13' fill='none' stroke='%23ffffff' stroke-width='1.1' opacity='0.07'/%3E%3C/svg%3E");background-repeat:repeat;position:absolute;inset:0;pointer-events:none}
+</style>
+<div id="vgc-gate">
+  <div class="gate-chevron"></div>
+  <div class="gate-card">
+    <svg class="gate-logo" width="48" height="48" viewBox="0 0 52 52" fill="none">
+      <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
+      <path d="M13 15 L26 37 L39 15" fill="none" stroke="#2b335c" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M32 20 A9 9 0 1 0 32 32" fill="none" stroke="#898b8d" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M32 26 L37 26 L37 32" fill="none" stroke="#898b8d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="gate-title">VGC Golf Operations</div>
+    <div class="gate-sub">The Victoria Golf Club &mdash; Staff Access</div>
+    <div class="gate-rule"></div>
+    <input class="gate-input" type="password" id="gateInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkGate()">
+    <button class="gate-btn" onclick="checkGate()">Access Hub</button>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+<script>
+(function(){
+  // Password gate disabled — always allow access
+  document.getElementById('vgc-gate')?.remove();
+
+  // Keep function to avoid any errors if referenced elsewhere
+  window.checkGate = function(){};
+})();
+</script>
+
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     TOP NAVIGATION BAR
+     Add/remove card type buttons here
+     ═══════════════════════════════════════════════════════════ -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:16px"><a href="../home/index.html" style="font-size:.65rem;font-weight:600;color:rgba(255,255,255,.5);text-decoration:none;letter-spacing:.5px;text-transform:uppercase" onmouseover="this.style.color='rgba(255,255,255,.85)'" onmouseout="this.style.color='rgba(255,255,255,.5)'">&#8592; Hub</a><h1>&#9971; VGC <span>Scorecard Generator</span></h1></div>
+  <div class="tbns">
+    <span class="tg">MATCHPLAY:</span>
+    <button class="tb active" onclick="show('mp2')">2-Ball</button>
+    <button class="tb"        onclick="show('mp4')">4-Ball</button>
+
+    <span class="tg">STROKEPLAY:</span>
+    <button class="tb" onclick="show('sp1')">Single</button>
+    <button class="tb" onclick="show('sp2')">2-Player</button>
+    <button class="tb" onclick="show('sp2m')">Mixed Index</button>
+    <button class="tb" onclick="show('sp4a')">Ambrose/4-Ball</button>
+    <button class="tb" onclick="show('fours')">Foursomes</button>
+
+    <span class="tg">LANDSCAPE:</span>
+    <button class="tb" onclick="show('ls2')">2-Ball</button>
+    <button class="tb" onclick="show('ls4')">4-Ball</button>
+    <button class="tb" onclick="show('lssoc')">Social</button>
+
+    <button class="tb pr" onclick="window.print()">🖨 Print</button>
+  </div>
+</div>
+
+
+<div class="layout">
+
+  <!-- ═══════════════════════════════════════════════════════
+       DASHBOARD — Left input panel
+       Each .dr row = one input field
+       .dl = label, .di = input, .dc = calculated display
+       ═══════════════════════════════════════════════════════ -->
+  <div class="dash">
+
+    <!-- COMPETITION DETAILS -->
+    <div class="ds">Competition</div>
+    <div class="dr">
+      <div class="dl">Date</div>
+      <div class="di"><input type="date" id="d_date" oninput="upd()"></div>
+    </div>
+    <div class="dr">
+      <div class="dl">Start Time</div>
+      <div class="di"><input type="text" id="d_time" value="8:00 AM" oninput="upd()"></div>
+    </div>
+    <div class="dr">
+      <div class="dl">Finish Time</div>
+      <div class="di"><input type="text" id="d_ftime" placeholder="e.g. 2:00 PM" oninput="upd()"></div>
+    </div>
+    <div class="dr">
+      <div class="dl">Competition</div>
+      <div class="di">
+        <select id="d_comp_sel" onchange="compSelChange()" style="width:100%;border:1px solid #ddd;border-radius:3px;padding:3px 5px;font-size:11px;font-family:Arial,sans-serif;background:#fffde7;color:#1a2638">
+          <option value="Club Matchplay">Club Matchplay</option>
+          <option value="Club Championship">Club Championship</option>
+          <option value="Pennant">Pennant</option>
+          <option value="Monthly Medal">Monthly Medal</option>
+          <option value="Stableford">Stableford</option>
+          <option value="Par / Bogey">Par / Bogey</option>
+          <option value="Ambrose">Ambrose</option>
+          <option value="Foursomes">Foursomes</option>
+          <option value="Social">Social</option>
+          <option value="Charity Day">Charity Day</option>
+          <option value="Corporate Day">Corporate Day</option>
+          <option value="__other__">Other (type below)…</option>
+        </select>
+      </div>
+    </div>
+    <div class="dr" id="d_comp_other_row" style="display:none">
+      <div class="dl">Custom Name</div>
+      <div class="di"><input type="text" id="d_comp_other" placeholder="Enter competition name" oninput="upd()"></div>
+    </div>
+    <!-- Hidden field read by upd() via v('d_comp') -->
+    <input type="hidden" id="d_comp" value="Club Matchplay">
+    <div class="dr">
+      <div class="dl">Event / Type</div>
+      <div class="di"><input type="text" id="d_event" value="Matchplay" oninput="upd()"></div>
+    </div>
+    <div class="dr">
+      <div class="dl">Course</div>
+      <div class="di"><input type="text" id="d_course" value="The Victoria Golf Club" oninput="upd()"></div>
+    </div>
+    <div class="dr">
+      <div class="dl">Group No.</div>
+      <div class="di"><input type="text" id="d_group" oninput="upd()"></div>
+    </div>
+    <div class="dr">
+      <div class="dl">Member No.</div>
+      <div class="di"><input type="text" id="d_memno" oninput="upd()"></div>
+    </div>
+
+    <!-- TEE & SETTINGS -->
+    <div class="ds">Tee &amp; Settings</div>
+    <div class="dr">
+      <div class="dl">Tee Colour</div>
+      <div class="di">
+        <select id="d_tee" onchange="upd()">
+          <option value="Black">Black</option>
+          <option value="Silver">Silver</option>
+          <option value="Blue" selected>Blue</option>
+          <option value="White">White</option>
+          <option value="Red">Red</option>
+          <option value="Yellow">Yellow</option>
+        </select>
+      </div>
+    </div>
+    <div class="dr">
+      <div class="dl">Index Type</div>
+      <div class="di">
+        <select id="d_idx" onchange="upd()">
+          <option value="male" selected>Male Course Index</option>
+          <option value="female">Female Course Index</option>
+          <option value="match">Match Index</option>
+        </select>
+      </div>
+    </div>
+    <div class="dr">
+      <div class="dl">Distance Unit</div>
+      <div class="di">
+        <select id="d_unit" onchange="upd()">
+          <option value="m" selected>Metres</option>
+          <option value="y">Yards</option>
+        </select>
+      </div>
+    </div>
+    <div class="dr">
+      <div class="dl">Starting Hole</div>
+      <div class="di">
+        <select id="d_start" onchange="upd()">
+          <option value="1" selected>Hole 1 (normal)</option>
+          <option value="2">Hole 2</option>
+          <option value="3">Hole 3</option>
+          <option value="4">Hole 4</option>
+          <option value="5">Hole 5</option>
+          <option value="6">Hole 6</option>
+          <option value="7">Hole 7</option>
+          <option value="8">Hole 8</option>
+          <option value="9">Hole 9</option>
+          <option value="10">Hole 10</option>
+          <option value="11">Hole 11</option>
+          <option value="12">Hole 12</option>
+          <option value="13">Hole 13</option>
+          <option value="14">Hole 14</option>
+          <option value="15">Hole 15</option>
+          <option value="16">Hole 16</option>
+          <option value="17">Hole 17</option>
+          <option value="18">Hole 18</option>
+        </select>
+      </div>
+    </div>
+    <div class="dr">
+      <div class="dl">Hole 19</div>
+      <div class="di">
+        <select id="d_h19" onchange="upd()">
+          <option value="none">Not in play</option>
+          <option value="4">Replaces Hole 4</option>
+          <option value="7">Replaces Hole 7</option>
+          <option value="14">Replaces Hole 14</option>
+          <option value="16">Replaces Hole 16</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Shotgun start note (shown automatically) -->
+    <div class="dnote" id="d_start_note" style="display:none"></div>
+
+    <!-- Calculated course values (read-only) -->
+    <div class="dr"><div class="dl">Scratch Rating</div><div class="dc" id="d_sr">–</div></div>
+    <div class="dr"><div class="dl">Slope</div>          <div class="dc" id="d_sl">–</div></div>
+    <div class="dr"><div class="dl">Total Par</div>      <div class="dc" id="d_par">–</div></div>
+
+    <div class="dinfo">
+      <b>Daily H'cap:</b> ((GA × Slope/113) + (SR − Par)) × 0.93 × CF<br>
+      Men CF=0.9986 · Women CF=1.0483 · rounded to nearest whole
+    </div>
+
+    <!-- PLAYER COLOUR PICKERS -->
+    <div class="ds">Player Colours</div>
+    <div class="legend">
+      <div class="legend-item" style="justify-content:space-between">
+        <span style="display:flex;align-items:center;gap:5px">
+          <div class="lsw" id="lsw1" style="background:#FFD700"></div>P1 / Player A
+        </span>
+        <input type="color" id="pcol1" value="#FFD700" oninput="updatePlayerColour(0,this.value)" style="width:28px;height:20px;border:1px solid #ccc;border-radius:2px;cursor:pointer;padding:1px 2px">
+      </div>
+      <div class="legend-item" style="justify-content:space-between">
+        <span style="display:flex;align-items:center;gap:5px">
+          <div class="lsw" id="lsw2" style="background:#90EE90"></div>P2 / Player B
+        </span>
+        <input type="color" id="pcol2" value="#90EE90" oninput="updatePlayerColour(1,this.value)" style="width:28px;height:20px;border:1px solid #ccc;border-radius:2px;cursor:pointer;padding:1px 2px">
+      </div>
+      <div class="legend-item" style="justify-content:space-between">
+        <span style="display:flex;align-items:center;gap:5px">
+          <div class="lsw" id="lsw3" style="background:#87CEEB"></div>P3 / Player C
+        </span>
+        <input type="color" id="pcol3" value="#87CEEB" oninput="updatePlayerColour(2,this.value)" style="width:28px;height:20px;border:1px solid #ccc;border-radius:2px;cursor:pointer;padding:1px 2px">
+      </div>
+      <div class="legend-item" style="justify-content:space-between">
+        <span style="display:flex;align-items:center;gap:5px">
+          <div class="lsw" id="lsw4" style="background:#FFB347"></div>P4 / Player D
+        </span>
+        <input type="color" id="pcol4" value="#FFB347" oninput="updatePlayerColour(3,this.value)" style="width:28px;height:20px;border:1px solid #ccc;border-radius:2px;cursor:pointer;padding:1px 2px">
+      </div>
+      <div style="font-size:9px;color:#666;margin-top:4px;display:flex;align-items:center;gap:4px">
+        <span>Solid = 1 stroke.</span>
+        <span id="stripe-preview" style="background:repeating-linear-gradient(135deg,#FFD700,#FFD700 4px,#b8960a 4px,#b8960a 7px);padding:0 6px;display:inline-block">&nbsp;</span>
+        <span>Stripe = 2 strokes.</span>
+      </div>
+      <button onclick="resetPlayerColours()" style="margin-top:5px;font-size:9px;padding:2px 7px;background:#f0f0f0;border:1px solid #ccc;border-radius:3px;cursor:pointer;width:100%">↺ Reset to defaults</button>
+    </div>
+
+    <!-- PLAYER 1 / A -->
+    <div class="ds">Player 1 / A</div>
+    <div class="dr"><div class="dl">Name</div>         <div class="di"><input type="text"   id="p1n"  placeholder="Player 1"   oninput="upd()"></div></div>
+    <div class="dr"><div class="dl">GA Handicap</div>  <div class="di"><input type="number" id="p1ga" step="0.1" placeholder="e.g. 14.2" oninput="upd()"></div></div>
+    <div class="dr"><div class="dl">Gender</div>       <div class="di"><select id="p1g" onchange="upd()"><option value="M" selected>Male</option><option value="F">Female</option></select></div></div>
+    <div class="dr"><div class="dl">Golflink #</div>   <div class="di"><input type="text"   id="p1gl" oninput="upd()"></div></div>
+    <div class="dr"><div class="dl">Daily H'cap</div>  <div class="dc" id="p1d">–</div></div>
+    <div class="dr"><div class="dl">Shots received</div><div class="dshots" id="p1s">–</div></div>
+
+    <!-- PLAYER 2 / B -->
+    <div class="ds">Player 2 / B</div>
+    <div class="dr"><div class="dl">Name</div>         <div class="di"><input type="text"   id="p2n"  placeholder="Player 2"   oninput="upd()"></div></div>
+    <div class="dr"><div class="dl">GA Handicap</div>  <div class="di"><input type="number" id="p2ga" step="0.1" oninput="upd()"></div></div>
+    <div class="dr"><div class="dl">Gender</div>       <div class="di"><select id="p2g" onchange="upd()"><option value="M" selected>Male</option><option value="F">Female</option></select></div></div>
+    <div class="dr"><div class="dl">Golflink #</div>   <div class="di"><input type="text"   id="p2gl" oninput="upd()"></div></div>
+    <div class="dr"><div class="dl">Daily H'cap</div>  <div class="dc" id="p2d">–</div></div>
+    <div class="dr"><div class="dl">Shots received</div><div class="dshots" id="p2s">–</div></div>
+
+    <!-- PLAYER 3 / C (4-Ball only) -->
+    <div class="ds">Player 3 / C (4-Ball)</div>
+    <div class="dr"><div class="dl">Name</div>         <div class="di"><input type="text"   id="p3n"  placeholder="Player 3"   oninput="upd()"></div></div>
+    <div class="dr"><div class="dl">GA Handicap</div>  <div class="di"><input type="number" id="p3ga" step="0.1" oninput="upd()"></div></div>
+    <div class="dr"><div class="dl">Gender</div>       <div class="di"><select id="p3g" onchange="upd()"><option value="M" selected>Male</option><option value="F">Female</option></select></div></div>
+    <div class="dr"><div class="dl">Daily H'cap</div>  <div class="dc" id="p3d">–</div></div>
+    <div class="dr"><div class="dl">Shots received</div><div class="dshots" id="p3s">–</div></div>
+
+    <!-- PLAYER 4 / D (4-Ball only) -->
+    <div class="ds">Player 4 / D (4-Ball)</div>
+    <div class="dr"><div class="dl">Name</div>         <div class="di"><input type="text"   id="p4n"  placeholder="Player 4"   oninput="upd()"></div></div>
+    <div class="dr"><div class="dl">GA Handicap</div>  <div class="di"><input type="number" id="p4ga" step="0.1" oninput="upd()"></div></div>
+    <div class="dr"><div class="dl">Gender</div>       <div class="di"><select id="p4g" onchange="upd()"><option value="M" selected>Male</option><option value="F">Female</option></select></div></div>
+    <div class="dr"><div class="dl">Daily H'cap</div>  <div class="dc" id="p4d">–</div></div>
+    <div class="dr"><div class="dl">Shots received</div><div class="dshots" id="p4s">–</div></div>
+
+    <div class="dnote">★ Lowest daily H'cap = scratch. Others get the difference. Matchplay: Index column highlights per player colour.</div>
+
+    <!-- Print button -->
+    <button class="prbtn" onclick="window.print()">🖨&nbsp; Print Card</button>
+
+    <!-- Print settings reminder -->
+    <div style="font-size:9px;color:#888;margin-top:8px;padding:0 12px;line-height:1.4">
+      ⚙ Print settings:<br>
+      • Paper size: <b>A5</b><br>
+      • Margins: <b>None / Minimum</b><br>
+      • Scale: <b>100%</b><br>
+      • Layout: <b>Portrait</b><br>
+      • Uncheck "Headers and footers"
+    </div>
+
+  </div><!-- /dash -->
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       PREVIEW AREA — Right side, shows the active card
+       Cards are hidden/shown by JavaScript via .active class
+       ═══════════════════════════════════════════════════════ -->
+  <div class="preview">
+    <div class="plbl">Live Preview — updates as you type</div>
+
+
+    <!-- ══ 2-BALL MATCHPLAY ══ -->
+    <div class="card cp active" id="card_mp2">
+      <!-- Header: Player names, date, winner box -->
+      <div style="display:flex;align-items:flex-start;gap:0;margin-bottom:2px">
+        <div style="flex:1;min-width:0">
+          <!-- Player 1 row -->
+          <div style="display:flex;align-items:baseline;gap:5px;margin-bottom:1px">
+            <span style="font-size:12px;font-weight:700">Player</span>
+            <span style="font-size:11px;font-weight:700" id="m2p1"></span>
+            <span style="font-size:9px;color:#1a6b3a;font-weight:700" id="m2p1hc"></span>
+            <span id="m2p1badge" style="padding:1px 5px;border-radius:2px;font-size:8px;font-weight:700;margin-left:2px"></span>
+            <span style="flex:1"></span>
+            <span style="font-size:7px;color:#555;white-space:nowrap">Handicap</span>
+            <span style="font-size:7px;color:#555;white-space:nowrap;margin-left:10px">Golflink</span>
+          </div>
+          <!-- Player 2 row -->
+          <div style="display:flex;align-items:baseline;gap:5px;margin-bottom:2px">
+            <span style="font-size:12px;font-weight:700">Player</span>
+            <span style="font-size:11px;font-weight:700" id="m2p2"></span>
+            <span style="font-size:9px;color:#1a6b3a;font-weight:700" id="m2p2hc"></span>
+            <span id="m2p2badge" style="padding:1px 5px;border-radius:2px;font-size:8px;font-weight:700;margin-left:2px"></span>
+          </div>
+          <!-- Date / Time / Tee -->
+          <div style="font-size:9.5px;font-weight:700;margin-bottom:1px">
+            <b>Date:</b>&nbsp;<span class="uline" id="m2date" style="min-width:60px;font-weight:400"></span>&nbsp;&nbsp;
+            <b>Time:</b>&nbsp;<span class="uline" id="m2time" style="min-width:50px;font-weight:400"></span>&nbsp;&nbsp;
+            <b>Tee:</b>&nbsp;<span class="uline"  id="m2tee"  style="min-width:35px;font-weight:400"></span>
+          </div>
+          <div style="font-size:10px;font-weight:700">
+            <b>Competition:</b>&nbsp;<span id="m2comp" style="font-weight:400"></span>
+          </div>
+        </div>
+        <!-- Winner Name / Result box -->
+        <div style="border:2px solid #000;min-width:148px;flex-shrink:0;margin-left:8px">
+          <div style="display:grid;grid-template-columns:1fr 50px;border-bottom:1px solid #000">
+            <div style="font-size:8px;font-weight:700;padding:2px 4px;border-right:1px solid #000;text-align:center">Winner Name</div>
+            <div style="font-size:8px;font-weight:700;padding:2px 4px;text-align:center">Result</div>
+          </div>
+          <div style="height:28px;display:grid;grid-template-columns:1fr 50px">
+            <div style="border-right:1px solid #000"></div><div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Table populated by JavaScript buildMatchTbl() -->
+      <table class="ct ct-fill" id="m2tbl" style="flex:1;table-layout:fixed;width:100%"></table>
+    </div>
+
+
+    <!-- ══ 4-BALL MATCHPLAY ══ -->
+    <div class="card cp" id="card_mp4">
+      <div style="display:flex;align-items:flex-start;gap:0;margin-bottom:2px">
+        <div style="flex:1;min-width:0">
+          <!-- Player list populated by JavaScript -->
+          <div id="m4players" style="line-height:1.7"></div>
+          <div style="font-size:9.5px;font-weight:700;margin-top:2px">
+            <b>Competition:</b>&nbsp;<span id="m4comp" style="font-weight:400"></span>&nbsp;&nbsp;&nbsp;
+            <b>Tee:</b>&nbsp;<span id="m4tee" style="font-weight:400"></span>&nbsp;&nbsp;&nbsp;
+            <b>Date:</b>&nbsp;<span id="m4date" style="font-weight:400"></span>&nbsp;&nbsp;&nbsp;
+            <b>Time:</b>&nbsp;<span id="m4time" style="font-weight:400"></span>
+          </div>
+        </div>
+        <!-- Winners / Result box -->
+        <div style="border:2px solid #000;min-width:148px;flex-shrink:0;margin-left:8px">
+          <div style="display:grid;grid-template-columns:1fr 50px;border-bottom:1px solid #000">
+            <div style="font-size:8px;font-weight:700;padding:2px 4px;border-right:1px solid #000;text-align:center">Winners</div>
+            <div style="font-size:8px;font-weight:700;padding:2px 4px;text-align:center">Result</div>
+          </div>
+          <div style="height:28px;display:grid;grid-template-columns:1fr 50px">
+            <div style="border-right:1px solid #000"></div><div></div>
+          </div>
+        </div>
+      </div>
+      <table class="ct ct-fill" id="m4tbl" style="flex:1;table-layout:fixed;width:100%"></table>
+    </div>
+
+
+    <!-- ══ SINGLE PLAYER STROKEPLAY ══ -->
+    <div class="card cp" id="card_sp1">
+      <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:3px">
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700">
+            Player&nbsp;<span id="sp1p1" style="font-size:11px"></span>&nbsp;
+            <span style="font-size:8px">H/C</span>&nbsp;<b id="sp1hc" style="font-size:8px;color:#1a6b3a"></b>&nbsp;
+            <span style="font-size:8px">Golflink</span>&nbsp;<span id="sp1gl" style="font-size:8px"></span>
+          </div>
+          <div style="font-size:9px;margin-top:2px">
+            <b>Date:</b>&nbsp;<span id="sp1date"></span>&nbsp;&nbsp;
+            <b>Time:</b>&nbsp;<span id="sp1time"></span>&nbsp;&nbsp;
+            <b>Tee:</b>&nbsp;<span id="sp1tee"></span>&nbsp;&nbsp;
+            <b>S/R:</b>&nbsp;<span id="sp1sr"></span>&nbsp;
+            <b>Slope:</b>&nbsp;<span id="sp1sl"></span>
+          </div>
+          <div style="font-size:10px;font-weight:700"><b>Competition:</b>&nbsp;<span id="sp1comp"></span></div>
+        </div>
+        <div class="rbox" style="min-width:90px">
+          <div class="rh">Gross</div><div class="rv" style="border-bottom:1px solid #000"></div>
+          <div class="rh" style="border-top:none">Nett</div><div class="rv"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;align-items:flex-start">
+        <div><table class="ct" id="sp1ltbl"></table></div>
+        <div style="flex:1" id="sp1grid"></div>
+      </div>
+    </div>
+
+
+    <!-- ══ 2-PLAYER STROKEPLAY (4BBB) ══ -->
+    <div class="card cp" id="card_sp2">
+      <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:3px">
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:700">Player&nbsp;&nbsp;<span style="font-size:8px">H/C&nbsp;&nbsp;Golflink</span></div>
+          <div id="sp2p1" style="font-size:10px"></div>
+          <div id="sp2p2" style="font-size:10px;margin-bottom:2px"></div>
+          <div style="font-size:9px">
+            <b>Date:</b>&nbsp;<span id="sp2date"></span>&nbsp;
+            <b>Par:</b>&nbsp;<span id="sp2par"></span>&nbsp;
+            <b>S/R:</b>&nbsp;<span id="sp2sr"></span>&nbsp;
+            <b>Slope:</b>&nbsp;<span id="sp2sl"></span>
+          </div>
+          <div style="font-size:10px;font-weight:700">
+            <span id="sp2comp"></span>&nbsp;&nbsp;
+            <b>Tee:</b>&nbsp;<span id="sp2tee"></span>&nbsp;
+            <span id="sp2time" style="font-weight:400;font-size:9px"></span>
+          </div>
+        </div>
+        <div class="rbox"><div class="rh">RESULT</div><div class="rv"></div></div>
+      </div>
+      <div class="gnotice">MARK GROSS SCORE AND P2 IF SCORE APPLIES FOR PLAYER 2</div>
+      <div style="display:flex;gap:4px;align-items:flex-start">
+        <div><table class="ct" id="sp2ltbl"></table></div>
+        <div style="flex:1" id="sp2grid"></div>
+      </div>
+    </div>
+
+
+    <!-- ══ MIXED INDEX (4BBB Mixed) ══ -->
+    <div class="card cp" id="card_sp2m">
+      <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:3px">
+        <div style="flex:1">
+          <div style="font-size:9px;font-weight:700"><span id="sp2mc"></span></div>
+          <div style="font-size:9px">
+            <b>Date:</b>&nbsp;<span id="sp2mdate"></span>&nbsp;
+            <b>S/R:</b>&nbsp;<span id="sp2msr"></span>&nbsp;
+            <b>Slope:</b>&nbsp;<span id="sp2msl"></span>
+          </div>
+          <div style="font-size:11px;font-weight:700;margin-top:1px">
+            Player&nbsp;&nbsp;<span style="font-size:8px">Golflink&nbsp;&nbsp;H/C&nbsp;&nbsp;Tee: <span id="sp2mtee"></span>&nbsp;<span id="sp2mtime" style="font-weight:400"></span></span>
+          </div>
+          <div id="sp2mp1" style="font-size:10px"></div>
+          <div id="sp2mp2" style="font-size:10px"></div>
+        </div>
+        <div class="rbox"><div class="rh">RESULT</div><div class="rv"></div></div>
+      </div>
+      <div class="gnotice">MARK GROSS SCORE AND P2 IF SCORE APPLIES FOR PLAYER 2</div>
+      <div style="display:flex;gap:4px;align-items:flex-start">
+        <div><table class="ct" id="sp2mltbl"></table></div>
+        <div style="flex:1" id="sp2mgrid"></div>
+      </div>
+    </div>
+
+
+    <!-- ══ AMBROSE / 4-BALL STROKEPLAY ══ -->
+    <div class="card cp" id="card_sp4a">
+      <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:3px">
+        <div style="flex:1">
+          <div style="font-size:9px;font-weight:700">
+            <b>Competition:</b>&nbsp;<span id="sp4ac"></span>&nbsp;&nbsp;
+            <b>Starting Tee:</b>&nbsp;<span id="sp4ast"></span>&nbsp;&nbsp;
+            <b>Date:</b>&nbsp;<span id="sp4ad"></span>&nbsp;&nbsp;
+            <b>Time:</b>&nbsp;<span id="sp4at"></span>
+          </div>
+          <div style="font-size:9px;font-weight:700;margin-top:1px">
+            Players&nbsp;&nbsp;<span style="margin-left:6px;font-weight:700">H/C</span>&nbsp;&nbsp;
+            <span style="margin-left:6px">Golflink</span>&nbsp;&nbsp;&nbsp;&nbsp;
+            <b>Team Handicap:</b> <span id="sp4ath" style="color:#1a6b3a;font-weight:700"></span>
+          </div>
+          <div id="sp4aplayers" style="font-size:9px"></div>
+        </div>
+        <div class="rbox" style="min-width:90px">
+          <div class="rh">Gross</div><div class="rv" style="border-bottom:1px solid #000"></div>
+          <div class="rh" style="border-top:none">Nett</div><div class="rv"></div>
+        </div>
+      </div>
+      <table class="ct" id="sp4atbl"></table>
+    </div>
+
+
+    <!-- ══ FOURSOMES / SOCIAL PORTRAIT ══ -->
+    <div class="card cp" id="card_fours">
+      <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:3px">
+        <div style="flex:1">
+          <div style="font-size:9px;margin-bottom:1px">
+            <b>Comp:</b>&nbsp;<span id="foc"></span>&nbsp;&nbsp;
+            <b>Par:</b>&nbsp;<span id="fopar"></span>&nbsp;&nbsp;
+            <b>Distance:</b>&nbsp;<span id="fodist"></span>&nbsp;&nbsp;
+            <b>T'Hc:</b>&nbsp;<span id="fothc" style="color:#1a6b3a;font-weight:700"></span>
+          </div>
+          <div style="font-size:9px;margin-bottom:1px">
+            <b>Date:</b>&nbsp;<span id="fodate"></span>&nbsp;&nbsp;
+            <b>S/R:</b>&nbsp;<span id="fosr"></span>&nbsp;&nbsp;
+            <b>Slope:</b>&nbsp;<span id="fosl"></span>
+          </div>
+          <div style="font-size:11px;font-weight:700;margin-bottom:1px">
+            Player&nbsp;&nbsp;<span style="font-size:8px">Golflink&nbsp;&nbsp;H/C&nbsp;&nbsp;Tee: <span id="fotee"></span>&nbsp;<span id="fotime" style="font-weight:400"></span></span>
+          </div>
+          <div id="fop1" style="font-size:10px"></div>
+          <div id="fop2" style="font-size:10px"></div>
+        </div>
+        <div class="rbox"><div class="rh">RESULT</div><div class="rv"></div></div>
+      </div>
+      <div class="gnotice">MARK GROSS SCORE ONLY. USE PEN OR DARK PENCIL.</div>
+      <div style="display:flex;gap:4px;align-items:flex-start">
+        <div><table class="ct" id="foltbl"></table></div>
+        <div style="flex:1" id="fogrid"></div>
+      </div>
+    </div>
+
+
+    <!-- ══ LANDSCAPE 2-BALL ══ -->
+    <div class="card cl" id="card_ls2">
+      <div id="ls2hdr"></div>
+      <table class="ct" id="ls2tbl"></table>
+    </div>
+
+    <!-- ══ LANDSCAPE 4-BALL ══ -->
+    <div class="card cl" id="card_ls4">
+      <div id="ls4hdr"></div>
+      <table class="ct" id="ls4tbl"></table>
+    </div>
+
+    <!-- ══ LANDSCAPE SOCIAL ══ -->
+    <div class="card cl" id="card_lssoc">
+      <div id="lssochdr"></div>
+      <table class="ct" id="lssoctbl"></table>
+    </div>
+
+
+  </div><!-- /preview -->
+</div><!-- /layout -->
+
+
+<!-- JavaScript logic — all calculations and card rendering -->
+<script src="data.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>

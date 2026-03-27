@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VGC Golf Operations Hub</title>
+<link rel="stylesheet" href="assets/home/styles.css">
+<style>
+/* ─── VGC BRAND TOKENS ─── */
+:root {
+  --navy:       #2b335c;
+  --navy-dark:  #1a1f3a;
+  --navy-mid:   #363d6e;
+  --navy-light: #4a5490;
+  --silver:     #898b8d;
+  --silver-lt:  #b8b9bb;
+  --silver-xlt: #e4e5e6;
+  --charcoal:   #5a585c;
+  --white:      #ffffff;
+  --off-white:  #f6f6f4;
+  --bg:         #f2f2f0;
+  --text:       #1a1f3a;
+  --muted:      #6b6d7a;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Open Sans', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── CHEVRON PATTERN ─── */
+.chv {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='13'%3E%3Cpolyline points='0,13 20,1 40,13' fill='none' stroke='%23ffffff' stroke-width='1.1' opacity='0.09'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/* ─── HEADER ─── */
+.hdr {
+  background: var(--navy);
+  position: sticky; top: 0; z-index: 200;
+  box-shadow: 0 2px 16px rgba(0,0,0,.35);
+}
+.hdr-chevron {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='13'%3E%3Cpolyline points='0,13 20,1 40,13' fill='none' stroke='%23ffffff' stroke-width='1.1' opacity='0.07'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+.hdr-inner {
+  max-width: 1280px; margin: 0 auto;
+  padding: 0 36px;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: relative; z-index: 1;
+}
+.brand { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+.brand-logo { width: 42px; height: 42px; flex-shrink: 0; }
+.brand-wordmark {}
+.brand-wordmark h1 {
+  font-size: 1.05rem; font-weight: 700;
+  color: #fff; letter-spacing: .2px; line-height: 1.15;
+}
+.brand-wordmark p {
+  font-size: .6rem; font-weight: 400;
+  color: rgba(255,255,255,.45);
+  letter-spacing: 1.8px; text-transform: uppercase; margin-top: 1px;
+}
+.hdr-right { display: flex; align-items: center; gap: 14px; }
+.hdr-date {
+  font-size: .65rem; color: rgba(255,255,255,.35);
+  letter-spacing: .5px; text-transform: uppercase;
+}
+.hdr-pill {
+  font-size: .6rem; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; padding: 4px 12px; border-radius: 2px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.14);
+  color: rgba(255,255,255,.6);
+}
+/* Silver rule */
+.hdr-rule {
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, var(--silver) 25%, var(--silver-lt) 50%, var(--silver) 75%, transparent 100%);
+}
+
+/* ─── HERO ─── */
+.hero {
+  background: var(--navy);
+  padding: 60px 36px 54px;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.hero-chv {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='13'%3E%3Cpolyline points='0,13 20,1 40,13' fill='none' stroke='%23ffffff' stroke-width='1.1' opacity='0.05'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+.hero-inner { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; }
+.hero-eyebrow {
+  font-size: .62rem; font-weight: 700; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--silver);
+  margin-bottom: 18px; display: block;
+}
+.hero-title {
+  font-size: 2.4rem; font-weight: 300; line-height: 1.18;
+  color: #fff; margin-bottom: 16px;
+  letter-spacing: -.3px;
+}
+.hero-title strong { font-weight: 700; color: #fff; }
+.hero-title em { font-style: normal; color: var(--silver-lt); font-weight: 300; }
+.hero-sub {
+  font-size: .82rem; line-height: 1.75;
+  color: rgba(255,255,255,.45); font-weight: 300;
+}
+
+/* Silver divider line below hero */
+.hero-rule {
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--silver), var(--silver-lt), var(--silver), transparent);
+}
+
+/* ─── STAT STRIP ─── */
+.stats {
+  background: var(--navy-dark);
+  display: flex; justify-content: center;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.stat {
+  padding: 20px 44px; text-align: center;
+  border-right: 1px solid rgba(255,255,255,.06);
+}
+.stat:last-child { border-right: none; }
+.stat-num {
+  font-size: 1.6rem; font-weight: 700;
+  color: #fff; letter-spacing: -.5px; line-height: 1;
+}
+.stat-lbl {
+  font-size: .58rem; font-weight: 600;
+  color: rgba(255,255,255,.3);
+  letter-spacing: 1.5px; text-transform: uppercase; margin-top: 5px;
+}
+
+/* ─── SECTION WRAPPER ─── */
+.section {
+  max-width: 1280px; margin: 0 auto; padding: 52px 36px;
+}
+
+.section-hdr {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 32px;
+}
+.section-hdr-line { flex: 1; height: 1px; background: var(--silver-xlt); }
+.section-hdr-label {
+  font-size: .6rem; font-weight: 700; letter-spacing: 2.5px;
+  text-transform: uppercase; color: var(--silver);
+  white-space: nowrap;
+}
+
+/* ─── TOOL GRID ─── */
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+/* ─── TOOL CARD ─── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--silver-xlt);
+  border-radius: 3px;
+  overflow: hidden;
+  display: block; text-decoration: none;
+  transition: transform .22s cubic-bezier(.25,.8,.25,1),
+              box-shadow .22s cubic-bezier(.25,.8,.25,1),
+              border-color .22s;
+  position: relative;
+  animation: riseIn .45s ease both;
+}
+.card:nth-child(1) { animation-delay: .08s; }
+.card:nth-child(2) { animation-delay: .16s; }
+.card:nth-child(3) { animation-delay: .24s; }
+
+@keyframes riseIn {
+  from { opacity:0; transform:translateY(18px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.card:not(.card--disabled):hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 48px rgba(43,51,92,.13);
+  border-color: var(--silver-lt);
+}
+.card:not(.card--disabled):hover .card-arrow { opacity:1; transform:translateX(0); }
+.card:not(.card--disabled):hover .card-bar { opacity: 1; }
+
+.card--disabled { cursor: default; opacity: .52; }
+
+/* Coloured top bar */
+.card-bar {
+  height: 4px; opacity: .65;
+  transition: opacity .22s;
+}
+
+/* Status dot */
+.card-status {
+  position: absolute; top: 14px; right: 14px;
+  font-size: .57rem; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; padding: 3px 9px; border-radius: 2px;
+}
+.card-status--live   { background: rgba(46,107,62,.1);  color: #2e6b3e; border: 1px solid rgba(46,107,62,.2);  }
+.card-status--plan   { background: rgba(43,51,92,.07);  color: var(--navy-mid); border: 1px solid rgba(43,51,92,.15); }
+
+/* Card icon row */
+.card-icon-row {
+  padding: 26px 26px 0;
+  display: flex; align-items: center; gap: 14px;
+}
+.card-icon {
+  width: 50px; height: 50px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.card-tag {
+  font-size: .58rem; font-weight: 700; letter-spacing: 1.8px;
+  text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 4px;
+}
+.card-name {
+  font-size: 1.15rem; font-weight: 700;
+  color: var(--navy); line-height: 1.1;
+}
+
+/* Card body */
+.card-body { padding: 16px 26px 24px; }
+.card-desc {
+  font-size: .76rem; color: var(--muted);
+  line-height: 1.75; margin-bottom: 16px;
+}
+.chips {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 20px;
+}
+.chip {
+  font-size: .6rem; font-weight: 600;
+  color: var(--navy-mid);
+  background: rgba(43,51,92,.06);
+  border: 1px solid rgba(43,51,92,.1);
+  padding: 3px 8px; border-radius: 2px; letter-spacing: .2px;
+}
+.card-foot {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-cta-text {
+  font-size: .7rem; font-weight: 700;
+  color: var(--navy); letter-spacing: .5px; text-transform: uppercase;
+}
+.card-arrow {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--silver-xlt);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transform: translateX(-5px);
+  transition: opacity .2s, transform .2s;
+}
+
+/* ─── QUICK ACTIONS ─── */
+.quick {
+  background: var(--navy);
+  position: relative; overflow: hidden;
+}
+.quick-chv {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='13'%3E%3Cpolyline points='0,13 20,1 40,13' fill='none' stroke='%23ffffff' stroke-width='1.1' opacity='0.05'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+.quick-inner {
+  max-width: 1280px; margin: 0 auto;
+  padding: 36px 36px;
+  position: relative; z-index: 1;
+}
+.quick-label {
+  font-size: .58rem; font-weight: 700; letter-spacing: 2.5px;
+  text-transform: uppercase; color: rgba(255,255,255,.3);
+  margin-bottom: 16px; display: block;
+}
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+}
+.quick-btn {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 3px; padding: 14px 16px;
+  text-decoration: none; display: block;
+  transition: background .15s, border-color .15s;
+}
+.quick-btn:hover {
+  background: rgba(255,255,255,.1);
+  border-color: rgba(255,255,255,.16);
+}
+.quick-icon { font-size: 1.15rem; margin-bottom: 7px; display: block; }
+.quick-name {
+  font-size: .7rem; font-weight: 600;
+  color: rgba(255,255,255,.75); display: block;
+}
+.quick-sub {
+  font-size: .61rem; color: rgba(255,255,255,.3);
+  margin-top: 2px; display: block;
+}
+
+/* ─── ROADMAP ─── */
+.roadmap-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.roadmap-card {
+  background: rgba(255,255,255,.65);
+  border: 1px dashed var(--silver-xlt);
+  border-radius: 3px; padding: 22px 20px;
+  position: relative; overflow: hidden;
+  animation: riseIn .45s ease both;
+}
+.roadmap-card:nth-child(1) { animation-delay: .1s; }
+.roadmap-card:nth-child(2) { animation-delay: .18s; }
+.roadmap-card:nth-child(3) { animation-delay: .26s; }
+.roadmap-card:nth-child(4) { animation-delay: .34s; }
+
+.roadmap-card::after {
+  content: 'SOON';
+  position: absolute; top: 10px; right: -14px;
+  font-size: .48rem; font-weight: 800; letter-spacing: 1.5px;
+  color: var(--silver-lt); transform: rotate(45deg) translateX(6px);
+  background: var(--off-white); padding: 2px 22px;
+}
+.roadmap-icon { font-size: 1.3rem; margin-bottom: 10px; opacity: .55; }
+.roadmap-name {
+  font-size: .8rem; font-weight: 700;
+  color: var(--charcoal); margin-bottom: 6px;
+}
+.roadmap-desc {
+  font-size: .7rem; color: var(--silver);
+  line-height: 1.65;
+}
+
+/* ─── FOOTER ─── */
+.footer {
+  background: var(--navy-dark);
+  border-top: 3px solid;
+  border-image: linear-gradient(90deg, transparent, var(--silver), var(--silver-lt), var(--silver), transparent) 1;
+}
+.footer-inner {
+  max-width: 1280px; margin: 0 auto;
+  padding: 24px 36px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.footer-left { display: flex; align-items: center; gap: 12px; }
+.footer-logo { width: 26px; height: 26px; opacity: .4; }
+.footer-name {
+  font-size: .78rem; font-weight: 300;
+  color: rgba(255,255,255,.4);
+}
+.footer-copy {
+  font-size: .6rem; color: rgba(255,255,255,.2);
+  letter-spacing: .5px; margin-left: 14px;
+  padding-left: 14px; border-left: 1px solid rgba(255,255,255,.1);
+}
+.footer-links { display: flex; gap: 22px; }
+.footer-link {
+  font-size: .62rem; font-weight: 600;
+  color: rgba(255,255,255,.3); text-decoration: none;
+  letter-spacing: .8px; text-transform: uppercase;
+  transition: color .15s;
+}
+.footer-link:hover { color: rgba(255,255,255,.65); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1000px) {
+  .tool-grid { grid-template-columns: 1fr 1fr; }
+  .roadmap-grid { grid-template-columns: 1fr 1fr; }
+  .quick-grid { grid-template-columns: repeat(3,1fr); }
+  .stats { flex-wrap: wrap; }
+}
+@media (max-width: 640px) {
+  .tool-grid { grid-template-columns: 1fr; }
+  .roadmap-grid { grid-template-columns: 1fr; }
+  .quick-grid { grid-template-columns: 1fr 1fr; }
+  .hero { padding: 40px 20px 36px; }
+  .hero-title { font-size: 1.85rem; }
+  .section { padding: 36px 20px; }
+  .hdr-inner { padding: 0 20px; }
+  .quick-inner { padding: 28px 20px; }
+}
+</style>
+</head>
+<body>
+<style>
+#vgc-gate{position:fixed;inset:0;background:#2b335c;display:flex;align-items:center;justify-content:center;z-index:99999;font-family:'Open Sans',Arial,sans-serif}
+.gate-card{background:#fff;border-radius:4px;padding:40px 44px;width:340px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.gate-logo{margin:0 auto 20px}
+.gate-title{font-size:1.05rem;font-weight:700;color:#2b335c;margin-bottom:4px}
+.gate-sub{font-size:.72rem;color:#6b6d7a;margin-bottom:24px;letter-spacing:.3px}
+.gate-rule{height:3px;background:linear-gradient(90deg,transparent,#898b8d,#b8b9bb,#898b8d,transparent);margin-bottom:24px}
+.gate-input{width:100%;padding:10px 14px;border:1px solid #dddee3;border-radius:3px;font-size:.85rem;font-family:inherit;color:#1a1f3a;outline:none;text-align:center;letter-spacing:2px;margin-bottom:10px;transition:border-color .15s}
+.gate-input:focus{border-color:#2b335c}
+.gate-btn{width:100%;padding:11px;background:#2b335c;color:#fff;border:none;border-radius:3px;font-size:.78rem;font-weight:700;cursor:pointer;letter-spacing:.8px;text-transform:uppercase;font-family:inherit;transition:background .15s;margin-bottom:10px}
+.gate-btn:hover{background:#1e2540}
+.gate-err{font-size:.7rem;color:#8b2535;min-height:18px;font-weight:600}
+.gate-chevron{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='13'%3E%3Cpolyline points='0,13 20,1 40,13' fill='none' stroke='%23ffffff' stroke-width='1.1' opacity='0.07'/%3E%3C/svg%3E");background-repeat:repeat;position:absolute;inset:0;pointer-events:none}
+</style>
+<div id="vgc-gate">
+  <div class="gate-chevron"></div>
+  <div class="gate-card">
+    <svg class="gate-logo" width="48" height="48" viewBox="0 0 52 52" fill="none">
+      <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
+      <path d="M13 15 L26 37 L39 15" fill="none" stroke="#2b335c" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M32 20 A9 9 0 1 0 32 32" fill="none" stroke="#898b8d" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M32 26 L37 26 L37 32" fill="none" stroke="#898b8d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="gate-title">VGC Golf Operations</div>
+    <div class="gate-sub">The Victoria Golf Club &mdash; Staff Access</div>
+    <div class="gate-rule"></div>
+    <input class="gate-input" type="password" id="gateInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkGate()">
+    <button class="gate-btn" onclick="checkGate()">Access Hub</button>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+<script>
+(function(){
+  const HASH="df121110fc1e6a6499111b6287664ddcb8cfa0dd560b83ef366f0c875ffae3a7";
+  async function sha256(s){const b=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+  if(sessionStorage.getItem('vgc_auth')==='1'){document.getElementById('vgc-gate').remove();return;}
+  window.checkGate=async function(){
+    const v=document.getElementById('gateInput').value;
+    const h=await sha256(v);
+    if(h===HASH){sessionStorage.setItem('vgc_auth','1');document.getElementById('vgc-gate').remove();}
+    else{const e=document.getElementById('gateErr');e.textContent='Incorrect password. Please try again.';document.getElementById('gateInput').value='';document.getElementById('gateInput').focus();setTimeout(()=>e.textContent='',3000);}
+  };
+})();
+</script>
+
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-chevron"></div>
+  <div class="hdr-inner">
+    <a class="brand" href="index.html">
+      <!-- VGC Monogram -->
+      <svg class="brand-logo" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
+        <path d="M13 15 L26 37 L39 15" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M32 20 A9 9 0 1 0 32 32" fill="none" stroke="#898b8d" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M32 26 L37 26 L37 32" fill="none" stroke="#898b8d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="22" y="39" width="8" height="2.5" rx="1" fill="#898b8d" opacity="0.55"/>
+        <rect x="19.5" y="41.5" width="13" height="2" rx="1" fill="#898b8d" opacity="0.35"/>
+      </svg>
+      <div class="brand-wordmark">
+        <h1>VGC Golf Operations Hub</h1>
+        <p>The Victoria Golf Club</p>
+      </div>
+    </a>
+    <div class="hdr-right">
+      <span class="hdr-date" id="hdrDate"></span>
+      <span class="hdr-pill">Internal Use</span>
+    </div>
+  </div>
+</header>
+<div class="hdr-rule"></div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-chv"></div>
+  <div class="hero-inner">
+    <span class="hero-eyebrow">Golf Operations · Management Hub</span>
+    <h2 class="hero-title">
+      <strong>VGC</strong> Golf Operations Hub<br>
+      <em>All your tools, one place</em>
+    </h2>
+    <p class="hero-sub">A central hub for Golf Operations management — analytics, scorecards, and more. Built for The Victoria Golf Club.</p>
+  </div>
+</div>
+<div class="hero-rule"></div>
+
+<!-- STATS STRIP -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-num">50,921</div>
+    <div class="stat-lbl">2025 Rounds</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">73.3%</div>
+    <div class="stat-lbl">Avg Occupancy</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">4</div>
+    <div class="stat-lbl">Active Tools</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">4</div>
+    <div class="stat-lbl">In Development</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">2023–26</div>
+    <div class="stat-lbl">Data Range</div>
+  </div>
+</div>
+
+<!-- ACTIVE TOOLS -->
+<div class="section">
+  <div class="section-hdr">
+    <div class="section-hdr-line"></div>
+    <div class="section-hdr-label">Active Tools</div>
+    <div class="section-hdr-line"></div>
+  </div>
+
+  <div class="tool-grid">
+
+    <!-- ROUNDS DASHBOARD -->
+    <a href="rounds-dashboard.html" class="card">
+      <div class="card-bar" style="background:linear-gradient(90deg,#2b335c,#4a5490)"></div>
+      <span class="card-status card-status--live">● Live</span>
+      <div class="card-icon-row">
+        <div class="card-icon" style="background:rgba(43,51,92,.07)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect x="3" y="14" width="4" height="11" rx="1" fill="#2b335c"/>
+            <rect x="9" y="9"  width="4" height="16" rx="1" fill="#2b335c" opacity=".72"/>
+            <rect x="15" y="5" width="4" height="20" rx="1" fill="#2b335c" opacity=".5"/>
+            <rect x="21" y="11" width="4" height="14" rx="1" fill="#2b335c" opacity=".35"/>
+            <polyline points="4,12 10,7 16,4 22,10" fill="none" stroke="#898b8d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="22" cy="10" r="1.5" fill="#898b8d"/>
+          </svg>
+        </div>
+        <div>
+          <span class="card-tag">Analytics</span>
+          <div class="card-name">Rounds Dashboard</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Comprehensive round tracking and analytics across 2023–2026. Filter by year, season, month and day of week. Includes occupancy reporting, guest breakdowns, heat maps and year-on-year comparisons.</p>
+        <div class="chips">
+          <span class="chip">Round Tracking</span>
+          <span class="chip">Occupancy</span>
+          <span class="chip">Guest Analysis</span>
+          <span class="chip">Heat Maps</span>
+          <span class="chip">YoY Compare</span>
+          <span class="chip">9 Views</span>
+        </div>
+        <div class="card-foot">
+          <span class="card-cta-text">Open Dashboard</span>
+          <span class="card-arrow">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6h8M6 2l4 4-4 4" stroke="#2b335c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    </a>
+
+    <!-- SCORECARD GENERATOR -->
+    <a href="scorecard-generator.html" class="card">
+      <div class="card-bar" style="background:linear-gradient(90deg,#5a585c,#898b8d)"></div>
+      <span class="card-status card-status--live">● Live</span>
+      <div class="card-icon-row">
+        <div class="card-icon" style="background:rgba(90,88,92,.07)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect x="4" y="3" width="20" height="22" rx="2" stroke="#5a585c" stroke-width="1.6"/>
+            <line x1="8" y1="9"  x2="20" y2="9"  stroke="#5a585c" stroke-width="1.2" stroke-linecap="round"/>
+            <line x1="8" y1="13" x2="20" y2="13" stroke="#5a585c" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+            <line x1="8" y1="17" x2="15" y2="17" stroke="#5a585c" stroke-width="1.2" stroke-linecap="round" opacity=".35"/>
+            <circle cx="20" cy="20" r="5" fill="#2b335c"/>
+            <path d="M17.5 20l1.5 1.5 3-3" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <span class="card-tag">Generator</span>
+          <div class="card-name">Scorecard Generator</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Generate custom match play scorecards for 2-ball and 4-ball formats. Auto-calculates GA handicaps, stroke allocation and match index. Replicates the club's existing PDF card layouts, ready to print.</p>
+        <div class="chips">
+          <span class="chip">2-Ball Matchplay</span>
+          <span class="chip">4-Ball Matchplay</span>
+          <span class="chip">GA Handicap</span>
+          <span class="chip">Stroke Index</span>
+          <span class="chip">Print Ready</span>
+        </div>
+        <div class="card-foot">
+          <span class="card-cta-text">Open Generator</span>
+          <span class="card-arrow">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6h8M6 2l4 4-4 4" stroke="#2b335c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    </a>
+
+    <!-- MICLUB PORTAL -->
+    <a href="https://members.victoriagolf.com.au/views/admin/portal/index.xhtml" target="_blank" rel="noopener" class="card">
+      <div class="card-bar" style="background:linear-gradient(90deg,#363d6e,#2b335c)"></div>
+      <span class="card-status card-status--live">● Live</span>
+      <div class="card-icon-row">
+        <div class="card-icon" style="background:rgba(43,51,92,.07)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect x="3" y="6" width="22" height="16" rx="2" stroke="#2b335c" stroke-width="1.6"/>
+            <path d="M3 10h22" stroke="#2b335c" stroke-width="1.2" opacity=".4"/>
+            <circle cx="7" cy="8" r="1" fill="#2b335c" opacity=".5"/>
+            <circle cx="10" cy="8" r="1" fill="#2b335c" opacity=".5"/>
+            <circle cx="13" cy="8" r="1" fill="#2b335c" opacity=".5"/>
+            <rect x="7" y="13" width="6" height="4" rx="1" fill="#2b335c" opacity=".2"/>
+            <rect x="15" y="13" width="6" height="1.5" rx=".75" fill="#2b335c" opacity=".25"/>
+            <rect x="15" y="16" width="4" height="1.5" rx=".75" fill="#2b335c" opacity=".18"/>
+            <path d="M21 20l2 2" stroke="#898b8d" stroke-width="1.4" stroke-linecap="round"/>
+            <circle cx="20" cy="19" r="2.5" stroke="#898b8d" stroke-width="1.2" fill="none"/>
+          </svg>
+        </div>
+        <div>
+          <span class="card-tag">Member Portal</span>
+          <div class="card-name">MiClub Portal</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Access the Victoria Golf Club member administration portal. Manage bookings, memberships, competition entries, tee sheets and club communications directly in MiClub.</p>
+        <div class="chips">
+          <span class="chip">Tee Bookings</span>
+          <span class="chip">Membership</span>
+          <span class="chip">Competitions</span>
+          <span class="chip">Reporting</span>
+          <span class="chip">Communications</span>
+        </div>
+        <div class="card-foot">
+          <span class="card-cta-text">Open MiClub ↗</span>
+          <span class="card-arrow" style="opacity:1;transform:translateX(0)">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6h8M6 2l4 4-4 4" stroke="#2b335c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    </a>
+
+    <!-- MEMBER LOOKUP -->
+    <a href="member-lookup.html" class="card">
+      <div class="card-bar" style="background:linear-gradient(90deg,#5a585c,#898b8d)"></div>
+      <span class="card-status card-status--live">&#9679; Live</span>
+      <div class="card-icon-row">
+        <div class="card-icon" style="background:rgba(90,88,92,.07)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <circle cx="11" cy="9" r="5" stroke="#5a585c" stroke-width="1.6"/>
+            <path d="M3 24c0-4 3.6-7 8-7s8 3 8 7" stroke="#5a585c" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+            <circle cx="20" cy="20" r="5" fill="#2b335c"/>
+            <path d="M18 20h4M20 18v4" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <span class="card-tag">Directory</span>
+          <div class="card-name">Member Lookup</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Searchable directory of all 1,399 VGC members. Filter by gender, age group, tenure or equipment brand. View contact details, membership date, tenure timeline and equipment preferences.</p>
+        <div class="chips">
+          <span class="chip">1,399 Members</span>
+          <span class="chip">Search &amp; Filter</span>
+          <span class="chip">Contact Details</span>
+          <span class="chip">Equipment</span>
+          <span class="chip">Tenure</span>
+        </div>
+        <div class="card-foot">
+          <span class="card-cta-text">Open Directory</span>
+          <span class="card-arrow" style="opacity:0;transform:translateX(-5px)">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6h8M6 2l4 4-4 4" stroke="#2b335c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<!-- QUICK ACTIONS -->
+<div class="quick">
+  <div class="quick-chv"></div>
+  <div class="quick-inner">
+    <span class="quick-label">Quick Access</span>
+    <div class="quick-grid">
+      <a href="rounds-dashboard.html" class="quick-btn">
+        <span class="quick-icon">📊</span>
+        <span class="quick-name">Rounds Overview</span>
+        <span class="quick-sub">2023–2026 summary</span>
+      </a>
+      <a href="rounds-dashboard.html" class="quick-btn">
+        <span class="quick-icon">🏌️</span>
+        <span class="quick-name">Occupancy Report</span>
+        <span class="quick-sub">AM · PM · After 3pm</span>
+      </a>
+      <a href="rounds-dashboard.html" class="quick-btn">
+        <span class="quick-icon">📈</span>
+        <span class="quick-name">Year Compare</span>
+        <span class="quick-sub">Side-by-side analysis</span>
+      </a>
+      <a href="scorecard-generator.html" class="quick-btn">
+        <span class="quick-icon">🃏</span>
+        <span class="quick-name">New Scorecard</span>
+        <span class="quick-sub">2-ball or 4-ball</span>
+      </a>
+      <a href="rounds-dashboard.html" class="quick-btn">
+        <span class="quick-icon">🔥</span>
+        <span class="quick-name">Heat Maps</span>
+        <span class="quick-sub">Day × month patterns</span>
+      </a>
+      <a href="https://members.victoriagolf.com.au/views/admin/portal/index.xhtml" target="_blank" rel="noopener" class="quick-btn">
+        <span class="quick-icon">🔗</span>
+        <span class="quick-name">MiClub Portal</span>
+        <span class="quick-sub">Open admin portal ↗</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ROADMAP -->
+<div class="section">
+  <div class="section-hdr">
+    <div class="section-hdr-line"></div>
+    <div class="section-hdr-label">On the Roadmap</div>
+    <div class="section-hdr-line"></div>
+  </div>
+  <div class="roadmap-grid">
+    <div class="roadmap-card">
+      <div class="roadmap-icon">📅</div>
+      <div class="roadmap-name">Monthly Report Builder</div>
+      <div class="roadmap-desc">Auto-generate your monthly round tracking report from CSV — no manual copy-paste.</div>
+    </div>
+    <div class="roadmap-card">
+      <div class="roadmap-icon">🏆</div>
+      <div class="roadmap-name">Competition Results</div>
+      <div class="roadmap-desc">Comp results entry, leaderboards and historical competition records.</div>
+    </div>
+    <div class="roadmap-card">
+      <div class="roadmap-icon">👥</div>
+      <div class="roadmap-name">Member Lookup</div>
+      <div class="roadmap-desc">Member round history, handicap tracking and communication preferences.</div>
+    </div>
+    <div class="roadmap-card">
+      <div class="roadmap-icon">📋</div>
+      <div class="roadmap-name">Tee Sheet Manager</div>
+      <div class="roadmap-desc">Visual tee time management with booking categories and twilight slots.</div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-inner">
+    <div class="footer-left">
+      <svg class="footer-logo" viewBox="0 0 52 52" fill="none">
+        <path d="M13 15 L26 37 L39 15" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M32 20 A9 9 0 1 0 32 32" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="footer-name">The Victoria Golf Club</span>
+      <span class="footer-copy">Golf Operations Hub · Internal Use Only</span>
+    </div>
+    <div class="footer-links">
+      <a href="rounds-dashboard.html" class="footer-link">Rounds Dashboard</a>
+      <a href="scorecard-generator.html" class="footer-link">Scorecard Generator</a>
+      <a href="https://members.victoriagolf.com.au/views/admin/portal/index.xhtml" target="_blank" rel="noopener" class="footer-link">MiClub Portal ↗</a>
+    </div>
+  </div>
+</div>
+
+<script src="assets/home/app.js"></script>
+
+</body>
+</html>

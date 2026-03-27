@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VGC Rounds Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="assets/rounds-dashboard/styles.css">
+<style>
+/* ═══════════════════════════════════════════
+   VGC BRAND TOKENS
+═══════════════════════════════════════════ */
+:root{
+  --navy:    #2b335c;
+  --navy2:   #1e2540;
+  --navy3:   #3d4678;
+  --silver:  #898b8d;
+  --silver2: #b8b9bb;
+  --silver3: #e4e5e6;
+  --charcoal:#5a585c;
+  --white:   #ffffff;
+  --bg:      #f2f3f5;
+  --card:    #ffffff;
+  --border:  #dddee3;
+  --text:    #1e2230;
+  --muted:   #6b6d7a;
+  --sidebar-w: 260px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px;overflow-x:hidden}
+
+/* ─── HEADER ─── */
+.hdr{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  background:var(--navy);
+  height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px 0 16px;
+  box-shadow:0 2px 12px rgba(0,0,0,.35);
+}
+.hdr::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--silver) 0%,var(--charcoal) 50%,var(--silver) 100%);
+}
+.hdr-brand{display:flex;align-items:center;gap:12px}
+.hdr-logo{width:36px;height:36px;flex-shrink:0}
+.hdr-title{color:#fff}
+.hdr-title h1{font-size:1rem;font-weight:700;letter-spacing:.3px}
+.hdr-title p{font-size:.65rem;opacity:.55;letter-spacing:.4px;text-transform:uppercase}
+.hdr-meta{display:flex;gap:8px;align-items:center}
+.hdr-badge{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
+  border-radius:3px;padding:3px 10px;font-size:.65rem;color:rgba(255,255,255,.8);
+  letter-spacing:.4px;text-transform:uppercase;
+}
+
+/* ─── LAYOUT ─── */
+.app{display:flex;margin-top:56px;min-height:calc(100vh - 56px)}
+
+/* ─── SIDEBAR ─── */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:#fff;
+  border-right:1px solid var(--border);
+  position:fixed;top:56px;left:0;bottom:0;
+  overflow-y:auto;
+  box-shadow:2px 0 8px rgba(43,51,92,.06);
+  z-index:100;
+  display:flex;flex-direction:column;
+}
+.sidebar-section{border-bottom:1px solid var(--silver3);padding:14px 16px}
+.sidebar-section:last-child{border-bottom:none;flex:1}
+.sidebar-label{
+  font-size:.6rem;font-weight:700;color:var(--navy);
+  text-transform:uppercase;letter-spacing:.9px;
+  margin-bottom:10px;display:flex;align-items:center;gap:6px;
+}
+.sidebar-label::after{content:'';flex:1;height:1px;background:var(--silver3)}
+
+/* Segmented controls in sidebar */
+.seg{display:flex;flex-direction:column;gap:4px}
+.seg-row{display:flex;gap:3px;flex-wrap:wrap}
+.seg-btn{
+  flex:1;min-width:0;
+  padding:5px 4px;
+  border:1px solid var(--border);background:#f7f8fa;
+  font-size:.68rem;font-weight:600;cursor:pointer;color:var(--muted);
+  border-radius:3px;text-align:center;transition:all .12s;
+  font-family:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.seg-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.seg-btn:hover:not(.active){background:var(--silver3);color:var(--navy)}
+
+/* Checkbox groups */
+.cb-group{display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto}
+.cb-item{display:flex;align-items:center;gap:7px;cursor:pointer;padding:2px 0}
+.cb-item input{accent-color:var(--navy);cursor:pointer;width:13px;height:13px}
+.cb-item span{font-size:.75rem;color:var(--text);flex:1}
+.cb-item .cb-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* Select */
+.sb-select{
+  width:100%;padding:6px 8px;
+  border:1px solid var(--border);border-radius:3px;
+  font-size:.75rem;font-family:inherit;color:var(--text);background:#fff;
+}
+
+/* Range slider */
+.range-wrap{margin-top:4px}
+.range-wrap input[type=range]{width:100%;accent-color:var(--navy)}
+.range-vals{display:flex;justify-content:space-between;font-size:.65rem;color:var(--muted);margin-top:2px}
+
+/* Sidebar reset btn */
+.reset-btn{
+  width:100%;padding:7px;margin-top:8px;
+  background:#f7f8fa;border:1px solid var(--border);border-radius:3px;
+  font-size:.72rem;font-weight:600;cursor:pointer;color:var(--navy);
+  font-family:inherit;transition:all .12s;
+}
+.reset-btn:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* ─── MAIN CONTENT ─── */
+.main{
+  margin-left:var(--sidebar-w);
+  flex:1;
+  min-width:0;
+  display:flex;flex-direction:column;
+}
+
+/* ─── TAB BAR ─── */
+.tabbar{
+  position:sticky;top:0;z-index:90;
+  background:#fff;
+  border-bottom:2px solid var(--border);
+  display:flex;
+  padding:0 20px;
+  box-shadow:0 1px 4px rgba(43,51,92,.06);
+}
+.tab{
+  padding:14px 16px;
+  font-size:.67rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--muted);cursor:pointer;
+  border-bottom:3px solid transparent;margin-bottom:-2px;
+  transition:all .15s;white-space:nowrap;
+}
+.tab:hover{color:var(--navy)}
+.tab.active{color:var(--navy);border-bottom-color:var(--navy)}
+
+/* ─── PAGES ─── */
+.page{display:none;padding:18px 20px}
+.page.active{display:block}
+
+/* ─── GRID LAYOUTS ─── */
+.kpi-row{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.g21{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px}
+.g31{display:grid;grid-template-columns:3fr 1fr;gap:14px;margin-bottom:14px}
+.mb{margin-bottom:14px}
+.full{margin-bottom:14px}
+
+/* ─── KPI CARDS ─── */
+.kpi{
+  background:#fff;border-radius:4px;padding:13px 15px;
+  box-shadow:0 1px 4px rgba(43,51,92,.08);
+  border:1px solid var(--border);border-left:4px solid var(--navy);
+  transition:transform .12s;position:relative;overflow:hidden;
+}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(43,51,92,.14)}
+.kpi.s1{border-left-color:var(--navy2)}
+.kpi.s2{border-left-color:var(--navy3)}
+.kpi.s3{border-left-color:var(--silver)}
+.kpi.s4{border-left-color:var(--charcoal)}
+.kpi.s5{border-left-color:var(--silver2)}
+.kpi.s6{border-left-color:#4a5490}
+.kpi-lbl{font-size:.58rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+.kpi-val{font-size:1.6rem;font-weight:700;line-height:1;margin:4px 0 2px;color:var(--navy)}
+.kpi-sub{font-size:.65rem;color:var(--muted)}
+.kpi-delta{font-size:.65rem;font-weight:700;margin-top:3px}
+.up{color:#2e6b3e}.dn{color:#8b2535}.flat{color:var(--muted)}
+
+/* ─── CARDS ─── */
+.card{
+  background:#fff;border-radius:4px;padding:15px 17px;
+  box-shadow:0 1px 4px rgba(43,51,92,.07);border:1px solid var(--border);
+}
+.card-hdr{
+  font-size:.62rem;font-weight:700;color:var(--navy);text-transform:uppercase;
+  letter-spacing:.8px;margin-bottom:12px;padding-bottom:8px;
+  border-bottom:1px solid var(--silver3);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.card-hdr .sub{font-size:.62rem;color:var(--silver);font-weight:400;text-transform:none;letter-spacing:0}
+canvas{max-height:230px}
+
+/* ─── TABLES ─── */
+.tbl{width:100%;border-collapse:collapse;font-size:.74rem}
+.tbl th{
+  background:#f0f1f5;color:var(--navy);font-weight:700;font-size:.6rem;
+  text-transform:uppercase;letter-spacing:.6px;padding:7px 9px;
+  border-bottom:2px solid var(--navy);text-align:right;white-space:nowrap;
+}
+.tbl th:first-child{text-align:left}
+.tbl td{padding:6px 9px;border-bottom:1px solid var(--silver3);text-align:right;white-space:nowrap}
+.tbl td:first-child{text-align:left;font-weight:600;color:var(--navy2)}
+.tbl tr:hover td{background:#f7f8fb}
+.tbl .best{color:#2e6b3e;font-weight:700}
+.tbl .worst{color:#8b2535}
+.tbl .total-row td{background:var(--navy);color:#fff;font-weight:700}
+.tbl .sub-row td{color:var(--muted);font-size:.7rem;font-style:italic}
+
+/* ─── MINI BARS ─── */
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.bar-lbl{font-size:.71rem;color:var(--text);width:125px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;background:var(--silver3);border-radius:2px;height:8px;overflow:hidden}
+.bar-fill{height:8px;border-radius:2px;transition:width .4s}
+.bar-val{font-size:.69rem;color:var(--muted);width:46px;text-align:right;flex-shrink:0}
+
+/* ─── OCC TILES ─── */
+.occ-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.occ-tile{background:#f5f6f8;border-radius:4px;padding:9px 11px;border:1px solid var(--border)}
+.occ-day{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.occ-pct{font-size:1.3rem;font-weight:700;margin:2px 0;color:var(--navy)}
+.occ-hi{color:#2e6b3e!important}.occ-mid{color:#7a5c1e!important}.occ-lo{color:#8b2535!important}
+.occ-sub{font-size:.61rem;color:var(--silver)}
+.occ-bar{height:4px;border-radius:2px;margin-top:3px}
+.occ-bar.am{background:var(--navy)}
+.occ-bar.pm{background:var(--silver);margin-top:2px}
+
+/* ─── SEASON CARDS ─── */
+.season-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.sc{border-radius:4px;padding:13px;text-align:center;background:#fff;border:1px solid var(--border)}
+.sc.sum{border-top:3px solid var(--navy)}
+.sc.aut{border-top:3px solid var(--silver)}
+.sc.win{border-top:3px solid var(--charcoal)}
+.sc.spr{border-top:3px solid var(--navy3)}
+.sc-icon{font-size:1.3rem}
+.sc-name{font-size:.58rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin:3px 0}
+.sc-num{font-size:1.2rem;font-weight:700;color:var(--navy)}
+.sc-sub{font-size:.61rem;color:var(--muted);margin-top:2px}
+
+/* ─── HEATMAP ─── */
+.hm-wrap{overflow-x:auto}
+.hm-table{border-collapse:collapse;width:100%}
+.hm-table td,.hm-table th{
+  width:36px;height:32px;text-align:center;font-size:.65rem;
+  border-radius:3px;padding:2px;
+}
+.hm-table th{background:transparent;font-weight:700;color:var(--muted);font-size:.6rem}
+.hm-row-lbl{text-align:left!important;font-weight:600;color:var(--navy2);white-space:nowrap;padding-right:8px!important;width:80px!important}
+
+/* ─── INSIGHT BOXES ─── */
+.ins{border-left:3px solid var(--navy);background:#eef0f8;border-radius:0 4px 4px 0;padding:9px 11px;margin-bottom:8px;font-size:.74rem;color:var(--navy2)}
+.ins.amber{border-color:var(--charcoal);background:#f5f4f2;color:var(--text)}
+.ins.rose{border-color:#8b2535;background:#faf0f1;color:#5a1520}
+.ins strong{display:block;margin-bottom:2px;font-size:.76rem;color:var(--navy)}
+
+/* ─── TREND PILLS ─── */
+.pill{display:inline-flex;align-items:center;gap:3px;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.pill.up{background:#dcf5e7;color:#1a5c30}
+.pill.dn{background:#fde8ea;color:#7a1020}
+.pill.flat{background:var(--silver3);color:var(--muted)}
+
+/* ─── SCROLL ─── */
+.scroll-x{overflow-x:auto}
+</style>
+</head>
+<body>
+<style>
+#vgc-gate{position:fixed;inset:0;background:#2b335c;display:flex;align-items:center;justify-content:center;z-index:99999;font-family:'Open Sans',Arial,sans-serif}
+.gate-card{background:#fff;border-radius:4px;padding:40px 44px;width:340px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.gate-logo{margin:0 auto 20px}
+.gate-title{font-size:1.05rem;font-weight:700;color:#2b335c;margin-bottom:4px}
+.gate-sub{font-size:.72rem;color:#6b6d7a;margin-bottom:24px;letter-spacing:.3px}
+.gate-rule{height:3px;background:linear-gradient(90deg,transparent,#898b8d,#b8b9bb,#898b8d,transparent);margin-bottom:24px}
+.gate-input{width:100%;padding:10px 14px;border:1px solid #dddee3;border-radius:3px;font-size:.85rem;font-family:inherit;color:#1a1f3a;outline:none;text-align:center;letter-spacing:2px;margin-bottom:10px;transition:border-color .15s}
+.gate-input:focus{border-color:#2b335c}
+.gate-btn{width:100%;padding:11px;background:#2b335c;color:#fff;border:none;border-radius:3px;font-size:.78rem;font-weight:700;cursor:pointer;letter-spacing:.8px;text-transform:uppercase;font-family:inherit;transition:background .15s;margin-bottom:10px}
+.gate-btn:hover{background:#1e2540}
+.gate-err{font-size:.7rem;color:#8b2535;min-height:18px;font-weight:600}
+.gate-chevron{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='13'%3E%3Cpolyline points='0,13 20,1 40,13' fill='none' stroke='%23ffffff' stroke-width='1.1' opacity='0.07'/%3E%3C/svg%3E");background-repeat:repeat;position:absolute;inset:0;pointer-events:none}
+</style>
+<div id="vgc-gate">
+  <div class="gate-chevron"></div>
+  <div class="gate-card">
+    <svg class="gate-logo" width="48" height="48" viewBox="0 0 52 52" fill="none">
+      <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
+      <path d="M13 15 L26 37 L39 15" fill="none" stroke="#2b335c" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M32 20 A9 9 0 1 0 32 32" fill="none" stroke="#898b8d" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M32 26 L37 26 L37 32" fill="none" stroke="#898b8d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="gate-title">VGC Golf Operations</div>
+    <div class="gate-sub">The Victoria Golf Club &mdash; Staff Access</div>
+    <div class="gate-rule"></div>
+    <input class="gate-input" type="password" id="gateInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkGate()">
+    <button class="gate-btn" onclick="checkGate()">Access Hub</button>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+<script>
+(function(){
+  const HASH="df121110fc1e6a6499111b6287664ddcb8cfa0dd560b83ef366f0c875ffae3a7";
+  async function sha256(s){const b=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+  if(sessionStorage.getItem('vgc_auth')==='1'){document.getElementById('vgc-gate').remove();return;}
+  window.checkGate=async function(){
+    const v=document.getElementById('gateInput').value;
+    const h=await sha256(v);
+    if(h===HASH){sessionStorage.setItem('vgc_auth','1');document.getElementById('vgc-gate').remove();}
+    else{const e=document.getElementById('gateErr');e.textContent='Incorrect password. Please try again.';document.getElementById('gateInput').value='';document.getElementById('gateInput').focus();setTimeout(()=>e.textContent='',3000);}
+  };
+})();
+</script>
+
+<!-- VGC_DASHBOARD_BODY -->
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-brand">
+    <svg class="hdr-logo" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="26" cy="26" rx="24" ry="24" fill="none" stroke="#898b8d" stroke-width="1.2" opacity="0.5"/>
+      <path d="M12 14 L26 38 L40 14" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M33 19 A10 10 0 1 0 33 33" fill="none" stroke="#898b8d" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M33 26 L38 26 L38 33" fill="none" stroke="#898b8d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="22" y="40" width="8" height="3" rx="1" fill="#898b8d" opacity="0.7"/>
+      <rect x="19" y="43" width="14" height="2" rx="1" fill="#898b8d" opacity="0.5"/>
+    </svg>
+    <div class="hdr-title">
+      <h1>The Victoria Golf Club</h1>
+      <p>Rounds Analytics · 2023–2026</p>
+    </div>
+  </div>
+  <div class="hdr-meta">
+    <span class="hdr-badge" id="activeTab">Overview</span>
+    <span class="hdr-badge" id="filterSummary">All Years · All Periods</span>
+  </div>
+</div>
+
+<div class="app">
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<aside class="sidebar">
+
+  <!-- YEAR -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Year</div>
+    <div class="seg-row" id="yearBtns">
+      <button class="seg-btn active" onclick="setYear('all')">All</button>
+      <button class="seg-btn" onclick="setYear(2023)">2023</button>
+      <button class="seg-btn" onclick="setYear(2024)">2024</button>
+      <button class="seg-btn" onclick="setYear(2025)">2025</button>
+      <button class="seg-btn" onclick="setYear(2026)">2026</button>
+    </div>
+  </div>
+
+  <!-- PERIOD TYPE -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Period</div>
+    <div class="seg-row" id="periodTypeBtns">
+      <button class="seg-btn active" onclick="setPeriodType('full')">Full</button>
+      <button class="seg-btn" onclick="setPeriodType('q')">Quarter</button>
+      <button class="seg-btn" onclick="setPeriodType('season')">Season</button>
+      <button class="seg-btn" onclick="setPeriodType('month')">Month</button>
+    </div>
+    <div id="periodSubFilters" style="margin-top:8px;display:none">
+      <select class="sb-select" id="periodSel" onchange="setPeriod(this.value)">
+        <option>—</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- MONTHS (multi-select) -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Months</div>
+    <div class="cb-group" id="monthCbs"></div>
+  </div>
+
+  <!-- DAYS OF WEEK -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Days of Week</div>
+    <div class="cb-group" id="dayCbs"></div>
+  </div>
+
+  <!-- PRIMARY METRIC -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Primary Metric</div>
+    <select class="sb-select" id="metricSel" onchange="setMetric(this.value)">
+      <option value="total">Total Rounds</option>
+      <option value="am">AM Field</option>
+      <option value="pm">PM Field</option>
+      <option value="after3">After 3pm</option>
+      <option value="guests">Guests</option>
+      <option value="members">Members</option>
+      <option value="comp">Competition</option>
+      <option value="corporate">Corporate</option>
+      <option value="event">Event</option>
+      <option value="memb_intro">Member Intro</option>
+      <option value="voucher">Voucher</option>
+      <option value="recip">Reciprocal</option>
+      <option value="interstate">Interstate</option>
+      <option value="intl">International</option>
+      <option value="mgr_intro">Manager Intro</option>
+      <option value="non_playing">Non Playing</option>
+    </select>
+  </div>
+
+  <!-- CHART TYPE -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Chart Style</div>
+    <div class="seg-row" id="chartTypeBtns">
+      <button class="seg-btn active" onclick="setChartType('bar')">Bar</button>
+      <button class="seg-btn" onclick="setChartType('line')">Line</button>
+      <button class="seg-btn" onclick="setChartType('stack')">Stack</button>
+    </div>
+  </div>
+
+  <!-- COMPARE MODE -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Compare</div>
+    <div class="seg-row">
+      <button class="seg-btn active" id="cmpYoY" onclick="toggleCompare('yoy',this)">YoY</button>
+      <button class="seg-btn" id="cmpAvg" onclick="toggleCompare('avg',this)">vs Avg</button>
+    </div>
+  </div>
+
+  <!-- RESET -->
+  <div class="sidebar-section">
+    <button class="reset-btn" onclick="resetFilters()">↺ Reset All Filters</button>
+  </div>
+
+</aside>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<div class="main">
+
+  <!-- TAB BAR -->
+  <div class="tabbar">
+    <div class="tab active" onclick="showTab('overview',this)">Overview</div>
+    <div class="tab" onclick="showTab('monthly',this)">Monthly</div>
+    <div class="tab" onclick="showTab('occupancy',this)">Occupancy</div>
+    <div class="tab" onclick="showTab('dayofweek',this)">Day of Week</div>
+    <div class="tab" onclick="showTab('guests',this)">Guests</div>
+    <div class="tab" onclick="showTab('seasonal',this)">Seasonal</div>
+    <div class="tab" onclick="showTab('heatmap',this)">Heat Map</div>
+    <div class="tab" onclick="showTab('compare',this)">Year Compare</div>
+    <div class="tab" onclick="showTab('averages',this)">Averages</div>
+    <div class="tab" onclick="showTab('members',this)">Members</div>
+  </div>
+
+  <!-- ── PAGE: OVERVIEW ── -->
+  <div class="page active" id="pg-overview">
+    <div class="kpi-row" id="kpiRow"></div>
+    <div class="g21">
+      <div class="card"><div class="card-hdr">Monthly Rounds <span class="sub" id="mainChartSub"></span></div><canvas id="mainChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Year on Year</div><canvas id="yoyBar"></canvas></div>
+    </div>
+    <div class="g3">
+      <div class="card"><div class="card-hdr">Booking Category Mix</div><div id="catBars"></div></div>
+      <div class="card"><div class="card-hdr">Guest Breakdown</div><canvas id="guestDonut" style="max-height:180px"></canvas></div>
+      <div class="card"><div class="card-hdr">Key Insights</div><div id="insights"></div></div>
+    </div>
+    <div class="g21">
+      <div class="card"><div class="card-hdr">Trend — <span id="trendLbl">Total Rounds</span></div><canvas id="trendLine"></canvas></div>
+      <div class="card"><div class="card-hdr">Seasonal Summary</div><canvas id="seasonOverview" style="max-height:200px"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: MONTHLY ── -->
+  <div class="page" id="pg-monthly">
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Monthly Totals <span class="sub" id="monthlyChartSub"></span></div><canvas id="monthlyMain"></canvas></div>
+      <div class="card"><div class="card-hdr">AM vs PM vs After 3pm</div><canvas id="amPmChart"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Guest / Member Ratio by Month</div><canvas id="ratioChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Corporate & Event by Month</div><canvas id="corpEventChart"></canvas></div>
+    </div>
+    <div class="card full"><div class="card-hdr">Monthly Detail Table <span class="sub" id="monthlyTableSub"></span></div><div class="scroll-x"><table class="tbl" id="monthlyTable"></table></div></div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Daily Average by Month</div><canvas id="dailyAvgChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Weekly Average by Month</div><canvas id="weeklyAvgChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: OCCUPANCY ── -->
+  <div class="page" id="pg-occupancy">
+    <div class="g4 mb" id="occKpiRow"></div>
+    <div class="g21">
+      <div class="card"><div class="card-hdr">Monthly Occupancy Rate <span class="sub" id="occMonthSub"></span></div><canvas id="occMonthChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Occupancy by Day of Week</div><div class="occ-grid" id="occDayGrid"></div></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">AM Occupancy — All Years</div><canvas id="occAmChart"></canvas></div>
+      <div class="card"><div class="card-hdr">PM Occupancy — All Years</div><canvas id="occPmChart"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">After 3pm Occupancy by Day (2025–2026)</div><canvas id="occ3pmChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Occupancy: Bookings vs Spots Available</div><canvas id="occSpotsChart"></canvas></div>
+    </div>
+    <div class="card full"><div class="card-hdr">Full Occupancy Table</div><div class="scroll-x"><table class="tbl" id="occTable"></table></div></div>
+  </div>
+
+  <!-- ── PAGE: DAY OF WEEK ── -->
+  <div class="page" id="pg-dayofweek">
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Total Rounds by Day <span class="sub" id="dowSub"></span></div><canvas id="dowTotal"></canvas></div>
+      <div class="card"><div class="card-hdr">AM vs PM vs After 3pm by Day</div><canvas id="dowAmPm"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Guest Ratio by Day</div><canvas id="dowGuestRatio"></canvas></div>
+      <div class="card"><div class="card-hdr">Competition Rounds by Day</div><canvas id="dowComp"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Day Share % of Monthly Total</div><canvas id="dowShare"></canvas></div>
+      <div class="card"><div class="card-hdr">Corporate & Event by Day</div><canvas id="dowCorpEvent"></canvas></div>
+    </div>
+    <div class="card full"><div class="card-hdr">Day of Week Full Breakdown</div><div class="scroll-x"><table class="tbl" id="dowTable"></table></div></div>
+  </div>
+
+  <!-- ── PAGE: GUESTS ── -->
+  <div class="page" id="pg-guests">
+    <div class="kpi-row" id="guestKpiRow"></div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Guest Type Trend <span class="sub" id="guestTrendSub"></span></div><canvas id="guestTrend"></canvas></div>
+      <div class="card"><div class="card-hdr">Guest Mix by Year</div><canvas id="guestMix"></canvas></div>
+    </div>
+    <div class="g3">
+      <div class="card"><div class="card-hdr">Interstate & International</div><canvas id="travelChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Corporate by Month</div><canvas id="corpMonth"></canvas></div>
+      <div class="card"><div class="card-hdr">Member Intro by Month</div><canvas id="membIntroChart"></canvas></div>
+    </div>
+    <div class="card full"><div class="card-hdr">Guest Category Detail Table</div><div class="scroll-x"><table class="tbl" id="guestTable"></table></div></div>
+  </div>
+
+  <!-- ── PAGE: SEASONAL ── -->
+  <div class="page" id="pg-seasonal">
+    <div class="season-row" id="seasonCards"></div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Seasonal Rounds by Year</div><canvas id="seasonYear"></canvas></div>
+      <div class="card"><div class="card-hdr">Quarter-by-Quarter</div><canvas id="quarterChart"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Seasonal Guests</div><canvas id="seasonGuests"></canvas></div>
+      <div class="card"><div class="card-hdr">Seasonal Occupancy</div><canvas id="seasonOcc"></canvas></div>
+    </div>
+    <div class="card full"><div class="card-hdr">Seasonal Summary Table</div><div class="scroll-x"><table class="tbl" id="seasonTable"></table></div></div>
+  </div>
+
+  <!-- ── PAGE: HEAT MAP ── -->
+  <div class="page" id="pg-heatmap">
+    <div class="card full mb">
+      <div class="card-hdr">Round Volume Heat Map — Day × Month <span class="sub" id="hmSub"></span></div>
+      <div class="hm-wrap" id="hmRounds"></div>
+    </div>
+    <div class="card full mb">
+      <div class="card-hdr">Occupancy Heat Map — Day × Month</div>
+      <div class="hm-wrap" id="hmOcc"></div>
+    </div>
+    <div class="card full mb">
+      <div class="card-hdr">Guest Ratio Heat Map — Day × Month</div>
+      <div class="hm-wrap" id="hmGuest"></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Competition Heat Map</div><div class="hm-wrap" id="hmComp"></div></div>
+      <div class="card"><div class="card-hdr">Corporate Heat Map</div><div class="hm-wrap" id="hmCorp"></div></div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: YEAR COMPARE ── -->
+  <div class="page" id="pg-compare">
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Total Rounds — Year Comparison</div><canvas id="cmpTotal"></canvas></div>
+      <div class="card"><div class="card-hdr">Members vs Guests</div><canvas id="cmpMemGuest"></canvas></div>
+    </div>
+    <div class="g3">
+      <div class="card"><div class="card-hdr">Corporate by Year</div><canvas id="cmpCorp"></canvas></div>
+      <div class="card"><div class="card-hdr">Competition by Year</div><canvas id="cmpComp"></canvas></div>
+      <div class="card"><div class="card-hdr">Occupancy Trend</div><canvas id="cmpOcc"></canvas></div>
+    </div>
+    <div class="card full mb"><div class="card-hdr">Full Year Comparison Table</div><div class="scroll-x"><table class="tbl" id="cmpTable"></table></div></div>
+    <div class="card full"><div class="card-hdr">Same Month — Cross Year Table</div><div class="scroll-x"><table class="tbl" id="cmpMonthTable"></table></div></div>
+  </div>
+
+  <!-- ── PAGE: AVERAGES ── -->
+  <div class="page" id="pg-averages">
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Daily Average Rounds by Month</div><canvas id="avgDaily"></canvas></div>
+      <div class="card"><div class="card-hdr">Weekly Average Rounds by Month</div><canvas id="avgWeekly"></canvas></div>
+    </div>
+    <div class="g3">
+      <div class="card"><div class="card-hdr">Average Daily Guests by Month</div><canvas id="avgGuests"></canvas></div>
+      <div class="card"><div class="card-hdr">Average Daily Competition</div><canvas id="avgComp"></canvas></div>
+      <div class="card"><div class="card-hdr">Average Daily Corporate</div><canvas id="avgCorp"></canvas></div>
+    </div>
+    <div class="card full"><div class="card-hdr">Monthly Averages Table</div><div class="scroll-x"><table class="tbl" id="avgTable"></table></div></div>
+  </div>
+
+
+  <!-- ── PAGE: MEMBERS ── -->
+  <div class="page" id="pg-members">
+    <div class="kpi-row" id="membKpiRow"></div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Age Distribution</div><canvas id="membAge"></canvas></div>
+      <div class="card"><div class="card-hdr">Membership Tenure</div><canvas id="membTenure"></canvas></div>
+    </div>
+    <div class="g3">
+      <div class="card"><div class="card-hdr">New Members per Year</div><canvas id="membJoin"></canvas></div>
+      <div class="card"><div class="card-hdr">Gender by Age Group</div><canvas id="membGenderAge"></canvas></div>
+      <div class="card"><div class="card-hdr">Driver Brand Preferences</div><canvas id="membDriver"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Iron Brands</div><canvas id="membIrons"></canvas></div>
+      <div class="card"><div class="card-hdr">Golf Ball Brands</div><canvas id="membBall"></canvas></div>
+    </div>
+    <div class="g3">
+      <div class="card">
+        <div class="card-hdr">Data Coverage</div>
+        <div id="membCoverage"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">Long-standing Members</div>
+        <div id="membLong"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">Quick Links</div>
+        <div style="padding:8px 0">
+          <a href="member-lookup.html" style="display:block;padding:10px 12px;background:var(--navy);color:#fff;border-radius:3px;text-decoration:none;font-size:.72rem;font-weight:700;text-align:center;letter-spacing:.4px;margin-bottom:8px">Open Member Lookup &#8594;</a>
+          <p style="font-size:.7rem;color:var(--muted);line-height:1.6">Full searchable directory with contact details, tenure bars, and equipment preferences for all 1,399 members.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+<script src="assets/data/rounds-dashboard.data.js"></script>
+<script src="assets/rounds-dashboard/app.js"></script>
+</body>
+</html>

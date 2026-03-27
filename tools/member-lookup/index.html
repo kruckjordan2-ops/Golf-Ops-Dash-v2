@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VGC Member Lookup</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+:root{
+  --navy:#2b335c;--navy2:#1e2540;--navy3:#363d6e;
+  --silver:#898b8d;--silver-lt:#b8b9bb;--silver-xlt:#e4e5e6;
+  --charcoal:#5a585c;--white:#fff;--bg:#f2f2f0;
+  --text:#1a1f3a;--muted:#6b6d7a;--border:#dddee3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+.hdr{background:var(--navy);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;box-shadow:0 2px 12px rgba(0,0,0,.3);position:sticky;top:0;z-index:200;position:relative}
+.hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--silver),var(--silver-lt),var(--silver),transparent)}
+.hdr-inner{position:relative;z-index:1;display:flex;align-items:center;gap:18px}
+.hdr-title h1{font-size:.95rem;font-weight:700;color:#fff;line-height:1.15}
+.hdr-title p{font-size:.6rem;color:rgba(255,255,255,.4);letter-spacing:1.5px;text-transform:uppercase}
+.hdr-right{position:relative;z-index:1;display:flex;gap:9px;align-items:center}
+.hdr-pill{font-size:.6rem;font-weight:700;letter-spacing:.9px;text-transform:uppercase;padding:4px 11px;border-radius:2px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.55)}
+.back-link{font-size:.65rem;font-weight:600;color:rgba(255,255,255,.5);text-decoration:none;letter-spacing:.5px;text-transform:uppercase;transition:color .15s}
+.back-link:hover{color:rgba(255,255,255,.85)}
+.app{display:flex;height:calc(100vh - 61px)}
+.sidebar{width:300px;flex-shrink:0;background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.search-wrap{padding:14px;border-bottom:1px solid var(--silver-xlt)}
+.search-box{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:3px;font-size:.8rem;font-family:inherit;background:#f7f8fa;color:var(--text);outline:none;transition:border-color .15s}
+.search-box:focus{border-color:var(--navy);background:#fff}
+.filter-row{display:flex;gap:6px;margin-top:7px}
+.filter-sel{flex:1;padding:5px 7px;border:1px solid var(--border);border-radius:3px;font-size:.7rem;font-family:inherit;color:var(--muted);background:#f7f8fa;min-width:0}
+.results-hdr{padding:9px 14px 7px;font-size:.59rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;border-bottom:1px solid var(--silver-xlt);display:flex;justify-content:space-between;align-items:center}
+.results-count{font-weight:400;color:var(--silver)}
+.member-list{flex:1;overflow-y:auto}
+.member-item{padding:10px 14px;border-bottom:1px solid var(--silver-xlt);cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:10px}
+.member-item:hover{background:#f5f6fa}
+.member-item.active{background:#eef0f8;border-left:3px solid var(--navy);padding-left:11px}
+.av{width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;flex-shrink:0;letter-spacing:.5px}
+.av.f{background:var(--silver)}
+.mn{font-size:.78rem;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mm{font-size:.65rem;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.main{flex:1;overflow-y:auto;padding:22px 26px}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:80%;color:var(--muted);text-align:center;gap:10px}
+.empty-icon{font-size:2.5rem;opacity:.2}
+.empty-title{font-size:.95rem;font-weight:600;color:var(--charcoal)}
+.empty-sub{font-size:.77rem}
+.mc-header{display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--silver-xlt)}
+.mc-avatar{width:56px;height:56px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;flex-shrink:0}
+.mc-avatar.f{background:var(--silver)}
+.mc-name{font-size:1.3rem;font-weight:700;color:var(--navy);line-height:1.15}
+.mc-sub{font-size:.73rem;color:var(--muted);margin-top:3px}
+.mc-badges{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+.badge{font-size:.58rem;font-weight:700;padding:3px 8px;border-radius:2px;letter-spacing:.4px}
+.bm{background:rgba(43,51,92,.09);color:var(--navy);border:1px solid rgba(43,51,92,.14)}
+.bf{background:rgba(137,139,141,.11);color:var(--charcoal);border:1px solid rgba(137,139,141,.18)}
+.bt{background:rgba(43,51,92,.06);color:var(--navy3);border:1px solid rgba(43,51,92,.09)}
+.mc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.mc-section{background:#fff;border:1px solid var(--border);border-radius:3px;padding:14px 16px}
+.mc-section.full{grid-column:1/-1}
+.sct{font-size:.58rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.9px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--silver-xlt)}
+.fr{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #f5f5f7}
+.fr:last-child{border-bottom:none}
+.fl{font-size:.65rem;color:var(--muted);font-weight:600}
+.fv{font-size:.75rem;color:var(--text);text-align:right}
+.fv.em{color:var(--silver-lt);font-style:italic}
+.fv a{color:var(--navy);text-decoration:none}
+.fv a:hover{text-decoration:underline}
+.ten-track{background:var(--silver-xlt);border-radius:2px;height:5px;overflow:hidden;margin-top:6px}
+.ten-fill{height:5px;border-radius:2px;background:var(--navy)}
+.ten-lbl{display:flex;justify-content:space-between;font-size:.6rem;color:var(--muted);margin-top:2px}
+.eq-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.eq-item{background:#f5f6f9;border-radius:3px;padding:8px 10px;border:1px solid var(--border)}
+.eq-type{font-size:.57rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+.eq-brand{font-size:.78rem;font-weight:600;color:var(--navy);margin-top:2px}
+.eq-brand.em{color:var(--silver-lt);font-weight:400;font-style:italic}
+.no-results{padding:28px;text-align:center;color:var(--muted);font-size:.78rem}
+</style>
+</head>
+<body>
+<style>
+#vgc-gate{position:fixed;inset:0;background:#2b335c;display:flex;align-items:center;justify-content:center;z-index:99999;font-family:'Open Sans',Arial,sans-serif}
+.gate-card{background:#fff;border-radius:4px;padding:40px 44px;width:340px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.gate-logo{margin:0 auto 20px}
+.gate-title{font-size:1.05rem;font-weight:700;color:#2b335c;margin-bottom:4px}
+.gate-sub{font-size:.72rem;color:#6b6d7a;margin-bottom:24px;letter-spacing:.3px}
+.gate-rule{height:3px;background:linear-gradient(90deg,transparent,#898b8d,#b8b9bb,#898b8d,transparent);margin-bottom:24px}
+.gate-input{width:100%;padding:10px 14px;border:1px solid #dddee3;border-radius:3px;font-size:.85rem;font-family:inherit;color:#1a1f3a;outline:none;text-align:center;letter-spacing:2px;margin-bottom:10px;transition:border-color .15s}
+.gate-input:focus{border-color:#2b335c}
+.gate-btn{width:100%;padding:11px;background:#2b335c;color:#fff;border:none;border-radius:3px;font-size:.78rem;font-weight:700;cursor:pointer;letter-spacing:.8px;text-transform:uppercase;font-family:inherit;transition:background .15s;margin-bottom:10px}
+.gate-btn:hover{background:#1e2540}
+.gate-err{font-size:.7rem;color:#8b2535;min-height:18px;font-weight:600}
+.gate-chevron{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='13'%3E%3Cpolyline points='0,13 20,1 40,13' fill='none' stroke='%23ffffff' stroke-width='1.1' opacity='0.07'/%3E%3C/svg%3E");background-repeat:repeat;position:absolute;inset:0;pointer-events:none}
+</style>
+<div id="vgc-gate">
+  <div class="gate-chevron"></div>
+  <div class="gate-card">
+    <svg class="gate-logo" width="48" height="48" viewBox="0 0 52 52" fill="none">
+      <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
+      <path d="M13 15 L26 37 L39 15" fill="none" stroke="#2b335c" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M32 20 A9 9 0 1 0 32 32" fill="none" stroke="#898b8d" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M32 26 L37 26 L37 32" fill="none" stroke="#898b8d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="gate-title">VGC Golf Operations</div>
+    <div class="gate-sub">The Victoria Golf Club &mdash; Staff Access</div>
+    <div class="gate-rule"></div>
+    <input class="gate-input" type="password" id="gateInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkGate()">
+    <button class="gate-btn" onclick="checkGate()">Access Hub</button>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+<script>
+(function(){
+  const HASH="df121110fc1e6a6499111b6287664ddcb8cfa0dd560b83ef366f0c875ffae3a7";
+  async function sha256(s){const b=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+  if(sessionStorage.getItem('vgc_auth')==='1'){document.getElementById('vgc-gate').remove();return;}
+  window.checkGate=async function(){
+    const v=document.getElementById('gateInput').value;
+    const h=await sha256(v);
+    if(h===HASH){sessionStorage.setItem('vgc_auth','1');document.getElementById('vgc-gate').remove();}
+    else{const e=document.getElementById('gateErr');e.textContent='Incorrect password. Please try again.';document.getElementById('gateInput').value='';document.getElementById('gateInput').focus();setTimeout(()=>e.textContent='',3000);}
+  };
+})();
+</script>
+
+<header class="hdr">
+  <div class="hdr-inner">
+    <a class="back-link" href="../home/index.html">&#8592; Hub</a>
+    <svg width="36" height="36" viewBox="0 0 52 52" fill="none">
+      <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
+      <path d="M13 15 L26 37 L39 15" fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M32 20 A9 9 0 1 0 32 32" fill="none" stroke="#898b8d" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+    <div class="hdr-title"><h1>Member Lookup</h1><p>The Victoria Golf Club</p></div>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-pill">1,399 Members</span>
+    <span class="hdr-pill">Golf Genius Export</span>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="search-wrap">
+      <input class="search-box" type="text" id="searchInput" placeholder="Search name or email&#8230;" oninput="doSearch()">
+      <div class="filter-row">
+        <select class="filter-sel" id="fGender" onchange="doSearch()">
+          <option value="">All genders</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+        <select class="filter-sel" id="fAge" onchange="doSearch()">
+          <option value="">All ages</option>
+          <option value="Under 30">Under 30</option>
+          <option value="30s">30s</option>
+          <option value="40s">40s</option>
+          <option value="50s">50s</option>
+          <option value="60s">60s</option>
+          <option value="70s">70s</option>
+          <option value="80+">80+</option>
+        </select>
+      </div>
+      <div class="filter-row">
+        <select class="filter-sel" id="fTenure" onchange="doSearch()">
+          <option value="">All tenures</option>
+          <option value="New (<2yr)">New (&lt;2yr)</option>
+          <option value="2-5yr">2&#8211;5yr</option>
+          <option value="5-10yr">5&#8211;10yr</option>
+          <option value="10-20yr">10&#8211;20yr</option>
+          <option value="20-30yr">20&#8211;30yr</option>
+          <option value="30-50yr">30&#8211;50yr</option>
+          <option value="50+yr">50+yr</option>
+        </select>
+        <select class="filter-sel" id="fDriver" onchange="doSearch()">
+          <option value="">Any driver</option>
+          <option value="Callaway">Callaway</option>
+          <option value="Titleist">Titleist</option>
+          <option value="Ping">Ping</option>
+          <option value="TaylorMade">TaylorMade</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="results-hdr">Results <span class="results-count" id="rCount"></span></div>
+    <div class="member-list" id="mList"></div>
+  </aside>
+
+  <div class="main" id="mainPanel">
+    <div class="empty-state">
+      <div class="empty-icon">&#128100;</div>
+      <div class="empty-title">Select a member</div>
+      <div class="empty-sub">Search or scroll the list to find a member, then click to view details.</div>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
