@@ -16,6 +16,7 @@ PAGES = {
     "scorecard-generator": "scorecard-generator",
     "tee-timing":          "tee-timing",       # F&B Timing Sync
     "pace-of-play":        "pace-of-play",     # Pace of Play Analyser
+    "spend-tracking":      "spend-tracking",   # Member Spend Tracking
 }
 
 DATA_TARGETS = {
@@ -23,6 +24,7 @@ DATA_TARGETS = {
     "member-lookup":       "member-lookup.data.js",
     "scorecard-generator": "scorecard-generator.data.js",
     "pace-of-play":        "pace_data.js",     # member pace data
+    "spend-tracking":      "sales_data.js",    # SwiftPOS sales data
 }
 
 # ── BUILD ─────────────────────────────────────────────────────────
@@ -41,6 +43,8 @@ for slug, tool_name in PAGES.items():
     html = html.replace('src="app.js"',         f'src="assets/{tool_name}/app.js"')
     html = html.replace('src="data.js"',        f'src="assets/data/{DATA_TARGETS.get(tool_name, tool_name + ".data.js")}"')
     html = html.replace('src="pace_data.js"',   f'src="assets/data/pace_data.js"')
+    html = html.replace('src="sales_data.js"',   f'src="assets/data/sales_data.js"')
+    html = html.replace('src="assets/data/member-lookup.data.js"', f'src="assets/data/member-lookup.data.js"')
 
     # Fix nav links
     html = html.replace('href="../home/index.html"',               'href="index.html"')
@@ -79,4 +83,3 @@ if CNAME_SRC.exists():
 print("\n✅ Site built → site/")
 for path in sorted(SITE.glob("*")):
     print(f"  - {path.name}")
-

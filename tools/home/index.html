@@ -286,7 +286,7 @@ body {
 }
 .quick-grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(9, 1fr);
   gap: 10px;
 }
 .quick-btn {
@@ -494,11 +494,11 @@ body {
     <div class="stat-lbl">Avg Occupancy</div>
   </div>
   <div class="stat">
-    <div class="stat-num">6</div>
+    <div class="stat-num">7</div>
     <div class="stat-lbl">Active Tools</div>
   </div>
   <div class="stat">
-    <div class="stat-num">2</div>
+    <div class="stat-num">1</div>
     <div class="stat-lbl">In Development</div>
   </div>
   <div class="stat">
@@ -602,7 +602,7 @@ body {
     <!-- F&B TIMING SYNC -->
     <a href="../tee-timing/index.html" class="card">
       <div class="card-bar" style="background:linear-gradient(90deg,#b8630a,#e8890d)"></div>
-      <span class="card-status card-status--live">&#9679; In Progress</span>
+      <span class="card-status card-status--live">&#9679; Live</span>
       <div class="card-icon-row">
         <div class="card-icon" style="background:rgba(184,99,10,.07)">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
@@ -664,6 +664,45 @@ body {
         </div>
         <div class="card-foot">
           <span class="card-cta-text">Open Pace Analysis</span>
+          <span class="card-arrow">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6h8M6 2l4 4-4 4" stroke="#2b335c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    </a>
+
+    <!-- SPEND TRACKING -->
+    <a href="../spend-tracking/index.html" class="card">
+      <div class="card-bar" style="background:linear-gradient(90deg,#2563eb,#7c3aed)"></div>
+      <span class="card-status card-status--live">&#9679; Live</span>
+      <div class="card-icon-row">
+        <div class="card-icon" style="background:rgba(37,99,235,.07)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect x="3" y="6" width="22" height="16" rx="2" stroke="#2563eb" stroke-width="1.6" fill="none"/>
+            <path d="M8 14h4M8 17h8" stroke="#2563eb" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
+            <circle cx="20" cy="10" r="3" fill="#7c3aed" opacity=".8"/>
+            <path d="M19 10h2M20 9v2" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
+            <rect x="3" y="6" width="22" height="4" rx="1" fill="#2563eb" opacity=".08"/>
+          </svg>
+        </div>
+        <div>
+          <span class="card-tag">Revenue</span>
+          <div class="card-name">Member Spend</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Full SwiftPOS spend breakdown for 1,177 members across 2025. Track F&amp;B, Pro Shop and Golf Fee revenue by member with segment ratings — Whale, High, Mid, Low and Zero Spend. Links directly to the Member Lookup database.</p>
+        <div class="chips">
+          <span class="chip">$1.16M Revenue</span>
+          <span class="chip">F&amp;B · Pro Shop · Golf</span>
+          <span class="chip">Member Segments</span>
+          <span class="chip">SwiftPOS 2025</span>
+          <span class="chip">DB Linked</span>
+        </div>
+        <div class="card-foot">
+          <span class="card-cta-text">Open Spend Tracker</span>
           <span class="card-arrow">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M2 6h8M6 2l4 4-4 4" stroke="#2b335c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -804,6 +843,11 @@ body {
         <span class="quick-name">Pace of Play</span>
         <span class="quick-sub">Slow member report</span>
       </a>
+      <a href="../spend-tracking/index.html" class="quick-btn">
+        <span class="quick-icon">💰</span>
+        <span class="quick-name">Member Spend</span>
+        <span class="quick-sub">SwiftPOS 2025</span>
+      </a>
     </div>
   </div>
 </div>
@@ -829,12 +873,12 @@ body {
     <div class="roadmap-card">
       <div class="roadmap-icon">👥</div>
       <div class="roadmap-name">Member Segmentation</div>
-      <div class="roadmap-desc">Segment members by spend, frequency and churn risk using SwiftPOS and MiClub data.</div>
+      <div class="roadmap-desc">Full segmentation by frequency, churn risk and playing patterns using MiClub booking data.</div>
     </div>
     <div class="roadmap-card">
-      <div class="roadmap-icon">💰</div>
-      <div class="roadmap-name">Spend Tracking</div>
-      <div class="roadmap-desc">Golf, pro shop and F&amp;B spend per member with lifetime value and trend analysis.</div>
+      <div class="roadmap-icon">📅</div>
+      <div class="roadmap-name">Multi-Year Spend Trends</div>
+      <div class="roadmap-desc">Year-on-year spend comparison per member once multiple years of SwiftPOS data are loaded.</div>
     </div>
   </div>
 </div>
@@ -855,6 +899,7 @@ body {
       <a href="../scorecard-generator/index.html" class="footer-link">Scorecard Generator</a>
       <a href="../tee-timing/index.html" class="footer-link">F&amp;B Timing</a>
       <a href="../pace-of-play/index.html" class="footer-link">Pace of Play</a>
+      <a href="../spend-tracking/index.html" class="footer-link">Member Spend</a>
       <a href="https://members.victoriagolf.com.au/views/admin/portal/index.xhtml" target="_blank" rel="noopener" class="footer-link">MiClub Portal ↗</a>
     </div>
   </div>
