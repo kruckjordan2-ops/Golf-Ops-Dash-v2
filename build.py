@@ -53,6 +53,7 @@ for slug, tool_name in PAGES.items():
     html = html.replace('href="../scorecard-generator/index.html"','href="scorecard-generator.html"')
     html = html.replace('href="../tee-timing/index.html"',         'href="tee-timing.html"')
     html = html.replace('href="../pace-of-play/index.html"',       'href="pace-of-play.html"')
+    html = html.replace('href="../spend-tracking/index.html"',   'href="spend-tracking.html"')
 
     target_name = "index.html" if slug == "index" else f"{slug}.html"
     (SITE / target_name).write_text(html, encoding="utf-8")
@@ -83,3 +84,4 @@ if CNAME_SRC.exists():
 print("\n✅ Site built → site/")
 for path in sorted(SITE.glob("*")):
     print(f"  - {path.name}")
+
