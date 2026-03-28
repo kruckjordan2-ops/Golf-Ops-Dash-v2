@@ -5,8 +5,8 @@
   Victoria Golf Club
   ═══════════════════════════════════════════════════════════════
   This file contains only the page structure.
-  Styling is in:  styles.css
-  Logic is in:    app.js
+  Styling is in:  VGC_Scorecard_Styles.css
+  Logic is in:    VGC_Scorecard_Backend.js
   ═══════════════════════════════════════════════════════════════
 -->
 <html lang="en">
@@ -14,7 +14,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VGC Scorecard Generator</title>
-  <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <style>
@@ -65,7 +65,7 @@
      Add/remove card type buttons here
      ═══════════════════════════════════════════════════════════ -->
 <div class="topbar">
-  <div style="display:flex;align-items:center;gap:16px"><a href="../home/index.html" style="font-size:.65rem;font-weight:600;color:rgba(255,255,255,.5);text-decoration:none;letter-spacing:.5px;text-transform:uppercase" onmouseover="this.style.color='rgba(255,255,255,.85)'" onmouseout="this.style.color='rgba(255,255,255,.5)'">&#8592; Hub</a><h1>&#9971; VGC <span>Scorecard Generator</span></h1></div>
+  <div style="display:flex;align-items:center;gap:16px"><a href="index.html" style="font-size:.65rem;font-weight:600;color:rgba(255,255,255,.5);text-decoration:none;letter-spacing:.5px;text-transform:uppercase" onmouseover="this.style.color='rgba(255,255,255,.85)'" onmouseout="this.style.color='rgba(255,255,255,.5)'">&#8592; Hub</a><h1>&#9971; VGC <span>Scorecard Generator</span></h1></div>
   <div class="tbns">
     <span class="tg">MATCHPLAY:</span>
     <button class="tb active" onclick="show('mp2')">2-Ball</button>
@@ -574,8 +574,7 @@
 </div><!-- /layout -->
 
 
-<!-- JavaScript logic — all calculations and card rendering -->
-<script src="data.js"></script>
+
 <script src="app.js"></script>
 
 </body>
