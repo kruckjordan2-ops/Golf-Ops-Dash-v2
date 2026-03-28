@@ -311,6 +311,7 @@ function segLabel(s) {
 }
 
 function buildCards() {
+  if (!DATA || DATA.length === 0) return;
   var spending = DATA.filter(function(m) { return m.total > 0; });
   var total = DATA.reduce(function(s, m) { return s + m.total; }, 0);
   var fnb = DATA.reduce(function(s, m) { return s + m.fnb; }, 0);
@@ -339,6 +340,13 @@ function sortBy(col, th) {
 }
 
 function renderTable() {
+  if (!DATA || DATA.length === 0) {
+    document.getElementById('resultCount').textContent = 'No data loaded';
+    document.getElementById('memberBody').innerHTML =
+      '<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">' +
+      'No spend data loaded. Ensure sales_data.js is in data/exports/ and rebuild.</td></tr>';
+    return;
+  }
   var search = document.getElementById('memberSearch').value.toLowerCase();
   var seg = document.getElementById('segFilter').value;
   var minSpend = parseFloat(document.getElementById('minSpend').value) || 0;
@@ -403,14 +411,12 @@ function showDetail(id) {
 
   var s = getSegment(m.total);
   var avgTx = m.transactions > 0 ? m.total / m.transactions : 0;
-
-  // Group breakdown sections
   var FNB_GROUPS = ['BULK BEER','PACK BEER','GIN','RUM','WHISKEY','VODKA/OUZO/TEQUILA',
     'LIQUEURS','MISC SPIRITS','BRANDY/COGNAC','APERTIFS','CHAMPAGNE/SPARKLING',
     'WHITE WINE','RED WINE','DESSERT WINE','FORTIFIED WINE','CELLAR LIST',
     'SOFT DRINK','COFFEE/TEA','MISC F&B','SANDWICHES','CASUAL SERVERY',
     'MISC FOOD','GOLF DRINKS','GOLF SNACKS','CONFECTIONARY','BREAKFAST',
-    'LUNCH','ENTRÉE','DESSERT','SYSTEM'];
+    'LUNCH','ENTREE','DESSERT','SYSTEM'];
   var SHOP_GROUPS = ['GOLF BALLS','GOLF GLOVES','GOLF TEES','ACCESSORIES','GOLF CLUBS',
     'REPAIRS','HEADWEAR','OUTERWEAR','MENS SHIRTS','LADIES SHIRTS','PANTS SHORTS',
     'SHOES','SOCKS','BAGS BUGGIES','PANTS SKIRT SKORT','Australian Open'];
@@ -423,51 +429,27 @@ function showDetail(id) {
     groupNames.forEach(function(g) {
       if (groups[g] && groups[g] > 0) {
         hasAny = true;
-        rows += '<div class="modal-row">' +
-          '<span class="modal-row-lbl">' + g + '</span>' +
-          '<span class="modal-row-val">' + fmtFull(groups[g]) + '</span>' +
-        '</div>';
+        rows += '<div class="modal-row"><span class="modal-row-lbl">' + g +
+          '</span><span class="modal-row-val">' + fmtFull(groups[g]) + '</span></div>';
       }
     });
-    // Also catch any groups not in predefined lists
-    Object.keys(groups).forEach(function(g) {
-      if (groups[g] > 0 && groupNames.indexOf(g) === -1) {
-        // check if it belongs to this section by category
-        var cat = getCatForGroup(g);
-        if (cat === getCatForGroup(groupNames[0])) {
-          hasAny = true;
-          rows += '<div class="modal-row">' +
-            '<span class="modal-row-lbl">' + g + '</span>' +
-            '<span class="modal-row-val">' + fmtFull(groups[g]) + '</span>' +
-          '</div>';
-        }
-      }
-    });
-    return hasAny ? rows : '<div class="modal-row"><span class="modal-row-lbl" style="font-style:italic">No spend</span><span class="modal-row-val">—</span></div>';
-  }
-
-  function getCatForGroup(g) {
-    if (FNB_GROUPS.indexOf(g) !== -1) return 'fnb';
-    if (SHOP_GROUPS.indexOf(g) !== -1) return 'proshop';
-    if (GOLF_GROUPS.indexOf(g) !== -1) return 'golf';
-    return 'other';
+    return hasAny ? rows :
+      '<div class="modal-row"><span class="modal-row-lbl" style="font-style:italic">No spend</span>' +
+      '<span class="modal-row-val">--</span></div>';
   }
 
   var groups = m.groups || {};
-
-  // Other groups (not in any predefined list)
   var otherRows = '';
   Object.keys(groups).forEach(function(g) {
-    if (groups[g] > 0 &&
-        FNB_GROUPS.indexOf(g) === -1 &&
-        SHOP_GROUPS.indexOf(g) === -1 &&
-        GOLF_GROUPS.indexOf(g) === -1) {
-      otherRows += '<div class="modal-row">' +
-        '<span class="modal-row-lbl">' + g + '</span>' +
-        '<span class="modal-row-val">' + fmtFull(groups[g]) + '</span>' +
-      '</div>';
+    if (groups[g] > 0 && FNB_GROUPS.indexOf(g) === -1 &&
+        SHOP_GROUPS.indexOf(g) === -1 && GOLF_GROUPS.indexOf(g) === -1) {
+      otherRows += '<div class="modal-row"><span class="modal-row-lbl">' + g +
+        '</span><span class="modal-row-val">' + fmtFull(groups[g]) + '</span></div>';
     }
   });
+
+  // Store ID on window so lookup button can find member safely (avoids apostrophe issues)
+  window._detailMemberId = id;
 
   var memberBlock = '';
   if (m._matched) {
@@ -475,58 +457,73 @@ function showDetail(id) {
     memberBlock =
       '<div class="modal-section-title">&#128101; Member Database Record</div>' +
       '<div class="member-info-box">' +
-        '<div class="mi-row"><span class="mi-lbl">Name</span><span class="mi-val">' + mem.first + ' ' + mem.last + '</span></div>' +
-        '<div class="mi-row"><span class="mi-lbl">Gender</span><span class="mi-val">' + (mem.gender || '—') + '</span></div>' +
-        '<div class="mi-row"><span class="mi-lbl">Age Group</span><span class="mi-val">' + (mem.age_group || '—') + '</span></div>' +
-        '<div class="mi-row"><span class="mi-lbl">Joined</span><span class="mi-val">' + (mem.join_date || '—') + '</span></div>' +
-        '<div class="mi-row"><span class="mi-lbl">Tenure</span><span class="mi-val">' + (mem.tenure_bucket || '—') + '</span></div>' +
-        '<div class="mi-row"><span class="mi-lbl">Email</span><span class="mi-val">' + (mem.email || '—') + '</span></div>' +
-        '<div class="mi-row"><span class="mi-lbl">Phone</span><span class="mi-val">' + (mem.phone || '—') + '</span></div>' +
+        '<div class="mi-row"><span class="mi-lbl">Name</span><span class="mi-val">' +
+          mem.first + ' ' + mem.last + '</span></div>' +
+        '<div class="mi-row"><span class="mi-lbl">Gender</span><span class="mi-val">' +
+          (mem.gender || '--') + '</span></div>' +
+        '<div class="mi-row"><span class="mi-lbl">Age Group</span><span class="mi-val">' +
+          (mem.age_group || '--') + '</span></div>' +
+        '<div class="mi-row"><span class="mi-lbl">Joined</span><span class="mi-val">' +
+          (mem.join_date || '--') + '</span></div>' +
+        '<div class="mi-row"><span class="mi-lbl">Tenure</span><span class="mi-val">' +
+          (mem.tenure_bucket || '--') + '</span></div>' +
+        '<div class="mi-row"><span class="mi-lbl">Email</span><span class="mi-val">' +
+          (mem.email || '--') + '</span></div>' +
+        '<div class="mi-row"><span class="mi-lbl">Phone</span><span class="mi-val">' +
+          (mem.phone || '--') + '</span></div>' +
       '</div>' +
-      '<button class="lookup-btn" onclick="openInMemberLookup('' + (mem.first + ' ' + mem.last).replace(/'/g, '') + '')">Open in Member Lookup &#8594;</button>';
+      '<button class="lookup-btn" onclick="openCurrentInLookup()">Open in Member Lookup &#8594;</button>';
   } else {
     memberBlock =
       '<div class="modal-section-title">&#128101; Member Database</div>' +
-      '<div style="font-size:.75rem;color:var(--muted);padding:10px;background:var(--bg);border-radius:3px;line-height:1.6">' +
-        '&#9888;&#65039; Name not matched in Golf Genius member database.' +
-      '</div>';
+      '<div style="font-size:.75rem;color:var(--muted);padding:10px;background:var(--bg);' +
+        'border-radius:3px;line-height:1.6">Name not matched in Golf Genius database.</div>';
   }
 
   document.getElementById('modalName').textContent = m.name;
   document.getElementById('modalBody').innerHTML =
-    // Summary stats
     '<div class="modal-stat-grid">' +
-      '<div class="modal-stat"><div class="modal-stat-val">' + fmtFull(m.total) + '</div><div class="modal-stat-lbl">Total Spend</div></div>' +
-      '<div class="modal-stat"><div class="modal-stat-val">' + m.transactions + '</div><div class="modal-stat-lbl">Transactions</div></div>' +
-      '<div class="modal-stat"><div class="modal-stat-val">' + (avgTx > 0 ? fmtFull(avgTx) : '$0') + '</div><div class="modal-stat-lbl">Avg per Visit</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-val">' + fmtFull(m.total) +
+        '</div><div class="modal-stat-lbl">Total Spend</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-val">' + m.transactions +
+        '</div><div class="modal-stat-lbl">Transactions</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-val">' +
+        (avgTx > 0 ? fmtFull(avgTx) : '$0') + '</div><div class="modal-stat-lbl">Avg per Visit</div></div>' +
     '</div>' +
-
-    // Segment + totals
     '<div class="modal-section-title">Summary</div>' +
-    '<div class="modal-row"><span class="modal-row-lbl">Segment</span><span class="modal-row-val"><span class="seg ' + s + '">' + segLabel(s) + '</span></span></div>' +
-    '<div class="modal-row"><span class="modal-row-lbl" style="color:var(--fnb);font-weight:700">&#127866; F&amp;B Total</span><span class="modal-row-val" style="color:var(--fnb)">' + fmtFull(m.fnb) + (m.total > 0 ? ' (' + Math.round(m.fnb / m.total * 100) + '%)' : '') + '</span></div>' +
-    '<div class="modal-row"><span class="modal-row-lbl" style="color:var(--shop);font-weight:700">&#128717; Pro Shop Total</span><span class="modal-row-val" style="color:var(--shop)">' + fmtFull(m.proshop) + (m.total > 0 ? ' (' + Math.round(m.proshop / m.total * 100) + '%)' : '') + '</span></div>' +
-    '<div class="modal-row"><span class="modal-row-lbl" style="color:var(--golf);font-weight:700">&#9971; Golf Total</span><span class="modal-row-val" style="color:var(--golf)">' + fmtFull(m.golf) + (m.total > 0 ? ' (' + Math.round(m.golf / m.total * 100) + '%)' : '') + '</span></div>' +
-
-    // F&B breakdown
-    '<div class="modal-section-title" style="color:var(--fnb)">&#127866; F&amp;B Breakdown</div>' +
+    '<div class="modal-row"><span class="modal-row-lbl">Segment</span>' +
+      '<span class="modal-row-val"><span class="seg ' + s + '">' + segLabel(s) + '</span></span></div>' +
+    '<div class="modal-row"><span class="modal-row-lbl" style="color:var(--fnb);font-weight:700">' +
+      'F&amp;B Total</span><span class="modal-row-val" style="color:var(--fnb)">' +
+      fmtFull(m.fnb) + (m.total > 0 ? ' (' + Math.round(m.fnb / m.total * 100) + '%)' : '') + '</span></div>' +
+    '<div class="modal-row"><span class="modal-row-lbl" style="color:var(--shop);font-weight:700">' +
+      'Pro Shop Total</span><span class="modal-row-val" style="color:var(--shop)">' +
+      fmtFull(m.proshop) + (m.total > 0 ? ' (' + Math.round(m.proshop / m.total * 100) + '%)' : '') + '</span></div>' +
+    '<div class="modal-row"><span class="modal-row-lbl" style="color:var(--golf);font-weight:700">' +
+      'Golf Total</span><span class="modal-row-val" style="color:var(--golf)">' +
+      fmtFull(m.golf) + (m.total > 0 ? ' (' + Math.round(m.golf / m.total * 100) + '%)' : '') + '</span></div>' +
+    '<div class="modal-section-title" style="color:var(--fnb)">F&amp;B Breakdown</div>' +
     groupRows(groups, FNB_GROUPS) +
-
-    // Pro shop breakdown
-    '<div class="modal-section-title" style="color:var(--shop)">&#128717; Pro Shop Breakdown</div>' +
+    '<div class="modal-section-title" style="color:var(--shop)">Pro Shop Breakdown</div>' +
     groupRows(groups, SHOP_GROUPS) +
-
-    // Golf breakdown
-    '<div class="modal-section-title" style="color:var(--golf)">&#9971; Golf Breakdown</div>' +
+    '<div class="modal-section-title" style="color:var(--golf)">Golf Breakdown</div>' +
     groupRows(groups, GOLF_GROUPS) +
-
-    // Other
     (otherRows ? '<div class="modal-section-title">Other</div>' + otherRows : '') +
-
-    // Member DB
     memberBlock;
 
   document.getElementById('detailModal').classList.remove('hidden');
+}
+
+
+function openCurrentInLookup() {
+  var m = null;
+  for (var i = 0; i < DATA.length; i++) {
+    if (DATA[i].id === window._detailMemberId) { m = DATA[i]; break; }
+  }
+  if (m && m._matched) {
+    sessionStorage.setItem('memberLookupSearch', m._member.first + ' ' + m._member.last);
+    window.location.href = 'member-lookup.html';
+  }
 }
 
 function openInMemberLookup(name) {
