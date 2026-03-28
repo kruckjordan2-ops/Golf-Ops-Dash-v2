@@ -127,7 +127,7 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
     <div class="hdr-title"><h1>Pace of Play</h1><p>The Victoria Golf Club</p></div>
   </div>
   <div class="hdr-right">
-    <span class="hdr-pill" id="dataInfo">603 rounds · 412 members</span>
+    <span class="hdr-pill" id="dataInfo">Loading...</span>
     <span class="hdr-pill">App-tracked only</span>
   </div>
 </header>
@@ -176,6 +176,30 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
     <option value="5">5+</option>
   </select>
   <div class="divider"></div>
+  <span class="toolbar-label">Tenure</span>
+  <select class="sel" id="tenureFilter" onchange="renderMembers()">
+    <option value="">All tenures</option>
+    <option value="New (<2yr)">New (&lt;2yr)</option>
+    <option value="2-5yr">2–5yr</option>
+    <option value="5-10yr">5–10yr</option>
+    <option value="10-20yr">10–20yr</option>
+    <option value="20-30yr">20–30yr</option>
+    <option value="30-50yr">30–50yr</option>
+    <option value="50+yr">50+yr</option>
+  </select>
+  <div class="divider"></div>
+  <span class="toolbar-label">Age</span>
+  <select class="sel" id="ageFilter" onchange="renderMembers()">
+    <option value="">All ages</option>
+    <option value="Under 30">Under 30</option>
+    <option value="30s">30s</option>
+    <option value="40s">40s</option>
+    <option value="50s">50s</option>
+    <option value="60s">60s</option>
+    <option value="70s">70s</option>
+    <option value="80+">80+</option>
+  </select>
+  <div class="divider"></div>
   <span class="toolbar-label" id="resultCount" style="color:var(--navy);font-weight:700"></span>
 </div>
 
@@ -189,6 +213,8 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
         <tr>
           <th onclick="sortBy('name')">Member</th>
           <th onclick="sortBy('gender')">Gender</th>
+          <th onclick="sortBy('tenure_bucket')">Tenure</th>
+          <th onclick="sortBy('age_group')">Age</th>
           <th onclick="sortBy('rounds')">Rounds</th>
           <th onclick="sortBy('avgMins')">Avg Time</th>
           <th onclick="sortBy('avgMins')">vs Club Avg</th>
@@ -316,9 +342,47 @@ const FORMAT_BENCHMARKS = {
 // ── INLINE DATA (412 members from XLS files) ─────────────────────
 </script>
 <script src="pace_data.js"></script>
+<script src="assets/data/member-lookup.data.js"></script>
 <script>
-// Use PACE_DATA from external file, or fall back to empty
-const MEMBERS = typeof PACE_DATA !== 'undefined' ? PACE_DATA : [];
+// Cross-reference pace data with member database
+// Only keep verified VGC members (filter guests)
+function buildMemberList() {
+  const paceData = typeof PACE_DATA !== 'undefined' ? PACE_DATA : [];
+  const memberDB = (typeof MEMBER_LOOKUP_DATA !== 'undefined' && MEMBER_LOOKUP_DATA.members) ? MEMBER_LOOKUP_DATA.members : [];
+
+  // Build lookup map from member DB by full name
+  const memberMap = {};
+  memberDB.forEach(m => {
+    const key = (m.first + ' ' + m.last).toLowerCase().trim();
+    memberMap[key] = m;
+  });
+
+  // Match pace data against member DB
+  const matched = [];
+  const unmatched = [];
+  paceData.forEach(p => {
+    const key = p.name.toLowerCase().trim();
+    const dbRecord = memberMap[key];
+    if (dbRecord) {
+      matched.push({
+        ...p,
+        gender: dbRecord.gender === 'Female' ? 'f' : 'm', // use DB gender (more accurate)
+        tenure_bucket: dbRecord.tenure_bucket || '',
+        age_group: dbRecord.age_group || '',
+        join_year: dbRecord.join_year || null,
+        email: dbRecord.email || '',
+        isVerifiedMember: true,
+      });
+    } else {
+      unmatched.push(p.name);
+    }
+  });
+
+  console.log('Pace of Play: ' + matched.length + ' verified members, ' + unmatched.length + ' guests/unmatched filtered out');
+  return matched;
+}
+
+const MEMBERS = buildMemberList();
 
 // ── HELPERS ───────────────────────────────────────────────────────
 function fmtMins(m) {
@@ -363,11 +427,15 @@ function renderMembers() {
   const pace = document.getElementById('paceFilter').value;
   const minR = parseInt(document.getElementById('minRounds').value);
 
+  const tenure = document.getElementById('tenureFilter').value;
+  const age = document.getElementById('ageFilter').value;
   let filtered = MEMBERS.filter(m => {
     if (m.rounds < minR) return false;
     if (gender && m.gender !== gender) return false;
     if (pace && getPaceRating(m.avgMins) !== pace) return false;
     if (search && !m.name.toLowerCase().includes(search)) return false;
+    if (tenure && m.tenure_bucket !== tenure) return false;
+    if (age && m.age_group !== age) return false;
     return true;
   });
 
@@ -416,6 +484,8 @@ function renderMembers() {
     return `<tr class="${rowClass}">
       <td style="font-weight:600">${m.name}</td>
       <td><span class="gbadge ${m.gender}">${m.gender === 'f' ? '♀ F' : '♂ M'}</span></td>
+      <td style="font-size:.68rem;color:var(--muted)">${m.tenure_bucket || '—'}</td>
+      <td style="font-size:.68rem;color:var(--muted)">${m.age_group || '—'}</td>
       <td>
         <div style="font-weight:700">${m.rounds}</div>
         <div class="rdots" style="margin-top:3px">${dots}</div>
@@ -459,7 +529,7 @@ function buildOverview() {
 
   // Distribution chart
   const bins = [180,195,210,225,240,255,270,285,300,315,330];
-  const labels = bins.map((b,i) => i<bins.length-1 ? `${b//60}h${(b%60).toString().padStart(2,'0')}` : '5h30+');
+  const labels = bins.map((b,i) => i<bins.length-1 ? `${Math.floor(b/60)}h${(b%60).toString().padStart(2,'0')}` : '5h30+');
   const counts = bins.map((b,i) => {
     const next = bins[i+1] || 999;
     return all.filter(m=>m.avgMins>=b && m.avgMins<next).length;
@@ -524,6 +594,8 @@ function switchTab(name, el) {
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
+const _totalRounds = MEMBERS.reduce((s,m)=>s+m.rounds,0);
+document.getElementById('dataInfo').textContent = _totalRounds + ' rounds · ' + MEMBERS.length + ' verified members';
 renderMembers();
 </script>
 </body>

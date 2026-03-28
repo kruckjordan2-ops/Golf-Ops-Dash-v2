@@ -642,7 +642,7 @@ function renderTable() {
 
     const holePips = status === 'not-started' ? '' : `
       <div class="hole-bar">
-        ${Array.from({length:18},(_,i)=>`<div class="hole-pip ${i<hole-1?'done':i===hole-1?'current':''}"></div>`).join('')}
+        ${Array.from({length:18},(_,i)=>{const cls=i<hole-1?'done':i===hole-1?'current':'';return '<div class="hole-pip '+cls+'"></div>';}).join('')}
         <span class="hole-text">H${hole}</span>
       </div>`;
 
