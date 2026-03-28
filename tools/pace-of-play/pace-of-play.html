@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VGC Pace of Play</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#2b335c;--navy2:#1e2540;--navy3:#363d6e;
+  --silver:#898b8d;--silver-lt:#b8b9bb;--silver-xlt:#e4e5e6;
+  --charcoal:#5a585c;--white:#fff;--bg:#f2f2f0;
+  --text:#1a1f3a;--muted:#6b6d7a;--border:#dddee3;
+  --green:#1a7a3e;--green-lt:#e8f5ee;
+  --amber:#b8630a;--amber-lt:#fef3e2;
+  --red:#8b1a1a;--red-lt:#faeaea;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+
+.hdr{background:var(--navy);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;box-shadow:0 2px 12px rgba(0,0,0,.3);position:relative}
+.hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--silver),var(--silver-lt),var(--silver),transparent)}
+.hdr-inner{position:relative;z-index:1;display:flex;align-items:center;gap:18px}
+.hdr-title h1{font-size:.95rem;font-weight:700;color:#fff;line-height:1.15}
+.hdr-title p{font-size:.6rem;color:rgba(255,255,255,.4);letter-spacing:1.5px;text-transform:uppercase}
+.hdr-right{position:relative;z-index:1;display:flex;gap:9px;align-items:center}
+.hdr-pill{font-size:.6rem;font-weight:700;letter-spacing:.9px;text-transform:uppercase;padding:4px 11px;border-radius:2px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.55)}
+.back-link{font-size:.65rem;font-weight:600;color:rgba(255,255,255,.5);text-decoration:none;letter-spacing:.5px;text-transform:uppercase;transition:color .15s}
+.back-link:hover{color:rgba(255,255,255,.85)}
+
+/* SUMMARY CARDS */
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.card{background:#fff;padding:16px 20px}
+.card-val{font-size:1.6rem;font-weight:700;color:var(--navy);line-height:1}
+.card-lbl{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-top:3px}
+.card-sub{font-size:.65rem;color:var(--silver);margin-top:2px}
+.card-val.amber{color:var(--amber)}
+.card-val.red{color:var(--red)}
+.card-val.green{color:var(--green)}
+
+/* TOOLBAR */
+.toolbar{background:#fff;border-bottom:1px solid var(--border);padding:10px 24px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.toolbar-label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+.sel{padding:6px 10px;border:1px solid var(--border);border-radius:3px;font-size:.75rem;font-family:inherit;color:var(--text);background:#f7f8fa}
+.sel:focus{outline:none;border-color:var(--navy)}
+.search{padding:7px 12px;border:1px solid var(--border);border-radius:3px;font-size:.75rem;font-family:inherit;color:var(--text);background:#f7f8fa;width:200px}
+.search:focus{outline:none;border-color:var(--navy)}
+.divider{width:1px;height:24px;background:var(--border)}
+.btn{padding:6px 14px;border-radius:3px;font-size:.72rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-family:inherit;border:1px solid var(--border);background:#f7f8fa;color:var(--muted);transition:all .15s}
+.btn.active,.btn:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* TABS */
+.tabs{display:flex;background:#fff;border-bottom:2px solid var(--border);padding:0 24px}
+.tab{padding:12px 18px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab.active{color:var(--navy);border-bottom-color:var(--navy)}
+.tab:hover{color:var(--navy)}
+
+/* CONTENT */
+.content{padding:20px 24px}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{background:var(--navy);color:#fff;font-size:.6rem;font-weight:700;letter-spacing:.9px;text-transform:uppercase;padding:10px 12px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none}
+.tbl th:hover{background:var(--navy3)}
+.tbl th.asc::after{content:' ▲';opacity:.7}
+.tbl th.desc::after{content:' ▼';opacity:.7}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--silver-xlt);font-size:.75rem;vertical-align:middle}
+.tbl tr:hover td{background:#f5f6fa}
+.tbl tr.slow td{background:var(--red-lt)}
+.tbl tr.watch td{background:var(--amber-lt)}
+
+/* PACE BADGE */
+.pace{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:2px;font-size:.6rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.pace.fast{background:var(--green-lt);color:var(--green);border:1px solid rgba(26,122,62,.2)}
+.pace.ok{background:#f0f0f0;color:var(--charcoal);border:1px solid var(--border)}
+.pace.watch{background:var(--amber-lt);color:var(--amber);border:1px solid rgba(184,99,10,.2)}
+.pace.slow{background:var(--red-lt);color:var(--red);border:1px solid rgba(139,26,26,.2)}
+
+/* SPARKLINE */
+.spark{display:flex;align-items:flex-end;gap:2px;height:24px}
+.spark-bar{width:6px;border-radius:1px;background:var(--navy);opacity:.5;min-height:2px}
+.spark-bar.latest{opacity:1;background:var(--amber)}
+
+/* DISTRIBUTION CHART */
+.chart-wrap{background:#fff;border:1px solid var(--border);border-radius:3px;padding:20px;margin-bottom:16px}
+.chart-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--navy);margin-bottom:14px}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+
+/* INSIGHT CARDS */
+.insights{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.insight{background:#fff;border:1px solid var(--border);border-radius:3px;padding:14px 16px}
+.insight-icon{font-size:1.4rem;margin-bottom:6px}
+.insight-title{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:4px}
+.insight-val{font-size:1.1rem;font-weight:700;color:var(--navy)}
+.insight-sub{font-size:.65rem;color:var(--muted);margin-top:2px}
+
+/* GENDER BADGE */
+.gbadge{font-size:.6rem;font-weight:700;padding:2px 6px;border-radius:2px;text-transform:uppercase}
+.gbadge.m{background:rgba(43,51,92,.08);color:var(--navy)}
+.gbadge.f{background:rgba(137,139,141,.12);color:var(--charcoal)}
+
+/* ROUNDS DOT */
+.rdots{display:flex;gap:2px;flex-wrap:wrap;max-width:80px}
+.rdot{width:7px;height:7px;border-radius:50%}
+
+/* PANEL TABS */
+.panel{display:none}
+.panel.active{display:block}
+
+/* TREND */
+.trend{font-size:.65rem;font-weight:700}
+.trend.up{color:var(--red)}
+.trend.down{color:var(--green)}
+.trend.flat{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-inner">
+    <a class="back-link" href="index.html">&#8592; Hub</a>
+    <svg width="36" height="36" viewBox="0 0 52 52" fill="none">
+      <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
+      <path d="M13 15 L26 37 L39 15" fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M32 20 A9 9 0 1 0 32 32" fill="none" stroke="#898b8d" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+    <div class="hdr-title"><h1>Pace of Play</h1><p>The Victoria Golf Club</p></div>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-pill" id="dataInfo">603 rounds · 412 members</span>
+    <span class="hdr-pill">App-tracked only</span>
+  </div>
+</header>
+
+<!-- SUMMARY CARDS -->
+<div class="cards">
+  <div class="card"><div class="card-val" id="cTotal">412</div><div class="card-lbl">Members Tracked</div><div class="card-sub">603 app rounds</div></div>
+  <div class="card"><div class="card-val green" id="cFast">—</div><div class="card-lbl">Fast (&lt;4h)</div><div class="card-sub">Under par pace</div></div>
+  <div class="card"><div class="card-val" id="cOk">—</div><div class="card-lbl">On Pace</div><div class="card-sub">4h – 4h45m</div></div>
+  <div class="card"><div class="card-val amber" id="cWatch">—</div><div class="card-lbl">Watch</div><div class="card-sub">4h45m – 5h</div></div>
+  <div class="card"><div class="card-val red" id="cSlow">—</div><div class="card-lbl">Slow (&gt;5h)</div><div class="card-sub">Needs attention</div></div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('members',this)">Members</div>
+  <div class="tab" onclick="switchTab('overview',this)">Overview</div>
+  <div class="tab" onclick="switchTab('benchmark',this)">Benchmarks</div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <input class="search" type="text" placeholder="Search member name…" oninput="renderMembers()" id="memberSearch">
+  <div class="divider"></div>
+  <span class="toolbar-label">Gender</span>
+  <select class="sel" id="genderFilter" onchange="renderMembers()">
+    <option value="">All</option>
+    <option value="m">Male</option>
+    <option value="f">Female</option>
+  </select>
+  <div class="divider"></div>
+  <span class="toolbar-label">Pace</span>
+  <select class="sel" id="paceFilter" onchange="renderMembers()">
+    <option value="">All</option>
+    <option value="fast">Fast (&lt;4h)</option>
+    <option value="ok">On Pace (4h–4h45)</option>
+    <option value="watch">Watch (4h45–5h)</option>
+    <option value="slow">Slow (&gt;5h)</option>
+  </select>
+  <div class="divider"></div>
+  <span class="toolbar-label">Min rounds</span>
+  <select class="sel" id="minRounds" onchange="renderMembers()">
+    <option value="1">1+</option>
+    <option value="2" selected>2+</option>
+    <option value="3">3+</option>
+    <option value="5">5+</option>
+  </select>
+  <div class="divider"></div>
+  <span class="toolbar-label" id="resultCount" style="color:var(--navy);font-weight:700"></span>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- MEMBERS TAB -->
+  <div class="panel active" id="panel-members">
+    <table class="tbl" id="memberTbl">
+      <thead>
+        <tr>
+          <th onclick="sortBy('name')">Member</th>
+          <th onclick="sortBy('gender')">Gender</th>
+          <th onclick="sortBy('rounds')">Rounds</th>
+          <th onclick="sortBy('avgMins')">Avg Time</th>
+          <th onclick="sortBy('avgMins')">vs Club Avg</th>
+          <th>History</th>
+          <th onclick="sortBy('avgMins')">Pace Rating</th>
+        </tr>
+      </thead>
+      <tbody id="memberBody"></tbody>
+    </table>
+  </div>
+
+  <!-- OVERVIEW TAB -->
+  <div class="panel" id="panel-overview">
+    <div class="insights">
+      <div class="insight">
+        <div class="insight-icon">🏌️</div>
+        <div class="insight-title">Club Average (All)</div>
+        <div class="insight-val" id="insClubAvg">—</div>
+        <div class="insight-sub">Across all formats & genders</div>
+      </div>
+      <div class="insight">
+        <div class="insight-icon">👨</div>
+        <div class="insight-title">Male Average</div>
+        <div class="insight-val" id="insMaleAvg">—</div>
+        <div class="insight-sub" id="insMaleN">— rounds</div>
+      </div>
+      <div class="insight">
+        <div class="insight-icon">👩</div>
+        <div class="insight-title">Female Average</div>
+        <div class="insight-val" id="insFemaleAvg">—</div>
+        <div class="insight-sub" id="insFemaleN">— rounds</div>
+      </div>
+      <div class="insight">
+        <div class="insight-icon">🐢</div>
+        <div class="insight-title">Slowest Member</div>
+        <div class="insight-val" id="insSlowest">—</div>
+        <div class="insight-sub" id="insSlowName">—</div>
+      </div>
+      <div class="insight">
+        <div class="insight-icon">⚡</div>
+        <div class="insight-title">Fastest Member</div>
+        <div class="insight-val" id="insFastest">—</div>
+        <div class="insight-sub" id="insFastName">—</div>
+      </div>
+      <div class="insight">
+        <div class="insight-icon">⚠️</div>
+        <div class="insight-title">Slow Members (&gt;5h)</div>
+        <div class="insight-val red" id="insSlowCount">—</div>
+        <div class="insight-sub">Avg across all rounds</div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-wrap">
+        <div class="chart-title">Round Time Distribution</div>
+        <canvas id="distChart" height="200"></canvas>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Pace Rating Breakdown</div>
+        <canvas id="paceChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">Format Benchmarks (App avg, outliers removed)</div>
+      <canvas id="fmtChart" height="120"></canvas>
+    </div>
+  </div>
+
+  <!-- BENCHMARK TAB -->
+  <div class="panel" id="panel-benchmark">
+    <div class="chart-wrap">
+      <div class="chart-title">VGC Round Duration Benchmarks — App Tracked (603 rounds, &lt;5h30)</div>
+      <table class="tbl" style="margin-top:8px">
+        <thead>
+          <tr>
+            <th>Format</th>
+            <th>Male Avg</th>
+            <th>Female Avg</th>
+            <th>Fastest</th>
+            <th>Slowest (clean)</th>
+            <th>Sample Size</th>
+            <th>Source</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Stableford</strong></td><td>4h 16m</td><td>4h 15m</td><td>3h 00m</td><td>5h 30m</td><td>248 rounds</td><td>App GPS</td></tr>
+          <tr><td><strong>Par</strong></td><td>3h 57m</td><td>4h 31m</td><td>3h 00m</td><td>5h 30m</td><td>128 rounds</td><td>App GPS</td></tr>
+          <tr><td><strong>Stroke / Nett</strong></td><td>4h 22m</td><td>4h 56m</td><td>3h 00m</td><td>5h 30m</td><td>62 rounds</td><td>App GPS</td></tr>
+          <tr><td><strong>Ambrose</strong></td><td>4h 16m</td><td>4h 14m</td><td>3h 00m</td><td>5h 30m</td><td>125 rounds</td><td>App GPS</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="chart-wrap" style="margin-top:0">
+      <div class="chart-title">How Pace Rating is Calculated</div>
+      <table class="tbl" style="margin-top:8px">
+        <thead>
+          <tr><th>Rating</th><th>Avg Round Time</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="pace fast">⚡ Fast</span></td><td>Under 4h 00m</td><td>Consistently ahead of pace — great for flow of play</td></tr>
+          <tr><td><span class="pace ok">✅ On Pace</span></td><td>4h 00m – 4h 45m</td><td>Within VGC club average — no issues</td></tr>
+          <tr><td><span class="pace watch">👀 Watch</span></td><td>4h 45m – 5h 00m</td><td>Slightly slow — worth monitoring over more rounds</td></tr>
+          <tr><td><span class="pace slow">🐢 Slow</span></td><td>Over 5h 00m</td><td>Consistently slow — consider a pace conversation</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── DATA (embedded from VGC round times report) ───────────────────
+const CLUB_AVG_M = 256;
+const CLUB_AVG_F = 261;
+
+// Format benchmarks (app avg in minutes, all files, outliers <5h30 removed)
+const FORMAT_BENCHMARKS = {
+  stableford: { m: 256, f: 255, n: 248 },
+  par:        { m: 237, f: 271, n: 128 },
+  stroke:     { m: 262, f: 296, n: 62  },
+  ambrose:    { m: 256, f: 254, n: 125 },
+};
+
+// ── INLINE DATA (412 members from XLS files) ─────────────────────
+</script>
+<script src="pace_data.js"></script>
+<script>
+// Use PACE_DATA from external file, or fall back to empty
+const MEMBERS = typeof PACE_DATA !== 'undefined' ? PACE_DATA : [];
+
+// ── HELPERS ───────────────────────────────────────────────────────
+function fmtMins(m) {
+  return `${Math.floor(m/60)}h ${Math.round(m%60).toString().padStart(2,'0')}m`;
+}
+
+function getPaceRating(mins) {
+  if (mins < 240) return 'fast';
+  if (mins < 285) return 'ok';
+  if (mins < 300) return 'watch';
+  return 'slow';
+}
+
+function getPaceLabel(rating) {
+  return { fast:'⚡ Fast', ok:'✅ On Pace', watch:'👀 Watch', slow:'🐢 Slow' }[rating];
+}
+
+function getClubAvg(gender) {
+  return gender === 'f' ? CLUB_AVG_F : CLUB_AVG_M;
+}
+
+// ── SORTING ───────────────────────────────────────────────────────
+let sortCol = 'avgMins';
+let sortDir = 1;
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = 1; }
+  document.querySelectorAll('.tbl th').forEach(th => {
+    th.classList.remove('asc','desc');
+    if (th.textContent.toLowerCase().includes(col.toLowerCase())) {
+      th.classList.add(sortDir === 1 ? 'asc' : 'desc');
+    }
+  });
+  renderMembers();
+}
+
+// ── RENDER MEMBERS ────────────────────────────────────────────────
+function renderMembers() {
+  const search = document.getElementById('memberSearch').value.toLowerCase();
+  const gender = document.getElementById('genderFilter').value;
+  const pace = document.getElementById('paceFilter').value;
+  const minR = parseInt(document.getElementById('minRounds').value);
+
+  let filtered = MEMBERS.filter(m => {
+    if (m.rounds < minR) return false;
+    if (gender && m.gender !== gender) return false;
+    if (pace && getPaceRating(m.avgMins) !== pace) return false;
+    if (search && !m.name.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  filtered.sort((a,b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    if (typeof av === 'string') return sortDir * av.localeCompare(bv);
+    return sortDir * (av - bv);
+  });
+
+  document.getElementById('resultCount').textContent = `${filtered.length} members`;
+
+  // Update summary cards
+  const all = MEMBERS.filter(m => m.rounds >= 1);
+  document.getElementById('cFast').textContent = all.filter(m=>getPaceRating(m.avgMins)==='fast').length;
+  document.getElementById('cOk').textContent = all.filter(m=>getPaceRating(m.avgMins)==='ok').length;
+  document.getElementById('cWatch').textContent = all.filter(m=>getPaceRating(m.avgMins)==='watch').length;
+  document.getElementById('cSlow').textContent = all.filter(m=>getPaceRating(m.avgMins)==='slow').length;
+
+  const tbody = document.getElementById('memberBody');
+  tbody.innerHTML = filtered.map(m => {
+    const rating = getPaceRating(m.avgMins);
+    const clubAvg = getClubAvg(m.gender);
+    const diff = m.avgMins - clubAvg;
+    const diffStr = diff >= 0 ? `+${Math.round(diff)}m` : `${Math.round(diff)}m`;
+    const diffColor = diff > 15 ? 'color:var(--red)' : diff > 0 ? 'color:var(--amber)' : 'color:var(--green)';
+    const rowClass = rating === 'slow' ? 'slow' : rating === 'watch' ? 'watch' : '';
+
+    // Sparkline from allTimes
+    const times = m.allTimes || [m.avgMins];
+    const maxT = Math.max(...times);
+    const minT = Math.min(...times);
+    const range = maxT - minT || 1;
+    const spark = times.map((t,i) => {
+      const h = Math.round(4 + ((t-minT)/range)*20);
+      const cls = i === times.length-1 ? 'latest' : '';
+      return `<div class="spark-bar ${cls}" style="height:${h}px" title="${fmtMins(t)}"></div>`;
+    }).join('');
+
+    // Round dots
+    const dots = times.map(t => {
+      const r = getPaceRating(t);
+      const col = {fast:'var(--green)',ok:'var(--navy)',watch:'var(--amber)',slow:'var(--red)'}[r];
+      return `<div class="rdot" style="background:${col}" title="${fmtMins(t)}"></div>`;
+    }).join('');
+
+    return `<tr class="${rowClass}">
+      <td style="font-weight:600">${m.name}</td>
+      <td><span class="gbadge ${m.gender}">${m.gender === 'f' ? '♀ F' : '♂ M'}</span></td>
+      <td>
+        <div style="font-weight:700">${m.rounds}</div>
+        <div class="rdots" style="margin-top:3px">${dots}</div>
+      </td>
+      <td style="font-weight:700;font-size:.82rem">${fmtMins(m.avgMins)}</td>
+      <td style="${diffColor};font-weight:700;font-size:.75rem">${diffStr} vs avg</td>
+      <td><div class="spark">${spark}</div></td>
+      <td><span class="pace ${rating}">${getPaceLabel(rating)}</span></td>
+    </tr>`;
+  }).join('');
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">No members match your filters.</td></tr>';
+  }
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────
+function buildOverview() {
+  const all = MEMBERS.filter(m=>m.rounds>=1);
+  const males = all.filter(m=>m.gender==='m');
+  const females = all.filter(m=>m.gender==='f');
+
+  const clubAvg = all.reduce((s,m)=>s+m.avgMins,0)/all.length;
+  const maleAvg = males.reduce((s,m)=>s+m.avgMins,0)/males.length;
+  const femaleAvg = females.reduce((s,m)=>s+m.avgMins,0)/females.length;
+
+  const sorted = [...all].sort((a,b)=>b.avgMins-a.avgMins);
+  const slowest = sorted[0];
+  const fastest = sorted[sorted.length-1];
+
+  document.getElementById('insClubAvg').textContent = fmtMins(clubAvg);
+  document.getElementById('insMaleAvg').textContent = fmtMins(maleAvg);
+  document.getElementById('insMaleN').textContent = `${males.length} members tracked`;
+  document.getElementById('insFemaleAvg').textContent = fmtMins(femaleAvg);
+  document.getElementById('insFemaleN').textContent = `${females.length} members tracked`;
+  document.getElementById('insSlowest').textContent = fmtMins(slowest.avgMins);
+  document.getElementById('insSlowName').textContent = slowest.name;
+  document.getElementById('insFastest').textContent = fmtMins(fastest.avgMins);
+  document.getElementById('insFastName').textContent = fastest.name;
+  document.getElementById('insSlowCount').textContent = all.filter(m=>m.avgMins>=300).length;
+
+  // Distribution chart
+  const bins = [180,195,210,225,240,255,270,285,300,315,330];
+  const labels = bins.map((b,i) => i<bins.length-1 ? `${b//60}h${(b%60).toString().padStart(2,'0')}` : '5h30+');
+  const counts = bins.map((b,i) => {
+    const next = bins[i+1] || 999;
+    return all.filter(m=>m.avgMins>=b && m.avgMins<next).length;
+  });
+
+  new Chart(document.getElementById('distChart'), {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        label:'Members',
+        data:counts,
+        backgroundColor: bins.map(b => b<240?'rgba(26,122,62,.7)':b<285?'rgba(43,51,92,.7)':b<300?'rgba(184,99,10,.7)':'rgba(139,26,26,.7)'),
+        borderRadius:2
+      }]
+    },
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#eee'}},x:{grid:{display:false}}}}
+  });
+
+  // Pace pie
+  const ratings = ['fast','ok','watch','slow'];
+  const rCounts = ratings.map(r=>all.filter(m=>getPaceRating(m.avgMins)===r).length);
+  new Chart(document.getElementById('paceChart'), {
+    type:'doughnut',
+    data:{
+      labels:['Fast (<4h)','On Pace (4h–4h45)','Watch (4h45–5h)','Slow (>5h)'],
+      datasets:[{data:rCounts,backgroundColor:['rgba(26,122,62,.8)','rgba(43,51,92,.8)','rgba(184,99,10,.8)','rgba(139,26,26,.8)'],borderWidth:0}]
+    },
+    options:{plugins:{legend:{position:'right',labels:{font:{size:11}}}}}
+  });
+
+  // Format benchmark chart
+  const fmts = ['Stableford','Par','Stroke','Ambrose'];
+  const mAvgs = [256,237,262,256];
+  const fAvgs = [255,271,296,254];
+  new Chart(document.getElementById('fmtChart'), {
+    type:'bar',
+    data:{
+      labels:fmts,
+      datasets:[
+        {label:'Male avg',data:mAvgs,backgroundColor:'rgba(43,51,92,.8)',borderRadius:2},
+        {label:'Female avg',data:fAvgs,backgroundColor:'rgba(137,139,141,.6)',borderRadius:2}
+      ]
+    },
+    options:{
+      plugins:{legend:{position:'top'}},
+      scales:{
+        y:{min:180,max:360,grid:{color:'#eee'},ticks:{callback:v=>`${Math.floor(v/60)}h${(v%60).toString().padStart(2,'0')}`}},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+}
+
+// ── TABS ─────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  if (name==='overview') buildOverview();
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+renderMembers();
+</script>
+</body>
+</html>
