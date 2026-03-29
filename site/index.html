@@ -286,7 +286,7 @@ body {
 }
 .quick-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(9, 1fr);
   gap: 10px;
 }
 .quick-btn {
@@ -380,7 +380,7 @@ body {
 @media (max-width: 1000px) {
   .tool-grid { grid-template-columns: 1fr 1fr; }
   .roadmap-grid { grid-template-columns: 1fr 1fr; }
-  .quick-grid { grid-template-columns: repeat(3,1fr); }
+  .quick-grid { grid-template-columns: repeat(4,1fr); }
   .stats { flex-wrap: wrap; }
 }
 @media (max-width: 640px) {
@@ -494,11 +494,11 @@ body {
     <div class="stat-lbl">Avg Occupancy</div>
   </div>
   <div class="stat">
-    <div class="stat-num">4</div>
+    <div class="stat-num">7</div>
     <div class="stat-lbl">Active Tools</div>
   </div>
   <div class="stat">
-    <div class="stat-num">4</div>
+    <div class="stat-num">1</div>
     <div class="stat-lbl">In Development</div>
   </div>
   <div class="stat">
@@ -520,7 +520,7 @@ body {
     <!-- ROUNDS DASHBOARD -->
     <a href="rounds-dashboard.html" class="card">
       <div class="card-bar" style="background:linear-gradient(90deg,#2b335c,#4a5490)"></div>
-      <span class="card-status card-status--live">● Live</span>
+      <span class="card-status card-status--live">● Functioning but Work In Progress</span>
       <div class="card-icon-row">
         <div class="card-icon" style="background:rgba(43,51,92,.07)">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
@@ -561,7 +561,7 @@ body {
     <!-- SCORECARD GENERATOR -->
     <a href="scorecard-generator.html" class="card">
       <div class="card-bar" style="background:linear-gradient(90deg,#5a585c,#898b8d)"></div>
-      <span class="card-status card-status--live">● Live</span>
+      <span class="card-status card-status--live">● Live For Matchplay Cards</span>
       <div class="card-icon-row">
         <div class="card-icon" style="background:rgba(90,88,92,.07)">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
@@ -589,6 +589,120 @@ body {
         </div>
         <div class="card-foot">
           <span class="card-cta-text">Open Generator</span>
+          <span class="card-arrow">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6h8M6 2l4 4-4 4" stroke="#2b335c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    </a>
+
+
+    <!-- F&B TIMING SYNC -->
+    <a href="tee-timing.html" class="card">
+      <div class="card-bar" style="background:linear-gradient(90deg,#b8630a,#e8890d)"></div>
+      <span class="card-status card-status--live">&#9679; Work In Progress Semi Working</span>
+      <div class="card-icon-row">
+        <div class="card-icon" style="background:rgba(184,99,10,.07)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="14" r="10" stroke="#b8630a" stroke-width="1.6" fill="none"/>
+            <polyline points="14,7 14,14 19,17" stroke="#b8630a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M6 23 Q14 20 22 23" stroke="#898b8d" stroke-width="1.2" stroke-linecap="round" fill="none" opacity=".5"/>
+          </svg>
+        </div>
+        <div>
+          <span class="card-tag">Operations</span>
+          <div class="card-name">F&amp;B Timing Sync</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Predict group finish times from the MiClub tee sheet. Kitchen and bar alerts show which groups are finishing in the next 15–30 minutes. Round durations based on 603 VGC app-tracked rounds.</p>
+        <div class="chips">
+          <span class="chip">Tee Sheet Import</span>
+          <span class="chip">Finish Alerts</span>
+          <span class="chip">Live Clock</span>
+          <span class="chip">Format-aware</span>
+          <span class="chip">MiClub Leaderboard</span>
+        </div>
+        <div class="card-foot">
+          <span class="card-cta-text">Open Timing Sync</span>
+          <span class="card-arrow">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6h8M6 2l4 4-4 4" stroke="#2b335c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    </a>
+
+    <!-- PACE OF PLAY -->
+    <a href="pace-of-play.html" class="card">
+      <div class="card-bar" style="background:linear-gradient(90deg,#1a7a3e,#2aab5a)"></div>
+      <span class="card-status card-status--live">&#9679; Work In Progress Semi Working</span>
+      <div class="card-icon-row">
+        <div class="card-icon" style="background:rgba(26,122,62,.07)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="10" r="4" stroke="#1a7a3e" stroke-width="1.6" fill="none"/>
+            <path d="M7 24c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="#1a7a3e" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+            <path d="M19 6l2-2M21 10h2M19 14l2 2" stroke="#898b8d" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+          </svg>
+        </div>
+        <div>
+          <span class="card-tag">Analytics</span>
+          <div class="card-name">Pace of Play</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Identify slow members and groups from app-tracked round times. 412 members rated across 603 rounds. Filter by gender, pace rating and minimum rounds played. Benchmarks by format and gender.</p>
+        <div class="chips">
+          <span class="chip">412 Members</span>
+          <span class="chip">603 Rounds</span>
+          <span class="chip">Pace Rating</span>
+          <span class="chip">Gender Split</span>
+          <span class="chip">App-tracked</span>
+        </div>
+        <div class="card-foot">
+          <span class="card-cta-text">Open Pace Analysis</span>
+          <span class="card-arrow">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6h8M6 2l4 4-4 4" stroke="#2b335c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    </a>
+
+    <!-- SPEND TRACKING -->
+    <a href="spend-tracking.html" class="card">
+      <div class="card-bar" style="background:linear-gradient(90deg,#2563eb,#7c3aed)"></div>
+      <span class="card-status card-status--live">&#9679; Work In Progress Semi Working </span>
+      <div class="card-icon-row">
+        <div class="card-icon" style="background:rgba(37,99,235,.07)">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect x="3" y="6" width="22" height="16" rx="2" stroke="#2563eb" stroke-width="1.6" fill="none"/>
+            <path d="M8 14h4M8 17h8" stroke="#2563eb" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
+            <circle cx="20" cy="10" r="3" fill="#7c3aed" opacity=".8"/>
+            <path d="M19 10h2M20 9v2" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
+            <rect x="3" y="6" width="22" height="4" rx="1" fill="#2563eb" opacity=".08"/>
+          </svg>
+        </div>
+        <div>
+          <span class="card-tag">Revenue</span>
+          <div class="card-name">Member Spend</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Full SwiftPOS spend breakdown for 1,177 members across 2025. Track F&amp;B, Pro Shop and Golf Fee revenue by member with segment ratings — Whale, High, Mid, Low and Zero Spend. Links directly to the Member Lookup database.</p>
+        <div class="chips">
+          <span class="chip">$1.16M Revenue</span>
+          <span class="chip">F&amp;B · Pro Shop · Golf</span>
+          <span class="chip">Member Segments</span>
+          <span class="chip">SwiftPOS 2025</span>
+          <span class="chip">DB Linked</span>
+        </div>
+        <div class="card-foot">
+          <span class="card-cta-text">Open Spend Tracker</span>
           <span class="card-arrow">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M2 6h8M6 2l4 4-4 4" stroke="#2b335c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -719,6 +833,21 @@ body {
         <span class="quick-name">MiClub Portal</span>
         <span class="quick-sub">Open admin portal ↗</span>
       </a>
+      <a href="tee-timing.html" class="quick-btn">
+        <span class="quick-icon">🍽️</span>
+        <span class="quick-name">F&amp;B Timing</span>
+        <span class="quick-sub">Group finish alerts</span>
+      </a>
+      <a href="pace-of-play.html" class="quick-btn">
+        <span class="quick-icon">🐢</span>
+        <span class="quick-name">Pace of Play</span>
+        <span class="quick-sub">Slow member report</span>
+      </a>
+      <a href="spend-tracking.html" class="quick-btn">
+        <span class="quick-icon">💰</span>
+        <span class="quick-name">Member Spend</span>
+        <span class="quick-sub">SwiftPOS 2025</span>
+      </a>
     </div>
   </div>
 </div>
@@ -743,13 +872,13 @@ body {
     </div>
     <div class="roadmap-card">
       <div class="roadmap-icon">👥</div>
-      <div class="roadmap-name">Member Lookup</div>
-      <div class="roadmap-desc">Member round history, handicap tracking and communication preferences.</div>
+      <div class="roadmap-name">Member Segmentation</div>
+      <div class="roadmap-desc">Full segmentation by frequency, churn risk and playing patterns using MiClub booking data.</div>
     </div>
     <div class="roadmap-card">
-      <div class="roadmap-icon">📋</div>
-      <div class="roadmap-name">Tee Sheet Manager</div>
-      <div class="roadmap-desc">Visual tee time management with booking categories and twilight slots.</div>
+      <div class="roadmap-icon">📅</div>
+      <div class="roadmap-name">Multi-Year Spend Trends</div>
+      <div class="roadmap-desc">Year-on-year spend comparison per member once multiple years of SwiftPOS data are loaded.</div>
     </div>
   </div>
 </div>
@@ -768,6 +897,9 @@ body {
     <div class="footer-links">
       <a href="rounds-dashboard.html" class="footer-link">Rounds Dashboard</a>
       <a href="scorecard-generator.html" class="footer-link">Scorecard Generator</a>
+      <a href="tee-timing.html" class="footer-link">F&amp;B Timing</a>
+      <a href="pace-of-play.html" class="footer-link">Pace of Play</a>
+      <a href="spend-tracking.html" class="footer-link">Member Spend</a>
       <a href="https://members.victoriagolf.com.au/views/admin/portal/index.xhtml" target="_blank" rel="noopener" class="footer-link">MiClub Portal ↗</a>
     </div>
   </div>
