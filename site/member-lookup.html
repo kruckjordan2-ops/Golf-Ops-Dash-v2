@@ -78,36 +78,7 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
 </style>
 </head>
 <body>
-  <div class="gate-card">
-    <svg class="gate-logo" width="48" height="48" viewBox="0 0 52 52" fill="none">
-      <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
-      <path d="M13 15 L26 37 L39 15" fill="none" stroke="#2b335c" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
-      <path d="M32 20 A9 9 0 1 0 32 32" fill="none" stroke="#898b8d" stroke-width="2.2" stroke-linecap="round"/>
-      <path d="M32 26 L37 26 L37 32" fill="none" stroke="#898b8d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <div class="gate-title">VGC Golf Operations</div>
-    <div class="gate-sub">The Victoria Golf Club &mdash; Staff Access</div>
-    <div class="gate-rule"></div>
-    <input class="gate-input" type="password" id="gateInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkGate()">
-    <button class="gate-btn" onclick="checkGate()">Access Hub</button>
-    <div class="gate-err" id="gateErr"></div>
-  </div>
-</div>
-<script>
-(function(){
-  const HASH="df121110fc1e6a6499111b6287664ddcb8cfa0dd560b83ef366f0c875ffae3a7";
-  async function sha256(s){const b=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');}
-  if(true){document.getElementById('vgc-gate').remove();return;}
-  window.checkGate=async function(){
-    const v=document.getElementById('gateInput').value;
-    const h=await sha256(v);
-    if(h===HASH){sessionStorage.setItem('vgc_auth','1');document.getElementById('vgc-gate').remove();}
-    else{const e=document.getElementById('gateErr');e.textContent='Incorrect password. Please try again.';document.getElementById('gateInput').value='';document.getElementById('gateInput').focus();setTimeout(()=>e.textContent='',3000);}
-  };
-})();
-</script>
-
-<header class="hdr">
+  <header class="hdr">
   <div class="hdr-inner">
     <a class="back-link" href="index.html">&#8592; Hub</a>
     <svg width="36" height="36" viewBox="0 0 52 52" fill="none">
