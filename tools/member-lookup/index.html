@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VGC Member Lookup</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="assets/member-lookup/styles.css">
 <style>
 :root{
   --navy:#2b335c;--navy2:#1e2540;--navy3:#363d6e;
@@ -78,22 +78,6 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
 </style>
 </head>
 <body>
-<style>
-#vgc-gate{position:fixed;inset:0;background:#2b335c;display:flex;align-items:center;justify-content:center;z-index:99999;font-family:'Open Sans',Arial,sans-serif}
-.gate-card{background:#fff;border-radius:4px;padding:40px 44px;width:340px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.35)}
-.gate-logo{margin:0 auto 20px}
-.gate-title{font-size:1.05rem;font-weight:700;color:#2b335c;margin-bottom:4px}
-.gate-sub{font-size:.72rem;color:#6b6d7a;margin-bottom:24px;letter-spacing:.3px}
-.gate-rule{height:3px;background:linear-gradient(90deg,transparent,#898b8d,#b8b9bb,#898b8d,transparent);margin-bottom:24px}
-.gate-input{width:100%;padding:10px 14px;border:1px solid #dddee3;border-radius:3px;font-size:.85rem;font-family:inherit;color:#1a1f3a;outline:none;text-align:center;letter-spacing:2px;margin-bottom:10px;transition:border-color .15s}
-.gate-input:focus{border-color:#2b335c}
-.gate-btn{width:100%;padding:11px;background:#2b335c;color:#fff;border:none;border-radius:3px;font-size:.78rem;font-weight:700;cursor:pointer;letter-spacing:.8px;text-transform:uppercase;font-family:inherit;transition:background .15s;margin-bottom:10px}
-.gate-btn:hover{background:#1e2540}
-.gate-err{font-size:.7rem;color:#8b2535;min-height:18px;font-weight:600}
-.gate-chevron{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='13'%3E%3Cpolyline points='0,13 20,1 40,13' fill='none' stroke='%23ffffff' stroke-width='1.1' opacity='0.07'/%3E%3C/svg%3E");background-repeat:repeat;position:absolute;inset:0;pointer-events:none}
-</style>
-<div id="vgc-gate">
-  <div class="gate-chevron"></div>
   <div class="gate-card">
     <svg class="gate-logo" width="48" height="48" viewBox="0 0 52 52" fill="none">
       <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
@@ -109,23 +93,11 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
     <div class="gate-err" id="gateErr"></div>
   </div>
 </div>
-<script>
-(function(){
-  const HASH="df121110fc1e6a6499111b6287664ddcb8cfa0dd560b83ef366f0c875ffae3a7";
-  async function sha256(s){const b=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');}
-  if(true){document.getElementById('vgc-gate').remove();return;}
-  window.checkGate=async function(){
-    const v=document.getElementById('gateInput').value;
-    const h=await sha256(v);
-    if(h===HASH){sessionStorage.setItem('vgc_auth','1');document.getElementById('vgc-gate').remove();}
-    else{const e=document.getElementById('gateErr');e.textContent='Incorrect password. Please try again.';document.getElementById('gateInput').value='';document.getElementById('gateInput').focus();setTimeout(()=>e.textContent='',3000);}
-  };
-})();
-</script>
+
 
 <header class="hdr">
   <div class="hdr-inner">
-    <a class="back-link" href="../home/index.html">&#8592; Hub</a>
+    <a class="back-link" href="index.html">&#8592; Hub</a>
     <svg width="36" height="36" viewBox="0 0 52 52" fill="none">
       <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
       <path d="M13 15 L26 37 L39 15" fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
@@ -194,7 +166,24 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
   </div>
 </div>
 
-<script src="data.js"></script>
-<script src="app.js"></script>
+<script src="assets/data/member-lookup.data.js"></script>
+<script src="assets/member-lookup/app.js"></script>
+
+<script>
+// Pre-fill search if navigated from Spend Tracking tool
+(function() {
+  var search = sessionStorage.getItem('memberLookupSearch');
+  if (search) {
+    sessionStorage.removeItem('memberLookupSearch');
+    window.addEventListener('DOMContentLoaded', function() {
+      var input = document.getElementById('searchInput');
+      if (input) {
+        input.value = search;
+        if (typeof doSearch === 'function') doSearch();
+      }
+    });
+  }
+})();
+</script>
 </body>
 </html>

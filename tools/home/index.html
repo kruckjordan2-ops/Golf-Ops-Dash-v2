@@ -396,22 +396,6 @@ body {
 </style>
 </head>
 <body>
-<style>
-#vgc-gate{position:fixed;inset:0;background:#2b335c;display:flex;align-items:center;justify-content:center;z-index:99999;font-family:'Open Sans',Arial,sans-serif}
-.gate-card{background:#fff;border-radius:4px;padding:40px 44px;width:340px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.35)}
-.gate-logo{margin:0 auto 20px}
-.gate-title{font-size:1.05rem;font-weight:700;color:#2b335c;margin-bottom:4px}
-.gate-sub{font-size:.72rem;color:#6b6d7a;margin-bottom:24px;letter-spacing:.3px}
-.gate-rule{height:3px;background:linear-gradient(90deg,transparent,#898b8d,#b8b9bb,#898b8d,transparent);margin-bottom:24px}
-.gate-input{width:100%;padding:10px 14px;border:1px solid #dddee3;border-radius:3px;font-size:.85rem;font-family:inherit;color:#1a1f3a;outline:none;text-align:center;letter-spacing:2px;margin-bottom:10px;transition:border-color .15s}
-.gate-input:focus{border-color:#2b335c}
-.gate-btn{width:100%;padding:11px;background:#2b335c;color:#fff;border:none;border-radius:3px;font-size:.78rem;font-weight:700;cursor:pointer;letter-spacing:.8px;text-transform:uppercase;font-family:inherit;transition:background .15s;margin-bottom:10px}
-.gate-btn:hover{background:#1e2540}
-.gate-err{font-size:.7rem;color:#8b2535;min-height:18px;font-weight:600}
-.gate-chevron{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='13'%3E%3Cpolyline points='0,13 20,1 40,13' fill='none' stroke='%23ffffff' stroke-width='1.1' opacity='0.07'/%3E%3C/svg%3E");background-repeat:repeat;position:absolute;inset:0;pointer-events:none}
-</style>
-<div id="vgc-gate">
-  <div class="gate-chevron"></div>
   <div class="gate-card">
     <svg class="gate-logo" width="48" height="48" viewBox="0 0 52 52" fill="none">
       <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
@@ -422,24 +406,10 @@ body {
     <div class="gate-title">VGC Golf Operations</div>
     <div class="gate-sub">The Victoria Golf Club &mdash; Staff Access</div>
     <div class="gate-rule"></div>
-    <input class="gate-input" type="password" id="gateInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkGate()">
-    <button class="gate-btn" onclick="checkGate()">Access Hub</button>
-    <div class="gate-err" id="gateErr"></div>
+    
   </div>
 </div>
-<script>
-(function(){
-  const HASH="df121110fc1e6a6499111b6287664ddcb8cfa0dd560b83ef366f0c875ffae3a7";
-  async function sha256(s){const b=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');}
-  if(true){document.getElementById('vgc-gate').remove();return;}
-  window.checkGate=async function(){
-    const v=document.getElementById('gateInput').value;
-    const h=await sha256(v);
-    if(h===HASH){sessionStorage.setItem('vgc_auth','1');document.getElementById('vgc-gate').remove();}
-    else{const e=document.getElementById('gateErr');e.textContent='Incorrect password. Please try again.';document.getElementById('gateInput').value='';document.getElementById('gateInput').focus();setTimeout(()=>e.textContent='',3000);}
-  };
-})();
-</script>
+
 
 
 <!-- HEADER -->
@@ -520,7 +490,7 @@ body {
     <!-- ROUNDS DASHBOARD -->
     <a href="../rounds-dashboard/index.html" class="card">
       <div class="card-bar" style="background:linear-gradient(90deg,#2b335c,#4a5490)"></div>
-      <span class="card-status card-status--live">● Functioning but Work In Progress</span>
+      <span class="card-status card-status--live">● Live</span>
       <div class="card-icon-row">
         <div class="card-icon" style="background:rgba(43,51,92,.07)">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
@@ -561,7 +531,7 @@ body {
     <!-- SCORECARD GENERATOR -->
     <a href="../scorecard-generator/index.html" class="card">
       <div class="card-bar" style="background:linear-gradient(90deg,#5a585c,#898b8d)"></div>
-      <span class="card-status card-status--live">● Live For Matchplay Cards</span>
+      <span class="card-status card-status--live">● Live</span>
       <div class="card-icon-row">
         <div class="card-icon" style="background:rgba(90,88,92,.07)">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
@@ -602,7 +572,7 @@ body {
     <!-- F&B TIMING SYNC -->
     <a href="../tee-timing/index.html" class="card">
       <div class="card-bar" style="background:linear-gradient(90deg,#b8630a,#e8890d)"></div>
-      <span class="card-status card-status--live">&#9679; Work In Progress Semi Working</span>
+      <span class="card-status card-status--live">&#9679; Live</span>
       <div class="card-icon-row">
         <div class="card-icon" style="background:rgba(184,99,10,.07)">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
@@ -639,7 +609,7 @@ body {
     <!-- PACE OF PLAY -->
     <a href="../pace-of-play/index.html" class="card">
       <div class="card-bar" style="background:linear-gradient(90deg,#1a7a3e,#2aab5a)"></div>
-      <span class="card-status card-status--live">&#9679; Work In Progress Semi Working</span>
+      <span class="card-status card-status--live">&#9679; Live</span>
       <div class="card-icon-row">
         <div class="card-icon" style="background:rgba(26,122,62,.07)">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
@@ -676,7 +646,7 @@ body {
     <!-- SPEND TRACKING -->
     <a href="../spend-tracking/index.html" class="card">
       <div class="card-bar" style="background:linear-gradient(90deg,#2563eb,#7c3aed)"></div>
-      <span class="card-status card-status--live">&#9679; Work In Progress Semi Working </span>
+      <span class="card-status card-status--live">&#9679; Live</span>
       <div class="card-icon-row">
         <div class="card-icon" style="background:rgba(37,99,235,.07)">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
