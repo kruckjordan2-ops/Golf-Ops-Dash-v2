@@ -22,6 +22,7 @@ const P=PALETTE;
 // ═══════════════════════════════════════════════════════
 let S = {
   year:'all',
+  exclude3pm:false,
   periodType:'full',
   period:null,
   months:new Set(MONTHS),
@@ -85,12 +86,37 @@ function getActiveMos(){
     return (sm[S.period]||[1,2,3,4,5,6,7,8,9,10,11,12]).filter(m=>[...S.months].includes(MONTHS[m-1]));
   }
   if(S.periodType==='month')return S.period?[parseInt(S.period)]:[1,2,3,4,5,6,7,8,9,10,11,12];
+  if(S.periodType==='fy')return [1,2,3,4,5,6,7,8,9,10,11,12]; // FY uses all months but split across years
   return [1,2,3,4,5,6,7,8,9,10,11,12];
+}
+
+// FY helper: sum across two calendar years for Jul-Jun
+function fySum(key){
+  if(S.periodType!=='fy'||!S.period)return filteredSum(key);
+  const fyYear=parseInt(S.period.replace('fy',''));
+  // Jul-Dec of previous calendar year + Jan-Jun of fyYear
+  const h1=sumMos(fyYear-1,[7,8,9,10,11,12],key); // Jul-Dec year-1
+  const h2=sumMos(fyYear,[1,2,3,4,5,6],key);       // Jan-Jun fyYear
+  return h1+h2;
+}
+
+function fyLabel(){
+  if(S.periodType!=='fy'||!S.period)return '';
+  const y=parseInt(S.period.replace('fy',''));
+  return 'FY'+y+' (Jul '+(y-1)+'–Jun '+y+')';
 }
 
 function getActiveDays(){return [...S.days];}
 
 function mVal(year,month,key){
+  // If excluding after3pm and key is 'total', subtract after3 from total
+  if(S.exclude3pm && key==='total'){
+    return (mValRaw(year,month,'total')||0) - (mValRaw(year,month,'after3')||0);
+  }
+  if(S.exclude3pm && key==='after3') return 0;
+  return mValRaw(year,month,key);
+}
+function mValRaw(year,month,key){
   // Try monthly first, then pivot grand total for that month
   const yd=RAW[year];
   if(!yd)return 0;
@@ -126,6 +152,7 @@ function sumMos(year,months,key){
 }
 
 function filteredSum(key){
+  if(S.periodType==='fy') return fySum(key);
   const mos=getActiveMos();
   const years=getYears();
   return years.reduce((s,y)=>s+sumMos(y,mos,key),0);
@@ -202,7 +229,7 @@ function setYear(y){
 function setPeriodType(t){
   S.periodType=t;
   document.querySelectorAll('#periodTypeBtns .seg-btn').forEach((b,i)=>{
-    b.classList.toggle('active',['full','q','season','month'][i]===t);
+    b.classList.toggle('active',['full','q','season','month','fy'][i]===t);
   });
   const sub=document.getElementById('periodSubFilters');
   const sel=document.getElementById('periodSel');
@@ -213,6 +240,7 @@ function setPeriodType(t){
     if(t==='q'){['Q1 (Jan–Mar)','Q2 (Apr–Jun)','Q3 (Jul–Sep)','Q4 (Oct–Dec)'].forEach((l,i)=>sel.innerHTML+=`<option value="q${i+1}">${l}</option>`);}
     else if(t==='season'){[{v:'summer',l:'☀️ Summer (Dec–Feb)'},{v:'autumn',l:'🍂 Autumn (Mar–May)'},{v:'winter',l:'❄️ Winter (Jun–Aug)'},{v:'spring',l:'🌸 Spring (Sep–Nov)'}].forEach(o=>sel.innerHTML+=`<option value="${o.v}">${o.l}</option>`);}
     else if(t==='month'){MONTHS.forEach((m,i)=>sel.innerHTML+=`<option value="${i+1}">${m}</option>`);}
+    else if(t==='fy'){['FY2023 (Jul 22–Jun 23)','FY2024 (Jul 23–Jun 24)','FY2025 (Jul 24–Jun 25)','FY2026 (Jul 25–Jun 26)'].forEach((l,i)=>sel.innerHTML+=`<option value="fy${2023+i}">${l}</option>`);}
     S.period=sel.value;
   }
   updateFilterSummary();
@@ -1272,6 +1300,14 @@ Chart.defaults.borderColor='#e4e5e6';
 
 document.addEventListener('DOMContentLoaded',()=>{
   initSidebar();
+  // After 3pm toggle
+  const tog = document.getElementById('toggle3pm');
+  if(tog){
+    tog.addEventListener('change', e=>{
+      S.exclude3pm = e.target.checked;
+      renderAll();
+    });
+  }
   updateFilterSummary();
   renderAll();
 });
