@@ -228,7 +228,15 @@ def process_rounds():
         print("  ⚠  data/raw/rounds/ not found")
         return
 
-    xlsx_files = sorted(rounds_dir.glob("*.xlsx"))
+    # Check for master file first
+    master = DATA_RAW / "master" / "VGC_-_MASTER_Rounds_Data.xlsx"
+    if master.exists():
+        xlsx_files = [master]
+        master_mode = True
+        print(f"  Using master file: {master.name}")
+    else:
+        xlsx_files = sorted(rounds_dir.glob("*.xlsx"))
+        master_mode = False
     if not xlsx_files:
         print("  ⚠  No xlsx files in data/raw/rounds/")
         return
@@ -236,19 +244,25 @@ def process_rounds():
     all_records = []
 
     for fp in xlsx_files:
-        match = re.match(r'(\d{4})_([A-Za-z]+)_', fp.stem)
-        if not match:
-            print(f"  ⚠  Skipping {fp.name} — must be YYYY_Month_Round_Tracking.xlsx")
-            continue
-        year = int(match.group(1))
-        month_name = match.group(2).lower()
-        month = MONTH_MAP.get(month_name)
-        if not month:
-            print(f"  ⚠  Skipping {fp.name} — unrecognised month")
-            continue
+        if master_mode:
+            year = 0  # will be set per-row from YEAR column
+            month_name = ''
+            month = 0
+        else:
+            match = re.match(r'(\d{4})_([A-Za-z]+)_', fp.stem)
+            if not match:
+                print(f"  ⚠  Skipping {fp.name} — must be YYYY_Month_Round_Tracking.xlsx")
+                continue
+            year = int(match.group(1))
+            month_name = match.group(2).lower()
+            month = MONTH_MAP.get(month_name)
+            if not month:
+                print(f"  ⚠  Skipping {fp.name} — unrecognised month")
+                continue
 
         try:
-            rows = read_xlsx(fp, 'Daily Numbers')
+            sheet_name = 'all daily data' if master_mode else 'Daily Numbers'
+            rows = read_xlsx(fp, sheet_name)
         except Exception as e:
             print(f"  ⚠  Could not read {fp.name}: {e}")
             continue
@@ -269,12 +283,23 @@ def process_rounds():
 
             if not date_str: continue
 
+            # In master mode, get year/month from the row data
+            if master_mode:
+                try: year = int(float(row.get('YEAR', date_str[:4])))
+                except: year = int(date_str[:4])
+                month_name = row.get('MONTH', '')
+                month = MONTH_MAP.get(month_name, int(date_str[5:7]))
+
             total  = safe_int(row.get('TOTAL FIELD'))
             guests = safe_int(row.get('No. GUESTS'))
+            # Master file uses slightly different column names
+            miclub = safe_int(row.get('MEMB GUEST MICLUB') or row.get('MEMB GUEST'))
+            unaccomp = safe_int(row.get('MEMB GUEST UNACCOMPANIED') or row.get('UNACCOMPANIED'))
+            recip = safe_int(row.get('RECIP') or row.get('RECIPROCAL'))
 
             all_records.append({
                 "date": date_str, "year": year, "month": month,
-                "monthName": month_name.capitalize(),
+                "monthName": month_name.capitalize() if not master_mode else month_name,
                 "day": safe_str(row.get('DAY')),
                 "amField": safe_int(row.get('AM FIELD')),
                 "pmField": safe_int(row.get('PM FIELD')),
@@ -287,20 +312,20 @@ def process_rounds():
                 "interstate": safe_int(row.get('INTERSTATE')),
                 "international": safe_int(row.get('INTERNATIONAL')),
                 "industryGuest": safe_int(row.get('INDUSTRY GUEST')),
-                "membGuestMiclub": safe_int(row.get('MEMB GUEST MICLUB')),
-                "membGuestUnaccompanied": safe_int(row.get('MEMB GUEST UNACCOMPANIED')),
+                "membGuestMiclub": miclub,
+                "membGuestUnaccompanied": unaccomp,
                 "corporate": safe_int(row.get('CORPORATE')),
                 "event": safe_int(row.get('EVENT')),
                 "nonPlaying": safe_int(row.get('NON-PLAYING')),
                 "voucher": safe_int(row.get('VOUCHER')),
-                "recip": safe_int(row.get('RECIP')),
+                "recip": recip,
                 "comp": safe_int(row.get('COMP')),
-                "variance": safe_int(row.get('VARIANCE')),
-                "notes": safe_str(row.get('Notes')),
+                "variance": safe_int(row.get('VARIANCE', 0)),
+                "notes": safe_str(row.get('Notes') or row.get('NOTES')),
             })
             count += 1
 
-        print(f"  ✓  {fp.name}  ({count} days, {month_name.capitalize()} {year})")
+        print(f"  ✓  {fp.name}  ({count} days)")
 
     if not all_records:
         print("  ⚠  No records loaded")
