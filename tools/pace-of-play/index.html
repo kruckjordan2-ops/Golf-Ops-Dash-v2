@@ -134,7 +134,7 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
 
 <!-- SUMMARY CARDS -->
 <div class="cards">
-  <div class="card"><div class="card-val" id="cTotal">412</div><div class="card-lbl">Members Tracked</div><div class="card-sub">603 app rounds</div></div>
+  <div class="card"><div class="card-val" id="cTotal">—</div><div class="card-lbl">Members Tracked</div><div class="card-sub" id="cTotalSub">—</div></div>
   <div class="card"><div class="card-val green" id="cFast">—</div><div class="card-lbl">Fast (&lt;4h)</div><div class="card-sub">Under par pace</div></div>
   <div class="card"><div class="card-val" id="cOk">—</div><div class="card-lbl">On Pace</div><div class="card-sub">4h – 4h45m</div></div>
   <div class="card"><div class="card-val amber" id="cWatch">—</div><div class="card-lbl">Watch</div><div class="card-sub">4h45m – 5h</div></div>
@@ -339,7 +339,7 @@ const FORMAT_BENCHMARKS = {
   ambrose:    { m: 256, f: 254, n: 125 },
 };
 
-// ── INLINE DATA (412 members from XLS files) ─────────────────────
+// ── PACE DATA (loaded from pace_data.js, cross-referenced with member DB) ──
 </script>
 <script src="pace_data.js"></script>
 <script src="assets/data/member-lookup.data.js"></script>
@@ -449,6 +449,8 @@ function renderMembers() {
 
   // Update summary cards
   const all = MEMBERS.filter(m => m.rounds >= 1);
+  document.getElementById('cTotal').textContent = MEMBERS.length;
+  document.getElementById('cTotalSub').textContent = MEMBERS.reduce((s,m)=>s+m.rounds,0).toLocaleString() + ' total rounds';
   document.getElementById('cFast').textContent = all.filter(m=>getPaceRating(m.avgMins)==='fast').length;
   document.getElementById('cOk').textContent = all.filter(m=>getPaceRating(m.avgMins)==='ok').length;
   document.getElementById('cWatch').textContent = all.filter(m=>getPaceRating(m.avgMins)==='watch').length;

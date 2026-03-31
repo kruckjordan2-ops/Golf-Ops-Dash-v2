@@ -313,6 +313,7 @@ canvas{max-height:230px}
       <button class="seg-btn" onclick="setPeriodType('q')">Quarter</button>
       <button class="seg-btn" onclick="setPeriodType('season')">Season</button>
       <button class="seg-btn" onclick="setPeriodType('month')">Month</button>
+      <button class="seg-btn" onclick="setPeriodType('fy')">Fin Year</button>
     </div>
     <div id="periodSubFilters" style="margin-top:8px;display:none">
       <select class="sb-select" id="periodSel" onchange="setPeriod(this.value)">
@@ -373,6 +374,15 @@ canvas{max-height:230px}
       <button class="seg-btn active" id="cmpYoY" onclick="toggleCompare('yoy',this)">YoY</button>
       <button class="seg-btn" id="cmpAvg" onclick="toggleCompare('avg',this)">vs Avg</button>
     </div>
+  </div>
+
+  <!-- AFTER 3PM TOGGLE -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">After 3pm</div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0">
+      <input type="checkbox" id="toggle3pm" style="width:13px;height:13px;accent-color:var(--navy);cursor:pointer;flex-shrink:0">
+      <span style="font-size:.67rem;color:var(--text);line-height:1.4">Exclude from totals<br><span style="font-size:.59rem;color:var(--muted)">Tracked from Oct 2025</span></span>
+    </label>
   </div>
 
   <!-- RESET -->
