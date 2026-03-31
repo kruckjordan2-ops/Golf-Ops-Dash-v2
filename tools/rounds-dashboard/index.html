@@ -280,7 +280,7 @@ canvas{max-height:230px}
     </svg>
     <div class="hdr-title">
       <h1>The Victoria Golf Club</h1>
-      <p>Rounds Analytics · 2023–2026</p>
+      <p id="hdrYearRange">Rounds Analytics</p>
     </div>
   </div>
   <div class="hdr-meta">
@@ -298,11 +298,7 @@ canvas{max-height:230px}
   <div class="sidebar-section">
     <div class="sidebar-label">Year</div>
     <div class="seg-row" id="yearBtns">
-      <button class="seg-btn active" onclick="setYear('all')">All</button>
-      <button class="seg-btn" onclick="setYear(2023)">2023</button>
-      <button class="seg-btn" onclick="setYear(2024)">2024</button>
-      <button class="seg-btn" onclick="setYear(2025)">2025</button>
-      <button class="seg-btn" onclick="setYear(2026)">2026</button>
+      <!-- populated dynamically by app.js from data.js YEARS -->
     </div>
   </div>
 
@@ -379,10 +375,10 @@ canvas{max-height:230px}
 
   <!-- AFTER 3PM TOGGLE -->
   <div class="sidebar-section">
-    <div class="section-label">AFTER 3PM</div>
+    <div class="sidebar-label">After 3pm</div>
     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0">
-      <input type="checkbox" id="toggle3pm" style="width:13px;height:13px;accent-color:#7a84b8;cursor:pointer;flex-shrink:0">
-      <span style="font-size:.67rem;color:rgba(255,255,255,.55);line-height:1.4">Exclude from all totals<br><span style="font-size:.59rem;color:rgba(255,255,255,.35)">Tracked from Oct 2025</span></span>
+      <input type="checkbox" id="toggle3pm" style="width:13px;height:13px;accent-color:var(--navy);cursor:pointer;flex-shrink:0">
+      <span style="font-size:.67rem;color:var(--text);line-height:1.4">Exclude from totals<br><span style="font-size:.59rem;color:var(--muted)">Tracked from Oct 2025</span></span>
     </label>
   </div>
 
