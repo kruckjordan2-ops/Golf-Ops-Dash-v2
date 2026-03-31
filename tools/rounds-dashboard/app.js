@@ -9,11 +9,12 @@ const MONTHS=['January','February','March','April','May','June','July','August',
 const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const DS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const YEARS=[2023,2024,2025,2026];
+const YEARS=(window.ROUNDS_DASHBOARD_YEARS||['2023','2024','2025','2026']).map(Number);
 
-// VGC colour palette for charts
-const YC={2023:'#2b335c',2024:'#5a6090',2025:'#898b8d',2026:'#3d4678'};
-const YC_A={2023:'#2b335c99',2024:'#5a609099',2025:'#898b8d99',2026:'#3d467899'};
+// VGC colour palette for charts — auto-generated for any number of years
+const _YC_BASE=['#2b335c','#5a6090','#898b8d','#3d4678','#b8b9bb','#1e2540','#7a7c8a','#c5c6c8'];
+const YC=Object.fromEntries(YEARS.map((y,i)=>[y,_YC_BASE[i%_YC_BASE.length]]));
+const YC_A=Object.fromEntries(YEARS.map((y,i)=>[y,_YC_BASE[i%_YC_BASE.length]+'99']));
 const PALETTE=['#2b335c','#5a6090','#898b8d','#3d4678','#b8b9bb','#1e2540','#7a7c8a','#c5c6c8'];
 const P=PALETTE;
 
@@ -72,8 +73,8 @@ const SC_STACK={x:{stacked:true,...SC.x},y:{stacked:true,...SC.y}};
 const SC_PCT={...SC,y:{...SC.y,ticks:{...SC.y.ticks,callback:v=>v+'%'},suggestedMin:0,suggestedMax:100}};
 
 // ── DATA GETTERS ──────────────────────────────────────
-function getYears(){return S.year==='all'?[2023,2024,2025,2026]:[S.year];}
-function getYearsNoPartial(){return getYears().filter(y=>y<=2025);}
+function getYears(){return S.year==='all'?YEARS:[S.year];}
+function getYearsNoPartial(){const last=YEARS[YEARS.length-1];return getYears().filter(y=>y<last);}
 
 function getActiveMos(){
   if(S.periodType==='full')return [...S.months].map(m=>MONTHS.indexOf(m)+1).filter(n=>n>0);
@@ -186,6 +187,15 @@ const MLABELS={total:'Total Rounds',am:'AM Field',pm:'PM Field',after3:'After 3p
 // SIDEBAR INIT
 // ═══════════════════════════════════════════════════════
 function initSidebar(){
+  // Year buttons — built dynamically from data
+  const yb=document.getElementById('yearBtns');
+  if(yb){
+    yb.innerHTML=`<button class="seg-btn active" data-year="all" onclick="setYear('all')">All</button>`
+      +YEARS.map(y=>`<button class="seg-btn" data-year="${y}" onclick="setYear(${y})">${y}</button>`).join('');
+  }
+  // Header subtitle
+  const sub=document.getElementById('hdrYearRange');
+  if(sub&&YEARS.length){sub.textContent=`Rounds Analytics · ${YEARS[0]}–${YEARS[YEARS.length-1]}`;}
   // Month checkboxes
   const mc=document.getElementById('monthCbs');
   mc.innerHTML=MONTHS.map((m,i)=>`
@@ -219,8 +229,9 @@ function showTab(id,el){
 
 function setYear(y){
   S.year=y;
-  document.querySelectorAll('#yearBtns .seg-btn').forEach((b,i)=>{
-    b.classList.toggle('active',['all',2023,2024,2025,2026][i]===y);
+  document.querySelectorAll('#yearBtns .seg-btn').forEach(b=>{
+    const bv=b.dataset.year;
+    b.classList.toggle('active', bv==='all'?y==='all':Number(bv)===y);
   });
   updateFilterSummary();
   renderAll();
@@ -240,7 +251,7 @@ function setPeriodType(t){
     if(t==='q'){['Q1 (Jan–Mar)','Q2 (Apr–Jun)','Q3 (Jul–Sep)','Q4 (Oct–Dec)'].forEach((l,i)=>sel.innerHTML+=`<option value="q${i+1}">${l}</option>`);}
     else if(t==='season'){[{v:'summer',l:'☀️ Summer (Dec–Feb)'},{v:'autumn',l:'🍂 Autumn (Mar–May)'},{v:'winter',l:'❄️ Winter (Jun–Aug)'},{v:'spring',l:'🌸 Spring (Sep–Nov)'}].forEach(o=>sel.innerHTML+=`<option value="${o.v}">${o.l}</option>`);}
     else if(t==='month'){MONTHS.forEach((m,i)=>sel.innerHTML+=`<option value="${i+1}">${m}</option>`);}
-    else if(t==='fy'){['FY2023 (Jul 22–Jun 23)','FY2024 (Jul 23–Jun 24)','FY2025 (Jul 24–Jun 25)','FY2026 (Jul 25–Jun 26)'].forEach((l,i)=>sel.innerHTML+=`<option value="fy${2023+i}">${l}</option>`);}
+    else if(t==='fy'){YEARS.forEach(y=>sel.innerHTML+=`<option value="fy${y}">FY${y} (Jul ${y-1}–Jun ${y})</option>`);}
     S.period=sel.value;
   }
   updateFilterSummary();
@@ -291,11 +302,12 @@ function buildKPIs(){
     {k:'corporate',l:'Corporate',cls:'s6'},
   ];
   document.getElementById('kpiRow').innerHTML=kpis.map(({k,l,cls})=>{
-    const curr=years.reduce((s,y)=>s+sumMos(y,mos,k),0);
-    const total=years.reduce((s,y)=>s+sumMos(y,mos,'total'),0);
-    const prev=S.year!=='all'&&S.year>2023?sumMos(S.year-1,mos,k):null;
+    const curr=filteredSum(k);
+    const total=filteredSum('total');
+    const prev=S.year!=='all'&&S.year>YEARS[0]?sumMos(S.year-1,mos,k):null;
     const d=prev?delta(curr,prev):{txt:'',cls:'flat'};
-    const sub=k==='total'?`${fmtD(curr/(mos.length*26||1))} avg/day`:
+    const activeDays=S.periodType==='fy'?182:mos.length*26;
+    const sub=k==='total'?`${fmtD(curr/(activeDays||1))} avg/day`:
               k==='guests'?`${fmtP(curr/(total||1))} of total`:
               k==='comp'?`${fmtP(curr/(total||1))} of total`:
               k==='after3'&&curr===0?'Tracked from Oct 2025':'';
