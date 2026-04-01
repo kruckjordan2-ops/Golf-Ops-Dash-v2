@@ -9,11 +9,12 @@ const MONTHS=['January','February','March','April','May','June','July','August',
 const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const DS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const YEARS=[2023,2024,2025,2026];
+const YEARS=Object.keys(RAW).map(Number).filter(n=>!isNaN(n)).sort();
 
-// VGC colour palette for charts
-const YC={2023:'#2b335c',2024:'#5a6090',2025:'#898b8d',2026:'#3d4678'};
-const YC_A={2023:'#2b335c99',2024:'#5a609099',2025:'#898b8d99',2026:'#3d467899'};
+// VGC colour palette for charts — auto-assigned by year index
+const _YC_PALETTE=['#2b335c','#5a6090','#898b8d','#3d4678','#b8b9bb','#1e2540'];
+const YC={}, YC_A={};
+YEARS.forEach((y,i)=>{ YC[y]=_YC_PALETTE[i%_YC_PALETTE.length]; YC_A[y]=YC[y]+'99'; });
 const PALETTE=['#2b335c','#5a6090','#898b8d','#3d4678','#b8b9bb','#1e2540','#7a7c8a','#c5c6c8'];
 const P=PALETTE;
 
@@ -72,8 +73,9 @@ const SC_STACK={x:{stacked:true,...SC.x},y:{stacked:true,...SC.y}};
 const SC_PCT={...SC,y:{...SC.y,ticks:{...SC.y.ticks,callback:v=>v+'%'},suggestedMin:0,suggestedMax:100}};
 
 // ── DATA GETTERS ──────────────────────────────────────
-function getYears(){return S.year==='all'?[2023,2024,2025,2026]:[S.year];}
-function getYearsNoPartial(){return getYears().filter(y=>y<=2025);}
+function getYears(){return S.year==='all'?YEARS:[S.year];}
+const CURRENT_YEAR=new Date().getFullYear();
+function getYearsNoPartial(){return getYears().filter(y=>y<CURRENT_YEAR);}
 
 function getActiveMos(){
   if(S.periodType==='full')return [...S.months].map(m=>MONTHS.indexOf(m)+1).filter(n=>n>0);
@@ -220,7 +222,7 @@ function showTab(id,el){
 function setYear(y){
   S.year=y;
   document.querySelectorAll('#yearBtns .seg-btn').forEach((b,i)=>{
-    b.classList.toggle('active',['all',2023,2024,2025,2026][i]===y);
+    b.classList.toggle('active',['all',...YEARS][i]===y);
   });
   updateFilterSummary();
   renderAll();
@@ -391,7 +393,7 @@ function buildTrendLine(){
   const mos=getActiveMos();
   mkChart('trendLine','line',{
     labels:mos.map(m=>MO[m-1]),
-    datasets:[2023,2024,2025,2026].map(y=>({
+    datasets:YEARS.map(y=>({
       label:String(y),
       data:mos.map(m=>mVal(y,m,S.metric)),
       borderColor:YC[y],backgroundColor:'transparent',
@@ -464,7 +466,7 @@ function buildRatioChart(){
   const mos=getActiveMos();
   mkChart('ratioChart','line',{
     labels:mos.map(m=>MO[m-1]),
-    datasets:[2023,2024,2025,2026].map(y=>({
+    datasets:YEARS.map(y=>({
       label:String(y),
       data:mos.map(m=>{const v=RAW[y]?.monthly?.[MONTHS[m-1]]?.guest_ratio;return v?(v*100).toFixed(1):null;}),
       borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
@@ -487,7 +489,7 @@ function buildDailyAvgChart(){
   const mos=getActiveMos();
   mkChart('dailyAvgChart','line',{
     labels:mos.map(m=>MO[m-1]),
-    datasets:[2023,2024,2025,2026].map(y=>({
+    datasets:YEARS.map(y=>({
       label:String(y),
       data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.total?.daily?.toFixed(1)||null),
       borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
@@ -499,7 +501,7 @@ function buildWeeklyAvgChart(){
   const mos=getActiveMos();
   mkChart('weeklyAvgChart','line',{
     labels:mos.map(m=>MO[m-1]),
-    datasets:[2023,2024,2025,2026].map(y=>({
+    datasets:YEARS.map(y=>({
       label:String(y),
       data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.total?.weekly?.toFixed(0)||null),
       borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
@@ -878,7 +880,7 @@ function buildSeasonCards(){
 function buildSeasonYear(){
   mkChart('seasonYear','bar',{
     labels:SEASONS.map(s=>s.l),
-    datasets:[2023,2024,2025,2026].map(y=>({
+    datasets:YEARS.map(y=>({
       label:String(y),data:SEASONS.map(s=>sumMos(y,s.m,'total')),backgroundColor:YC[y]+'cc'
     }))
   },{scales:SC});
@@ -887,7 +889,7 @@ function buildSeasonYear(){
 function buildQuarterChart(){
   mkChart('quarterChart','bar',{
     labels:QUARTERS.map(q=>q.l),
-    datasets:[2023,2024,2025,2026].map(y=>({
+    datasets:YEARS.map(y=>({
       label:String(y),data:QUARTERS.map(q=>sumMos(y,q.m,'total')),backgroundColor:YC[y]+'cc'
     }))
   },{scales:SC});
@@ -896,7 +898,7 @@ function buildQuarterChart(){
 function buildSeasonGuests(){
   mkChart('seasonGuests','bar',{
     labels:SEASONS.map(s=>s.l),
-    datasets:[2023,2024,2025,2026].map(y=>({
+    datasets:YEARS.map(y=>({
       label:String(y),data:SEASONS.map(s=>sumMos(y,s.m,'guests')),backgroundColor:YC[y]+'cc'
     }))
   },{scales:SC});
@@ -919,8 +921,8 @@ function buildSeasonOcc(){
 function buildSeasonTable(){
   const tbl=document.getElementById('seasonTable');
   const metrics=[{l:'Total',k:'total'},{l:'AM',k:'am'},{l:'PM',k:'pm'},{l:'Guests',k:'guests'},{l:'Comp',k:'comp'},{l:'Corporate',k:'corporate'}];
-  const hdr=`<thead><tr><th>Season</th>${[2023,2024,2025,2026].flatMap(y=>metrics.map(m=>`<th style="color:${YC[y]}">${y} ${m.l}</th>`)).join('')}</tr></thead>`;
-  const body='<tbody>'+SEASONS.map(s=>`<tr><td>${s.l} (${s.m.map(m=>MO[m-1]).join('·')})</td>${[2023,2024,2025,2026].flatMap(y=>metrics.map(({k})=>`<td>${fmtN(sumMos(y,s.m,k))}</td>`)).join('')}</tr>`).join('')+'</tbody>';
+  const hdr=`<thead><tr><th>Season</th>${YEARS.flatMap(y=>metrics.map(m=>`<th style="color:${YC[y]}">${y} ${m.l}</th>`)).join('')}</tr></thead>`;
+  const body='<tbody>'+SEASONS.map(s=>`<tr><td>${s.l} (${s.m.map(m=>MO[m-1]).join('·')})</td>${YEARS.flatMap(y=>metrics.map(({k})=>`<td>${fmtN(sumMos(y,s.m,k))}</td>`)).join('')}</tr>`).join('')+'</tbody>';
   tbl.innerHTML=hdr+body;
 }
 
@@ -1293,7 +1295,7 @@ function renderAll(){
 Chart.defaults.font.family="'Open Sans',Arial,sans-serif";
 
 // ── MEMBERSHIP ANALYTICS DATA ──
-const MEMB={"total":1399,"male":1009,"female":388,"avg_age":60.2,"median_age":63.0,"avg_tenure":18.6,"age_groups":{"60s":299,"70s":269,"80+":259,"50s":221,"30s":134,"40s":118,"Under 30":99},"tenure_buckets":{"10\u201320yr":405,"30\u201350yr":202,"20\u201330yr":199,"5\u201310yr":191,"2\u20135yr":156,"50+yr":154,"New (<2yr)":92},"join_trend":{"2010":34,"2011":35,"2012":58,"2013":47,"2014":41,"2015":28,"2016":40,"2017":39,"2018":29,"2019":51,"2020":34,"2021":56,"2022":49,"2023":59,"2024":44,"2025":52},"driver_brands":{" ":961,"Callaway":108,"Titleist":88,"Ping":83,"TaylorMade":81,"Other":32},"iron_brands":{" ":961,"Ping":93,"Callaway":89,"Titleist":80,"Other":76,"TaylorMade":54},"ball_brands":{"Titleist ProV1":142,"Other":70,"Callaway Supersoft":54,"Titleist ProV1x":48,"Titleist Tour Soft":27,"Callaway Chrome Tour":20,"Titleist AVX":16,"Titleist Tru Feel":9},"gender_by_age":{"Under 30":{"M":73,"F":26},"30s":{"M":115,"F":19},"40s":{"M":109,"F":9},"50s":{"M":192,"F":29},"60s":{"M":215,"F":84},"70s":{"M":159,"F":110},"80+":{"M":146,"F":111},"Unknown":{"M":0,"F":0}},"email_pct":97.3,"phone_pct":91.4,"new_5yr":260,"long_10plus":888};
+const MEMB=window.ROUNDS_DASHBOARD_MEMB||{};
 Chart.defaults.font.size=11;
 Chart.defaults.color='#6b6d7a';
 Chart.defaults.borderColor='#e4e5e6';

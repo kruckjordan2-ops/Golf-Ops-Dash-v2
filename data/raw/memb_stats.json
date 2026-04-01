@@ -1,0 +1,108 @@
+{
+  "total": 1399,
+  "male": 1009,
+  "female": 388,
+  "avg_age": 60.2,
+  "median_age": 63.0,
+  "avg_tenure": 18.6,
+  "age_groups": {
+    "60s": 299,
+    "70s": 269,
+    "80+": 259,
+    "50s": 221,
+    "30s": 134,
+    "40s": 118,
+    "Under 30": 99
+  },
+  "tenure_buckets": {
+    "10\u201320yr": 405,
+    "30\u201350yr": 202,
+    "20\u201330yr": 199,
+    "5\u201310yr": 191,
+    "2\u20135yr": 156,
+    "50+yr": 154,
+    "New (<2yr)": 92
+  },
+  "join_trend": {
+    "2010": 34,
+    "2011": 35,
+    "2012": 58,
+    "2013": 47,
+    "2014": 41,
+    "2015": 28,
+    "2016": 40,
+    "2017": 39,
+    "2018": 29,
+    "2019": 51,
+    "2020": 34,
+    "2021": 56,
+    "2022": 49,
+    "2023": 59,
+    "2024": 44,
+    "2025": 52
+  },
+  "driver_brands": {
+    " ": 961,
+    "Callaway": 108,
+    "Titleist": 88,
+    "Ping": 83,
+    "TaylorMade": 81,
+    "Other": 32
+  },
+  "iron_brands": {
+    " ": 961,
+    "Ping": 93,
+    "Callaway": 89,
+    "Titleist": 80,
+    "Other": 76,
+    "TaylorMade": 54
+  },
+  "ball_brands": {
+    "Titleist ProV1": 142,
+    "Other": 70,
+    "Callaway Supersoft": 54,
+    "Titleist ProV1x": 48,
+    "Titleist Tour Soft": 27,
+    "Callaway Chrome Tour": 20,
+    "Titleist AVX": 16,
+    "Titleist Tru Feel": 9
+  },
+  "gender_by_age": {
+    "Under 30": {
+      "M": 73,
+      "F": 26
+    },
+    "30s": {
+      "M": 115,
+      "F": 19
+    },
+    "40s": {
+      "M": 109,
+      "F": 9
+    },
+    "50s": {
+      "M": 192,
+      "F": 29
+    },
+    "60s": {
+      "M": 215,
+      "F": 84
+    },
+    "70s": {
+      "M": 159,
+      "F": 110
+    },
+    "80+": {
+      "M": 146,
+      "F": 111
+    },
+    "Unknown": {
+      "M": 0,
+      "F": 0
+    }
+  },
+  "email_pct": 97.3,
+  "phone_pct": 91.4,
+  "new_5yr": 260,
+  "long_10plus": 888
+}
