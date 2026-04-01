@@ -391,6 +391,13 @@ canvas{max-height:230px}
     <button class="reset-btn" onclick="resetFilters()">↺ Reset All Filters</button>
   </div>
 
+  <!-- REPORTS -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Reports</div>
+    <button class="reset-btn" style="margin-bottom:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);width:100%;text-align:left;padding:7px 10px;font-size:.68rem;letter-spacing:.3px" onclick="openReportModal('monthly')">📋 Monthly Report</button>
+    <button class="reset-btn" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);width:100%;text-align:left;padding:7px 10px;font-size:.68rem;letter-spacing:.3px" onclick="openReportModal('quarterly')">📊 Quarterly Report</button>
+  </div>
+
 </aside>
 
 <!-- ═══════════════ MAIN ═══════════════ -->
@@ -598,5 +605,6 @@ canvas{max-height:230px}
 </div><!-- /app -->
 <script src="data.js"></script>
 <script src="app.js"></script>
+<script src="report.js"></script>
 </body>
 </html>
