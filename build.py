@@ -41,6 +41,8 @@ PAGES = {
     "tee-timing":          "tee-timing",
     "pace-of-play":        "pace-of-play",
     "spend-tracking":      "spend-tracking",
+    "fnb-sync":            "fnb-sync",
+    "booking-analysis":    "booking-analysis",
 }
 
 DATA_TARGETS = {
@@ -49,6 +51,7 @@ DATA_TARGETS = {
     "scorecard-generator": "scorecard-generator.data.js",
     "pace-of-play":        "pace_data.js",
     "spend-tracking":      "sales_data.js",
+    "booking-analysis":    "booking-analysis.data.js",
 }
 
 MONTH_MAP = {
@@ -601,7 +604,25 @@ def process_members():
         print(f"\n  ✅ member-lookup.data.js regenerated ({kb:.0f} KB)")
 
 
-# ── STEP 5: BUILD SITE ────────────────────────────────────────────────────────
+# ── STEP 5: BOOKINGS ─────────────────────────────────────────────────────────
+
+def process_bookings():
+    section("BOOKING ANALYSIS DATA")
+    gen = BASE / "generate_bookings.py"
+    if not gen.exists():
+        print("  ⚠  generate_bookings.py not found — skipping")
+        return
+    result = subprocess.run([sys.executable, str(gen)], cwd=str(BASE))
+    if result.returncode != 0:
+        print("  ⚠  generate_bookings.py failed")
+        return
+    src = DATA_EXPORTS / "booking-analysis.data.js"
+    if src.exists():
+        kb = src.stat().st_size / 1024
+        print(f"\n  ✅ booking-analysis.data.js regenerated ({kb:.0f} KB)")
+
+
+# ── STEP 6: BUILD SITE ────────────────────────────────────────────────────────
 
 def build_site():
     section("BUILDING SITE")
@@ -622,10 +643,13 @@ def build_site():
 
         html = html.replace('href="styles.css"',   f'href="assets/{tool_name}/styles.css"')
         html = html.replace('src="app.js"',         f'src="assets/{tool_name}/app.js"')
+        html = html.replace('src="report.js"',     f'src="assets/{tool_name}/report.js"')
         data_file = DATA_TARGETS.get(tool_name, tool_name + ".data.js")
         html = html.replace('src="data.js"',        f'src="assets/data/{data_file}"')
         html = html.replace('src="pace_data.js"',  'src="assets/data/pace_data.js"')
         html = html.replace('src="sales_data.js"', 'src="assets/data/sales_data.js"')
+        html = html.replace('src="../../data/exports/sales_data.js"',          'src="assets/data/sales_data.js"')
+        html = html.replace('src="../../data/exports/member-lookup.data.js"',  'src="assets/data/member-lookup.data.js"')
 
         html = html.replace('href="../home/index.html"',                'href="index.html"')
         html = html.replace('href="../rounds-dashboard/index.html"',    'href="rounds-dashboard.html"')
@@ -634,11 +658,14 @@ def build_site():
         html = html.replace('href="../tee-timing/index.html"',          'href="tee-timing.html"')
         html = html.replace('href="../pace-of-play/index.html"',        'href="pace-of-play.html"')
         html = html.replace('href="../spend-tracking/index.html"',      'href="spend-tracking.html"')
+        html = html.replace('href="../fnb-sync/index.html"',             'href="fnb-sync.html"')
+        html = html.replace('href="../booking-analysis/index.html"',   'href="booking-analysis.html"')
+        html = html.replace('src="course-map.jpg"',                      f'src="assets/{tool_name}/course-map.jpg"')
 
         target = "index.html" if slug == "index" else f"{slug}.html"
         (SITE / target).write_text(html, encoding="utf-8")
 
-        for asset in ["styles.css", "app.js"]:
+        for asset in ["styles.css", "app.js", "report.js", "course-map.jpg"]:
             src_file = src_dir / asset
             if src_file.exists():
                 shutil.copy2(src_file, asset_dir / asset)
@@ -671,6 +698,7 @@ def main():
     process_pace()
     process_sales()
     process_members()
+    process_bookings()
     build_site()
 
     print("\n" + "="*50)
