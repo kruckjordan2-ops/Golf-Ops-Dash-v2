@@ -128,17 +128,17 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
   </div>
   <div class="hdr-right">
     <span class="hdr-pill" id="dataInfo">Loading...</span>
-    <span class="hdr-pill">App-tracked only</span>
+    <span class="hdr-pill">App + Scorecard</span>
   </div>
 </header>
 
 <!-- SUMMARY CARDS -->
 <div class="cards">
   <div class="card"><div class="card-val" id="cTotal">—</div><div class="card-lbl">Members Tracked</div><div class="card-sub" id="cTotalSub">—</div></div>
-  <div class="card"><div class="card-val green" id="cFast">—</div><div class="card-lbl">Fast (&lt;4h)</div><div class="card-sub">Under par pace</div></div>
-  <div class="card"><div class="card-val" id="cOk">—</div><div class="card-lbl">On Pace</div><div class="card-sub">4h – 4h45m</div></div>
-  <div class="card"><div class="card-val amber" id="cWatch">—</div><div class="card-lbl">Watch</div><div class="card-sub">4h45m – 5h</div></div>
-  <div class="card"><div class="card-val red" id="cSlow">—</div><div class="card-lbl">Slow (&gt;5h)</div><div class="card-sub">Needs attention</div></div>
+  <div class="card"><div class="card-val green" id="cFast">—</div><div class="card-lbl">Great (&lt;4h)</div><div class="card-sub">Under par pace</div></div>
+  <div class="card"><div class="card-val" id="cOk">—</div><div class="card-lbl">On Pace</div><div class="card-sub">4h – 4h20m</div></div>
+  <div class="card"><div class="card-val amber" id="cWatch">—</div><div class="card-lbl">Watch</div><div class="card-sub">4h20m – 4h40m</div></div>
+  <div class="card"><div class="card-val red" id="cSlow">—</div><div class="card-lbl">Slow (&gt;4h40m)</div><div class="card-sub">Needs attention</div></div>
 </div>
 
 <!-- TABS -->
@@ -162,10 +162,10 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
   <span class="toolbar-label">Pace</span>
   <select class="sel" id="paceFilter" onchange="renderMembers()">
     <option value="">All</option>
-    <option value="fast">Fast (&lt;4h)</option>
-    <option value="ok">On Pace (4h–4h45)</option>
-    <option value="watch">Watch (4h45–5h)</option>
-    <option value="slow">Slow (&gt;5h)</option>
+    <option value="fast">Great (&lt;4h)</option>
+    <option value="ok">On Pace (4h–4h20)</option>
+    <option value="watch">Watch (4h20–4h40)</option>
+    <option value="slow">Slow (&gt;4h40)</option>
   </select>
   <div class="divider"></div>
   <span class="toolbar-label">Min rounds</span>
@@ -261,7 +261,7 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
       </div>
       <div class="insight">
         <div class="insight-icon">⚠️</div>
-        <div class="insight-title">Slow Members (&gt;5h)</div>
+        <div class="insight-title">Slow Members (&gt;4h40)</div>
         <div class="insight-val red" id="insSlowCount">—</div>
         <div class="insight-sub">Avg across all rounds</div>
       </div>
@@ -315,10 +315,10 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
           <tr><th>Rating</th><th>Avg Round Time</th><th>Description</th></tr>
         </thead>
         <tbody>
-          <tr><td><span class="pace fast">⚡ Fast</span></td><td>Under 4h 00m</td><td>Consistently ahead of pace — great for flow of play</td></tr>
-          <tr><td><span class="pace ok">✅ On Pace</span></td><td>4h 00m – 4h 45m</td><td>Within VGC club average — no issues</td></tr>
-          <tr><td><span class="pace watch">👀 Watch</span></td><td>4h 45m – 5h 00m</td><td>Slightly slow — worth monitoring over more rounds</td></tr>
-          <tr><td><span class="pace slow">🐢 Slow</span></td><td>Over 5h 00m</td><td>Consistently slow — consider a pace conversation</td></tr>
+          <tr><td><span class="pace fast">⚡ Great</span></td><td>Under 4h 00m</td><td>Consistently ahead of pace — great for flow of play</td></tr>
+          <tr><td><span class="pace ok">✅ On Pace</span></td><td>4h 00m – 4h 20m</td><td>Within VGC club average — no issues</td></tr>
+          <tr><td><span class="pace watch">👀 Watch</span></td><td>4h 20m – 4h 40m</td><td>Slightly slow — worth monitoring over more rounds</td></tr>
+          <tr><td><span class="pace slow">🐢 Slow</span></td><td>Over 4h 40m</td><td>Consistently slow — consider a pace conversation</td></tr>
         </tbody>
       </table>
     </div>

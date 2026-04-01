@@ -3,227 +3,243 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VGC Member Spend</title>
+<title>VGC Member Spend Tracking</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<style>
-:root{
-  --navy:#2b335c;--navy2:#1e2540;--navy3:#363d6e;
-  --silver:#898b8d;--silver-lt:#b8b9bb;--silver-xlt:#e4e5e6;
-  --charcoal:#5a585c;--white:#fff;--bg:#f2f2f0;
-  --text:#1a1f3a;--muted:#6b6d7a;--border:#dddee3;
-  --green:#1a7a3e;--green-lt:#e8f5ee;
-  --amber:#b8630a;--amber-lt:#fef3e2;
-  --red:#8b1a1a;--red-lt:#faeaea;
-  --fnb:#2563eb;--fnb-lt:#eff6ff;
-  --shop:#7c3aed;--shop-lt:#f5f3ff;
-  --golf:#059669;--golf-lt:#ecfdf5;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
-.hdr{background:var(--navy);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;box-shadow:0 2px 12px rgba(0,0,0,.3);position:relative}
-.hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--silver),var(--silver-lt),var(--silver),transparent)}
-.hdr-inner{position:relative;z-index:1;display:flex;align-items:center;gap:18px}
-.hdr-title h1{font-size:.95rem;font-weight:700;color:#fff;line-height:1.15}
-.hdr-title p{font-size:.6rem;color:rgba(255,255,255,.4);letter-spacing:1.5px;text-transform:uppercase}
-.hdr-right{position:relative;z-index:1;display:flex;gap:9px;align-items:center}
-.hdr-pill{font-size:.6rem;font-weight:700;letter-spacing:.9px;text-transform:uppercase;padding:4px 11px;border-radius:2px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.55)}
-.back-link{font-size:.65rem;font-weight:600;color:rgba(255,255,255,.5);text-decoration:none;letter-spacing:.5px;text-transform:uppercase;transition:color .15s}
-.back-link:hover{color:rgba(255,255,255,.85)}
-.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
-.card{background:#fff;padding:14px 18px}
-.card-val{font-size:1.4rem;font-weight:700;color:var(--navy);line-height:1}
-.card-val.fnb{color:var(--fnb)}.card-val.shop{color:var(--shop)}.card-val.golf{color:var(--golf)}
-.card-lbl{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-top:3px}
-.card-sub{font-size:.65rem;color:var(--silver);margin-top:1px}
-.tabs{display:flex;background:#fff;border-bottom:2px solid var(--border);padding:0 24px}
-.tab{padding:11px 16px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
-.tab.active{color:var(--navy);border-bottom-color:var(--navy)}
-.toolbar{background:#fff;border-bottom:1px solid var(--border);padding:10px 24px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.toolbar-label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
-.sel{padding:6px 10px;border:1px solid var(--border);border-radius:3px;font-size:.75rem;font-family:inherit;color:var(--text);background:#f7f8fa}
-.sel:focus{outline:none;border-color:var(--navy)}
-.search{padding:7px 12px;border:1px solid var(--border);border-radius:3px;font-size:.75rem;font-family:inherit;color:var(--text);background:#f7f8fa;width:200px}
-.search:focus{outline:none;border-color:var(--navy)}
-.divider{width:1px;height:24px;background:var(--border)}
-.result-count{font-size:.65rem;font-weight:700;color:var(--navy)}
-.panel{display:none}.panel.active{display:block}
-.content{padding:20px 24px}
-.tbl{width:100%;border-collapse:collapse}
-.tbl th{background:var(--navy);color:#fff;font-size:.6rem;font-weight:700;letter-spacing:.9px;text-transform:uppercase;padding:10px 12px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none}
-.tbl th:hover{background:var(--navy3)}
-.tbl th.sorted-asc::after{content:' ▲';opacity:.7}
-.tbl th.sorted-desc::after{content:' ▼';opacity:.7}
-.tbl td{padding:9px 12px;border-bottom:1px solid var(--silver-xlt);font-size:.75rem;vertical-align:middle}
-.tbl tr:hover td{background:#f5f6fa}
-.tbl tr.top-row td{background:rgba(43,51,92,.03)}
-.spend-bar-wrap{display:flex;height:8px;border-radius:2px;overflow:hidden;background:var(--silver-xlt);width:120px}
-.spend-bar{height:8px}
-.bar-fnb{background:var(--fnb)}.bar-shop{background:var(--shop)}.bar-golf{background:var(--golf)}.bar-other{background:var(--silver-lt)}
-.seg{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:2px;font-size:.6rem;font-weight:700;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap}
-.seg.whale{background:rgba(43,51,92,.1);color:var(--navy);border:1px solid rgba(43,51,92,.2)}
-.seg.high{background:var(--green-lt);color:var(--green);border:1px solid rgba(26,122,62,.2)}
-.seg.mid{background:#f0f0f0;color:var(--charcoal);border:1px solid var(--border)}
-.seg.low{background:var(--amber-lt);color:var(--amber);border:1px solid rgba(184,99,10,.2)}
-.seg.dormant{background:var(--red-lt);color:var(--red);border:1px solid rgba(139,26,26,.2)}
-.matched-badge{font-size:.58rem;padding:2px 6px;border-radius:2px;font-weight:700;letter-spacing:.3px}
-.matched-badge.yes{background:var(--green-lt);color:var(--green)}
-.matched-badge.no{background:var(--silver-xlt);color:var(--muted)}
-.chart-wrap{background:#fff;border:1px solid var(--border);border-radius:3px;padding:20px;margin-bottom:16px}
-.chart-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--navy);margin-bottom:14px}
-.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-.chart-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
-.insights{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-.insight{background:#fff;border:1px solid var(--border);border-radius:3px;padding:14px 16px}
-.insight-icon{font-size:1.4rem;margin-bottom:6px}
-.insight-title{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:4px}
-.insight-val{font-size:1.1rem;font-weight:700;color:var(--navy)}
-.insight-sub{font-size:.65rem;color:var(--muted);margin-top:2px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:center;justify-content:center}
-.modal-overlay.hidden{display:none}
-.modal{background:#fff;border-radius:4px;width:580px;max-width:90vw;max-height:85vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.25)}
-.modal-hdr{background:var(--navy);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1}
-.modal-hdr h2{font-size:.88rem;font-weight:700;color:#fff}
-.modal-close{background:none;border:none;color:rgba(255,255,255,.5);font-size:1.2rem;cursor:pointer;line-height:1}
-.modal-body{padding:20px}
-.modal-stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
-.modal-stat{background:var(--bg);border-radius:3px;padding:12px;text-align:center}
-.modal-stat-val{font-size:1.2rem;font-weight:700;color:var(--navy)}
-.modal-stat-lbl{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-top:2px}
-.modal-section-title{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:14px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--silver-xlt)}
-.modal-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f7;font-size:.75rem}
-.modal-row:last-child{border-bottom:none}
-.modal-row-lbl{color:var(--muted)}
-.modal-row-val{font-weight:600}
-.member-info-box{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:12px 14px;margin-top:8px}
-.mi-row{display:flex;justify-content:space-between;padding:4px 0;font-size:.72rem}
-.mi-lbl{color:var(--muted)}
-.mi-val{font-weight:600}
-.lookup-btn{display:inline-block;margin-top:12px;padding:8px 16px;background:var(--navy);color:#fff;border:none;border-radius:3px;font-size:.7rem;font-weight:700;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;font-family:inherit}
-.lookup-btn:hover{background:var(--navy2)}
-.seg-list-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f7;font-size:.72rem;align-items:center}
-.seg-list-item:last-child{border-bottom:none}
-</style>
+<link rel="stylesheet" href="assets/spend-tracking/styles.css">
 </head>
 <body>
 
-<header class="hdr">
-  <div class="hdr-inner">
+<!-- ═══════════════ HEADER ═══════════════ -->
+<div class="hdr">
+  <div class="hdr-brand">
     <a class="back-link" href="index.html">&#8592; Hub</a>
-    <svg width="36" height="36" viewBox="0 0 52 52" fill="none">
-      <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
-      <path d="M13 15 L26 37 L39 15" fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
-      <path d="M32 20 A9 9 0 1 0 32 32" fill="none" stroke="#898b8d" stroke-width="2.2" stroke-linecap="round"/>
+    <svg class="hdr-logo" viewBox="0 0 52 52" fill="none">
+      <ellipse cx="26" cy="26" rx="24" ry="24" fill="none" stroke="#898b8d" stroke-width="1.2" opacity="0.5"/>
+      <path d="M12 14 L26 38 L40 14" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M33 19 A10 10 0 1 0 33 33" fill="none" stroke="#898b8d" stroke-width="2.5" stroke-linecap="round"/>
     </svg>
-    <div class="hdr-title"><h1>Member Spend Tracking</h1><p>The Victoria Golf Club</p></div>
+    <div class="hdr-title">
+      <h1>Member Spend Tracking</h1>
+      <p>The Victoria Golf Club</p>
+    </div>
   </div>
-  <div class="hdr-right">
-    <span class="hdr-pill">SwiftPOS · Jan–Dec 2025</span>
-    <span class="hdr-pill" id="matchPill">Loading...</span>
+  <div class="hdr-meta">
+    <span class="hdr-badge" id="activeTabBadge">Members</span>
+    <span class="hdr-badge" id="filterBadge">No Filters</span>
+    <span class="hdr-badge" id="matchBadge">Loading...</span>
   </div>
-</header>
-
-<div class="cards">
-  <div class="card"><div class="card-val" id="cTotal">—</div><div class="card-lbl">Total Member Spend</div><div class="card-sub">Jan – Dec 2025</div></div>
-  <div class="card"><div class="card-val fnb" id="cFnb">—</div><div class="card-lbl">F&amp;B</div><div class="card-sub" id="cFnbPct">—</div></div>
-  <div class="card"><div class="card-val shop" id="cShop">—</div><div class="card-lbl">Pro Shop</div><div class="card-sub" id="cShopPct">—</div></div>
-  <div class="card"><div class="card-val golf" id="cGolf">—</div><div class="card-lbl">Golf Fees</div><div class="card-sub" id="cGolfPct">—</div></div>
-  <div class="card"><div class="card-val" id="cAvg">—</div><div class="card-lbl">Avg per Member</div><div class="card-sub">Spending members only</div></div>
-  <div class="card"><div class="card-val" id="cDormant" style="color:var(--red)">—</div><div class="card-lbl">Zero Spend</div><div class="card-sub">No transactions 2025</div></div>
 </div>
 
-<div class="tabs">
-  <div class="tab active" onclick="switchTab('members',this)">Members</div>
-  <div class="tab" onclick="switchTab('overview',this)">Overview</div>
-  <div class="tab" onclick="switchTab('segments',this)">Segments</div>
-</div>
+<div class="app">
 
-<div class="toolbar">
-  <input class="search" type="text" id="memberSearch" placeholder="Search member name..." oninput="renderTable()">
-  <div class="divider"></div>
-  <span class="toolbar-label">Segment</span>
-  <select class="sel" id="segFilter" onchange="renderTable()">
-    <option value="">All</option>
-    <option value="whale">Whale ($5k+)</option>
-    <option value="high">High ($1k-$5k)</option>
-    <option value="mid">Mid ($200-$1k)</option>
-    <option value="low">Low ($1-$200)</option>
-    <option value="dormant">Zero Spend</option>
-  </select>
-  <div class="divider"></div>
-  <span class="toolbar-label">Min spend</span>
-  <select class="sel" id="minSpend" onchange="renderTable()">
-    <option value="0">Any</option>
-    <option value="100">$100+</option>
-    <option value="500">$500+</option>
-    <option value="1000">$1,000+</option>
-    <option value="5000">$5,000+</option>
-  </select>
-  <div class="divider"></div>
-  <span class="toolbar-label">Member DB</span>
-  <select class="sel" id="matchFilter" onchange="renderTable()">
-    <option value="">All</option>
-    <option value="matched">Matched only</option>
-    <option value="unmatched">Unmatched only</option>
-  </select>
-  <div class="divider"></div>
-  <span class="result-count" id="resultCount"></span>
-</div>
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<aside class="sidebar">
 
-<div class="content">
-
-  <div class="panel active" id="panel-members">
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th onclick="sortBy('name',this)">Member</th>
-          <th onclick="sortBy('total',this)" class="sorted-desc">Total Spend</th>
-          <th onclick="sortBy('fnb',this)">F&amp;B</th>
-          <th onclick="sortBy('proshop',this)">Pro Shop</th>
-          <th onclick="sortBy('golf',this)">Golf Fees</th>
-          <th>Spend Mix</th>
-          <th onclick="sortBy('transactions',this)">Trans.</th>
-          <th>Segment</th>
-          <th>In DB</th>
-          <th>Detail</th>
-        </tr>
-      </thead>
-      <tbody id="memberBody"></tbody>
-    </table>
+  <!-- SEARCH -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Search</div>
+    <input class="sb-input" type="text" id="sSearch" placeholder="Member name..." oninput="setSearch(this.value)">
   </div>
 
-  <div class="panel" id="panel-overview">
-    <div class="insights">
-      <div class="insight"><div class="insight-icon">👑</div><div class="insight-title">Top Spender</div><div class="insight-val" id="insTop">—</div><div class="insight-sub" id="insTopName">—</div></div>
-      <div class="insight"><div class="insight-icon">🍺</div><div class="insight-title">Top F&amp;B</div><div class="insight-val" id="insFnbTop">—</div><div class="insight-sub" id="insFnbName">—</div></div>
-      <div class="insight"><div class="insight-icon">⛳</div><div class="insight-title">Top Golf Fees</div><div class="insight-val" id="insGolfTop">—</div><div class="insight-sub" id="insGolfName">—</div></div>
-      <div class="insight"><div class="insight-icon">🛍️</div><div class="insight-title">Top Pro Shop</div><div class="insight-val" id="insShopTop">—</div><div class="insight-sub" id="insShopName">—</div></div>
-      <div class="insight"><div class="insight-icon">🔗</div><div class="insight-title">DB Match Rate</div><div class="insight-val" id="insMatch">—</div><div class="insight-sub">SwiftPOS to Member DB</div></div>
-      <div class="insight"><div class="insight-icon">💤</div><div class="insight-title">Zero Spend</div><div class="insight-val" id="insDormant" style="color:var(--red)">—</div><div class="insight-sub">No SwiftPOS activity 2025</div></div>
+  <!-- SEGMENT -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Segment</div>
+    <div class="seg-row">
+      <button class="seg-btn active" onclick="setSegment('all',this)">All</button>
+      <button class="seg-btn" onclick="setSegment('whale',this)">Whale</button>
+      <button class="seg-btn" onclick="setSegment('high',this)">High</button>
     </div>
-    <div class="chart-grid">
-      <div class="chart-wrap"><div class="chart-title">Spend Distribution</div><canvas id="distChart" height="220"></canvas></div>
-      <div class="chart-wrap"><div class="chart-title">Category Breakdown</div><canvas id="catChart" height="220"></canvas></div>
+    <div class="seg-row" style="margin-top:3px">
+      <button class="seg-btn" onclick="setSegment('mid',this)">Mid</button>
+      <button class="seg-btn" onclick="setSegment('low',this)">Low</button>
+      <button class="seg-btn" onclick="setSegment('dormant',this)">Zero</button>
     </div>
-    <div class="chart-wrap"><div class="chart-title">Top 20 Spenders by Category</div><canvas id="top20Chart" height="140"></canvas></div>
   </div>
 
-  <div class="panel" id="panel-segments">
-    <div class="chart-grid-3">
-      <div class="chart-wrap"><div class="chart-title">🐋 Whales ($5k+)</div><div id="segWhale" style="max-height:320px;overflow-y:auto"></div></div>
-      <div class="chart-wrap"><div class="chart-title">⬆ High Spenders ($1k-$5k)</div><div id="segHigh" style="max-height:320px;overflow-y:auto"></div></div>
-      <div class="chart-wrap"><div class="chart-title">💤 Zero Spend — Engagement Targets</div><div id="segDormant" style="max-height:320px;overflow-y:auto"></div></div>
+  <!-- MIN SPEND -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Min Spend</div>
+    <select class="sb-select" id="sMinSpend" onchange="setMinSpend(this.value)">
+      <option value="0">Any</option>
+      <option value="100">$100+</option>
+      <option value="500">$500+</option>
+      <option value="1000">$1,000+</option>
+      <option value="5000">$5,000+</option>
+    </select>
+  </div>
+
+  <!-- CATEGORY FOCUS -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Category Focus</div>
+    <select class="sb-select" id="sCatFocus" onchange="setCategoryFocus(this.value)">
+      <option value="">All Members</option>
+      <option value="fnb">F&B Dominant</option>
+      <option value="shop">Pro Shop Dominant</option>
+      <option value="golf">Golf Dominant</option>
+      <option value="balanced">Balanced</option>
+    </select>
+  </div>
+
+  <!-- MEMBER DB -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Member DB</div>
+    <div class="seg-row">
+      <button class="seg-btn active" onclick="setMatchFilter('',this)">All</button>
+      <button class="seg-btn" onclick="setMatchFilter('matched',this)">Matched</button>
+      <button class="seg-btn" onclick="setMatchFilter('unmatched',this)">Unmatched</button>
     </div>
-    <div class="chart-wrap">
-      <div class="chart-title">Segment Summary</div>
-      <table class="tbl" style="margin-top:8px">
-        <thead><tr><th>Segment</th><th>Members</th><th>Total Spend</th><th>Avg Spend</th><th>% of Revenue</th></tr></thead>
-        <tbody id="segTable"></tbody>
+  </div>
+
+  <!-- DEMOGRAPHICS (visible when demographics tab is active) -->
+  <div class="sidebar-section" id="demoFilters" style="display:none">
+    <div class="sidebar-label">Demographics</div>
+    <select class="sb-select" id="sAgeGroup" onchange="setAgeGroup(this.value)" style="margin-bottom:6px">
+      <option value="">All Age Groups</option>
+    </select>
+    <select class="sb-select" id="sGender" onchange="setGender(this.value)" style="margin-bottom:6px">
+      <option value="">All Genders</option>
+      <option value="Male">Male</option>
+      <option value="Female">Female</option>
+    </select>
+    <select class="sb-select" id="sMemberType" onchange="setMembershipType(this.value)" style="margin-bottom:6px">
+      <option value="">All Membership Types</option>
+    </select>
+    <select class="sb-select" id="sTenure" onchange="setTenureBucket(this.value)">
+      <option value="">All Tenure</option>
+    </select>
+  </div>
+
+  <!-- RESET + REPORT -->
+  <div class="sidebar-section">
+    <button class="reset-btn" onclick="resetFilters()">Reset All Filters</button>
+    <button class="report-btn" onclick="openSpendReport()">Generate Report</button>
+  </div>
+
+</aside>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<div class="main">
+
+  <div class="tabbar">
+    <div class="tab active" onclick="showTab('members',this)">Members</div>
+    <div class="tab" onclick="showTab('overview',this)">Overview</div>
+    <div class="tab" onclick="showTab('segments',this)">Segments</div>
+    <div class="tab" onclick="showTab('categories',this)">Categories</div>
+    <div class="tab" onclick="showTab('demographics',this)">Demographics</div>
+  </div>
+
+  <!-- ── PAGE: MEMBERS ── -->
+  <div class="page active" id="pg-members">
+    <div class="result-bar">
+      <span class="result-count" id="resultCount">Loading...</span>
+    </div>
+    <div class="scroll-x">
+      <table class="tbl" id="memberTable">
+        <thead>
+          <tr>
+            <th style="text-align:center;width:36px">#</th>
+            <th onclick="sortBy('name',this)">Member</th>
+            <th onclick="sortBy('total',this)" class="desc">Total</th>
+            <th onclick="sortBy('fnb',this)">F&amp;B</th>
+            <th onclick="sortBy('proshop',this)">Pro Shop</th>
+            <th onclick="sortBy('golf',this)">Golf</th>
+            <th style="cursor:default">Mix</th>
+            <th onclick="sortBy('transactions',this)">Trans</th>
+            <th onclick="sortBy('avg',this)">Avg/Tx</th>
+            <th style="cursor:default">Segment</th>
+            <th style="cursor:default">DB</th>
+            <th style="cursor:default"></th>
+          </tr>
+        </thead>
+        <tbody id="memberBody"></tbody>
       </table>
     </div>
   </div>
 
-</div>
+  <!-- ── PAGE: OVERVIEW ── -->
+  <div class="page" id="pg-overview">
+    <div class="kpi-row" id="overviewKPIs"></div>
+    <div class="g21">
+      <div class="card"><div class="card-hdr">Spend Distribution</div><canvas id="distChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Category Breakdown</div><canvas id="catChart"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Top 20 Spenders<span class="sub">by category</span></div><canvas id="top20Chart"></canvas></div>
+      <div class="card"><div class="card-hdr">Spend Concentration<span class="sub">cumulative % of total</span></div><canvas id="paretoChart"></canvas></div>
+    </div>
+    <div class="g3" id="overviewInsights"></div>
+  </div>
 
+  <!-- ── PAGE: SEGMENTS ── -->
+  <div class="page" id="pg-segments">
+    <div class="g3">
+      <div class="card"><div class="card-hdr">Whales ($5k+)<span class="sub" id="whaleCount"></span></div><div class="seg-list-wrap" id="segWhale"></div></div>
+      <div class="card"><div class="card-hdr">High Spenders ($1k-$5k)<span class="sub" id="highCount"></span></div><div class="seg-list-wrap" id="segHigh"></div></div>
+      <div class="card"><div class="card-hdr">Zero Spend — Targets<span class="sub" id="dormantCount"></span></div><div class="seg-list-wrap" id="segDormant"></div></div>
+    </div>
+    <div class="full">
+      <div class="card">
+        <div class="card-hdr">Segment Summary</div>
+        <table class="tbl">
+          <thead><tr><th style="text-align:left">Segment</th><th>Members</th><th>Total Spend</th><th>Avg Spend</th><th>% of Revenue</th></tr></thead>
+          <tbody id="segSummaryBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Segment Distribution</div><canvas id="segPieChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Revenue by Segment</div><canvas id="segRevenueChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: CATEGORIES ── -->
+  <div class="page" id="pg-categories">
+    <div class="g3" id="catSummaryCards"></div>
+    <div class="full">
+      <div class="card"><div class="card-hdr">All Product Categories<span class="sub">sorted by revenue</span></div><canvas id="allCatChart" style="max-height:500px"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr" style="color:var(--fnb)">F&amp;B Sub-Categories</div><canvas id="fnbSubChart"></canvas></div>
+      <div class="card"><div class="card-hdr" style="color:var(--shop)">Pro Shop Sub-Categories</div><canvas id="shopSubChart"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr" style="color:var(--golf)">Golf Sub-Categories</div><canvas id="golfSubChart"></canvas></div>
+      <div class="card" id="catInsightsCard"></div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: DEMOGRAPHICS ── -->
+  <div class="page" id="pg-demographics">
+    <div class="demo-notice" id="demoNotice"></div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Total Spend by Age Group</div><canvas id="demoAgeChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Total Spend by Gender</div><canvas id="demoGenderChart"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Avg Spend by Tenure</div><canvas id="demoTenureChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Avg Spend by Membership Type</div><canvas id="demoTypeChart"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Avg Spend by Age Group</div><canvas id="demoAvgAgeChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Category Mix by Age Group</div><canvas id="demoCatMixChart"></canvas></div>
+    </div>
+    <div class="full">
+      <div class="card">
+        <div class="card-hdr">Demographics Detail</div>
+        <div class="scroll-x">
+          <table class="tbl">
+            <thead><tr><th style="text-align:left">Group</th><th>Members</th><th>Total Spend</th><th>Avg Spend</th><th>F&amp;B %</th><th>Pro Shop %</th><th>Golf %</th></tr></thead>
+            <tbody id="demoTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.main -->
+</div><!-- /.app -->
+
+<!-- ═══════════════ MODAL ═══════════════ -->
 <div class="modal-overlay hidden" id="detailModal">
   <div class="modal">
     <div class="modal-hdr">
@@ -236,435 +252,7 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
 
 <script src="assets/data/member-lookup.data.js"></script>
 <script src="assets/data/sales_data.js"></script>
-<script>
-var DATA = [];
-var MEMBER_INDEX = {};
-var sortCol = 'total';
-var sortDir = -1;
-var chartsBuilt = false;
-var segBuilt = false;
-
-window.addEventListener('load', function() { init(); });
-
-function init() {
-  DATA = typeof SALES_DATA !== 'undefined' ? SALES_DATA : [];
-
-  // Build name index from member lookup database
-  if (typeof MEMBER_LOOKUP_DATA !== 'undefined' && MEMBER_LOOKUP_DATA.members) {
-    MEMBER_LOOKUP_DATA.members.forEach(function(m) {
-      var key = (m.first + ' ' + m.last).toLowerCase().trim();
-      MEMBER_INDEX[key] = m;
-    });
-  }
-
-  // Cross-reference each sales record against member DB
-  DATA.forEach(function(sale) {
-    var nameLower = sale.name.toLowerCase().trim();
-    var matched = MEMBER_INDEX[nameLower];
-    if (!matched) {
-      var parts = nameLower.split(' ');
-      if (parts.length >= 3) {
-        var alt = parts[0] + ' ' + parts[parts.length - 1];
-        matched = MEMBER_INDEX[alt];
-      }
-    }
-    sale._member = matched || null;
-    sale._matched = !!matched;
-  });
-
-  var matchedCount = DATA.filter(function(d) { return d._matched; }).length;
-  var pct = DATA.length ? Math.round(matchedCount / DATA.length * 100) : 0;
-  document.getElementById('matchPill').textContent = matchedCount + ' matched (' + pct + '%)';
-
-  buildCards();
-  renderTable();
-
-  // Pre-populate member lookup search if we were redirected from spend tool
-  var preSearch = sessionStorage.getItem('spendToolSearch');
-  if (preSearch) {
-    document.getElementById('memberSearch').value = preSearch;
-    sessionStorage.removeItem('spendToolSearch');
-    renderTable();
-  }
-}
-
-function fmt(n) {
-  if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'M';
-  if (n >= 1000) return '$' + (n / 1000).toFixed(1) + 'k';
-  return '$' + n.toFixed(0);
-}
-
-function fmtFull(n) {
-  return '$' + n.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function getSegment(total) {
-  if (total === 0) return 'dormant';
-  if (total >= 5000) return 'whale';
-  if (total >= 1000) return 'high';
-  if (total >= 200) return 'mid';
-  return 'low';
-}
-
-function segLabel(s) {
-  return { whale: '🐋 Whale', high: '⬆ High', mid: '➡ Mid', low: '⬇ Low', dormant: '💤 Zero' }[s] || s;
-}
-
-function buildCards() {
-  if (!DATA || DATA.length === 0) return;
-  var spending = DATA.filter(function(m) { return m.total > 0; });
-  var total = DATA.reduce(function(s, m) { return s + m.total; }, 0);
-  var fnb = DATA.reduce(function(s, m) { return s + m.fnb; }, 0);
-  var shop = DATA.reduce(function(s, m) { return s + m.proshop; }, 0);
-  var golf = DATA.reduce(function(s, m) { return s + m.golf; }, 0);
-  var dormant = DATA.filter(function(m) { return m.total === 0; }).length;
-  var avg = spending.length ? spending.reduce(function(s, m) { return s + m.total; }, 0) / spending.length : 0;
-
-  document.getElementById('cTotal').textContent = fmt(total);
-  document.getElementById('cFnb').textContent = fmt(fnb);
-  document.getElementById('cFnbPct').textContent = total ? (fnb / total * 100).toFixed(1) + '% of total' : '';
-  document.getElementById('cShop').textContent = fmt(shop);
-  document.getElementById('cShopPct').textContent = total ? (shop / total * 100).toFixed(1) + '% of total' : '';
-  document.getElementById('cGolf').textContent = fmt(golf);
-  document.getElementById('cGolfPct').textContent = total ? (golf / total * 100).toFixed(1) + '% of total' : '';
-  document.getElementById('cAvg').textContent = fmtFull(avg);
-  document.getElementById('cDormant').textContent = dormant;
-}
-
-function sortBy(col, th) {
-  sortDir = sortCol === col ? sortDir * -1 : -1;
-  sortCol = col;
-  document.querySelectorAll('.tbl th').forEach(function(t) { t.classList.remove('sorted-asc', 'sorted-desc'); });
-  if (th) th.classList.add(sortDir === 1 ? 'sorted-asc' : 'sorted-desc');
-  renderTable();
-}
-
-function renderTable() {
-  if (!DATA || DATA.length === 0) {
-    document.getElementById('resultCount').textContent = 'No data loaded';
-    document.getElementById('memberBody').innerHTML =
-      '<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">' +
-      'No spend data loaded. Ensure sales_data.js is in data/exports/ and rebuild.</td></tr>';
-    return;
-  }
-  var search = document.getElementById('memberSearch').value.toLowerCase();
-  var seg = document.getElementById('segFilter').value;
-  var minSpend = parseFloat(document.getElementById('minSpend').value) || 0;
-  var matchFilter = document.getElementById('matchFilter').value;
-
-  var filtered = DATA.filter(function(m) {
-    if (search && m.name.toLowerCase().indexOf(search) === -1) return false;
-    if (seg && getSegment(m.total) !== seg) return false;
-    if (m.total < minSpend) return false;
-    if (matchFilter === 'matched' && !m._matched) return false;
-    if (matchFilter === 'unmatched' && m._matched) return false;
-    return true;
-  });
-
-  filtered.sort(function(a, b) {
-    var av = a[sortCol], bv = b[sortCol];
-    if (typeof av === 'string') return sortDir * av.localeCompare(bv);
-    return sortDir * ((av || 0) - (bv || 0));
-  });
-
-  document.getElementById('resultCount').textContent = filtered.length + ' members';
-
-  var html = filtered.map(function(m, i) {
-    var s = getSegment(m.total);
-    var total = m.total;
-    var fnbW = total > 0 ? Math.round(m.fnb / total * 120) : 0;
-    var shopW = total > 0 ? Math.round(m.proshop / total * 120) : 0;
-    var golfW = total > 0 ? Math.round(m.golf / total * 120) : 0;
-    var otherW = Math.max(0, 120 - fnbW - shopW - golfW);
-    var badge = m._matched
-      ? '<span class="matched-badge yes">&#10003; In DB</span>'
-      : '<span class="matched-badge no">Not found</span>';
-    return '<tr class="' + (i < 3 ? 'top-row' : '') + '">' +
-      '<td style="font-weight:600">' + m.name + '</td>' +
-      '<td style="font-weight:700;font-size:.82rem">' + fmtFull(total) + '</td>' +
-      '<td style="color:var(--fnb);font-weight:600">' + (m.fnb > 0 ? fmtFull(m.fnb) : '—') + '</td>' +
-      '<td style="color:var(--shop);font-weight:600">' + (m.proshop > 0 ? fmtFull(m.proshop) : '—') + '</td>' +
-      '<td style="color:var(--golf);font-weight:600">' + (m.golf > 0 ? fmtFull(m.golf) : '—') + '</td>' +
-      '<td><div class="spend-bar-wrap">' +
-        '<div class="spend-bar bar-fnb" style="width:' + fnbW + 'px"></div>' +
-        '<div class="spend-bar bar-shop" style="width:' + shopW + 'px"></div>' +
-        '<div class="spend-bar bar-golf" style="width:' + golfW + 'px"></div>' +
-        '<div class="spend-bar bar-other" style="width:' + otherW + 'px"></div>' +
-      '</div></td>' +
-      '<td style="text-align:center">' + m.transactions + '</td>' +
-      '<td><span class="seg ' + s + '">' + segLabel(s) + '</span></td>' +
-      '<td>' + badge + '</td>' +
-      '<td><button onclick="showDetail(\'' + m.id + '\')" style="background:var(--navy);color:#fff;border:none;border-radius:2px;padding:3px 8px;font-size:.6rem;font-weight:700;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;font-family:inherit">View</button></td>' +
-    '</tr>';
-  }).join('');
-
-  document.getElementById('memberBody').innerHTML = html ||
-    '<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">No members match your filters.</td></tr>';
-}
-
-function showDetail(id) {
-  var m = null;
-  for (var i = 0; i < DATA.length; i++) {
-    if (DATA[i].id === id) { m = DATA[i]; break; }
-  }
-  if (!m) return;
-
-  var s = getSegment(m.total);
-  var avgTx = m.transactions > 0 ? m.total / m.transactions : 0;
-  var FNB_GROUPS = ['BULK BEER','PACK BEER','GIN','RUM','WHISKEY','VODKA/OUZO/TEQUILA',
-    'LIQUEURS','MISC SPIRITS','BRANDY/COGNAC','APERTIFS','CHAMPAGNE/SPARKLING',
-    'WHITE WINE','RED WINE','DESSERT WINE','FORTIFIED WINE','CELLAR LIST',
-    'SOFT DRINK','COFFEE/TEA','MISC F&B','SANDWICHES','CASUAL SERVERY',
-    'MISC FOOD','GOLF DRINKS','GOLF SNACKS','CONFECTIONARY','BREAKFAST',
-    'LUNCH','ENTREE','DESSERT','SYSTEM'];
-  var SHOP_GROUPS = ['GOLF BALLS','GOLF GLOVES','GOLF TEES','ACCESSORIES','GOLF CLUBS',
-    'REPAIRS','HEADWEAR','OUTERWEAR','MENS SHIRTS','LADIES SHIRTS','PANTS SHORTS',
-    'SHOES','SOCKS','BAGS BUGGIES','PANTS SKIRT SKORT','Australian Open'];
-  var GOLF_GROUPS = ['COMP FEES','GREEN FEES','Range Balls','LESSONS','CART HIRE',
-    'Club Hire','Intl/Interstate GFees','Reciprocal Golfers','Paul Lessons'];
-
-  function groupRows(groups, groupNames) {
-    var rows = '';
-    var hasAny = false;
-    groupNames.forEach(function(g) {
-      if (groups[g] && groups[g] > 0) {
-        hasAny = true;
-        rows += '<div class="modal-row"><span class="modal-row-lbl">' + g +
-          '</span><span class="modal-row-val">' + fmtFull(groups[g]) + '</span></div>';
-      }
-    });
-    return hasAny ? rows :
-      '<div class="modal-row"><span class="modal-row-lbl" style="font-style:italic">No spend</span>' +
-      '<span class="modal-row-val">--</span></div>';
-  }
-
-  var groups = m.groups || {};
-  var otherRows = '';
-  Object.keys(groups).forEach(function(g) {
-    if (groups[g] > 0 && FNB_GROUPS.indexOf(g) === -1 &&
-        SHOP_GROUPS.indexOf(g) === -1 && GOLF_GROUPS.indexOf(g) === -1) {
-      otherRows += '<div class="modal-row"><span class="modal-row-lbl">' + g +
-        '</span><span class="modal-row-val">' + fmtFull(groups[g]) + '</span></div>';
-    }
-  });
-
-  // Store ID on window so lookup button can find member safely (avoids apostrophe issues)
-  window._detailMemberId = id;
-
-  var memberBlock = '';
-  if (m._matched) {
-    var mem = m._member;
-    memberBlock =
-      '<div class="modal-section-title">&#128101; Member Database Record</div>' +
-      '<div class="member-info-box">' +
-        '<div class="mi-row"><span class="mi-lbl">Name</span><span class="mi-val">' +
-          mem.first + ' ' + mem.last + '</span></div>' +
-        '<div class="mi-row"><span class="mi-lbl">Gender</span><span class="mi-val">' +
-          (mem.gender || '--') + '</span></div>' +
-        '<div class="mi-row"><span class="mi-lbl">Age Group</span><span class="mi-val">' +
-          (mem.age_group || '--') + '</span></div>' +
-        '<div class="mi-row"><span class="mi-lbl">Joined</span><span class="mi-val">' +
-          (mem.join_date || '--') + '</span></div>' +
-        '<div class="mi-row"><span class="mi-lbl">Tenure</span><span class="mi-val">' +
-          (mem.tenure_bucket || '--') + '</span></div>' +
-        '<div class="mi-row"><span class="mi-lbl">Email</span><span class="mi-val">' +
-          (mem.email || '--') + '</span></div>' +
-        '<div class="mi-row"><span class="mi-lbl">Phone</span><span class="mi-val">' +
-          (mem.phone || '--') + '</span></div>' +
-      '</div>' +
-      '<button class="lookup-btn" onclick="openCurrentInLookup()">Open in Member Lookup &#8594;</button>';
-  } else {
-    memberBlock =
-      '<div class="modal-section-title">&#128101; Member Database</div>' +
-      '<div style="font-size:.75rem;color:var(--muted);padding:10px;background:var(--bg);' +
-        'border-radius:3px;line-height:1.6">Name not matched in Golf Genius database.</div>';
-  }
-
-  document.getElementById('modalName').textContent = m.name;
-  document.getElementById('modalBody').innerHTML =
-    '<div class="modal-stat-grid">' +
-      '<div class="modal-stat"><div class="modal-stat-val">' + fmtFull(m.total) +
-        '</div><div class="modal-stat-lbl">Total Spend</div></div>' +
-      '<div class="modal-stat"><div class="modal-stat-val">' + m.transactions +
-        '</div><div class="modal-stat-lbl">Transactions</div></div>' +
-      '<div class="modal-stat"><div class="modal-stat-val">' +
-        (avgTx > 0 ? fmtFull(avgTx) : '$0') + '</div><div class="modal-stat-lbl">Avg per Visit</div></div>' +
-    '</div>' +
-    '<div class="modal-section-title">Summary</div>' +
-    '<div class="modal-row"><span class="modal-row-lbl">Segment</span>' +
-      '<span class="modal-row-val"><span class="seg ' + s + '">' + segLabel(s) + '</span></span></div>' +
-    '<div class="modal-row"><span class="modal-row-lbl" style="color:var(--fnb);font-weight:700">' +
-      'F&amp;B Total</span><span class="modal-row-val" style="color:var(--fnb)">' +
-      fmtFull(m.fnb) + (m.total > 0 ? ' (' + Math.round(m.fnb / m.total * 100) + '%)' : '') + '</span></div>' +
-    '<div class="modal-row"><span class="modal-row-lbl" style="color:var(--shop);font-weight:700">' +
-      'Pro Shop Total</span><span class="modal-row-val" style="color:var(--shop)">' +
-      fmtFull(m.proshop) + (m.total > 0 ? ' (' + Math.round(m.proshop / m.total * 100) + '%)' : '') + '</span></div>' +
-    '<div class="modal-row"><span class="modal-row-lbl" style="color:var(--golf);font-weight:700">' +
-      'Golf Total</span><span class="modal-row-val" style="color:var(--golf)">' +
-      fmtFull(m.golf) + (m.total > 0 ? ' (' + Math.round(m.golf / m.total * 100) + '%)' : '') + '</span></div>' +
-    '<div class="modal-section-title" style="color:var(--fnb)">F&amp;B Breakdown</div>' +
-    groupRows(groups, FNB_GROUPS) +
-    '<div class="modal-section-title" style="color:var(--shop)">Pro Shop Breakdown</div>' +
-    groupRows(groups, SHOP_GROUPS) +
-    '<div class="modal-section-title" style="color:var(--golf)">Golf Breakdown</div>' +
-    groupRows(groups, GOLF_GROUPS) +
-    (otherRows ? '<div class="modal-section-title">Other</div>' + otherRows : '') +
-    memberBlock;
-
-  document.getElementById('detailModal').classList.remove('hidden');
-}
-
-
-function openCurrentInLookup() {
-  var m = null;
-  for (var i = 0; i < DATA.length; i++) {
-    if (DATA[i].id === window._detailMemberId) { m = DATA[i]; break; }
-  }
-  if (m && m._matched) {
-    sessionStorage.setItem('memberLookupSearch', m._member.first + ' ' + m._member.last);
-    window.location.href = 'member-lookup.html';
-  }
-}
-
-function openInMemberLookup(name) {
-  sessionStorage.setItem('memberLookupSearch', name);
-  window.location.href = 'member-lookup.html';
-}
-
-function buildOverview() {
-  if (chartsBuilt) return;
-  chartsBuilt = true;
-
-  var spending = DATA.filter(function(m) { return m.total > 0; });
-  var total = DATA.reduce(function(s, m) { return s + m.total; }, 0);
-  var fnbT = DATA.reduce(function(s, m) { return s + m.fnb; }, 0);
-  var shopT = DATA.reduce(function(s, m) { return s + m.proshop; }, 0);
-  var golfT = DATA.reduce(function(s, m) { return s + m.golf; }, 0);
-  var otherT = Math.max(0, total - fnbT - shopT - golfT);
-  var dormant = DATA.filter(function(m) { return m.total === 0; }).length;
-  var matched = DATA.filter(function(m) { return m._matched; }).length;
-
-  var sorted = DATA.slice().sort(function(a, b) { return b.total - a.total; });
-  var topFnb = DATA.slice().sort(function(a, b) { return b.fnb - a.fnb; })[0];
-  var topShop = DATA.slice().sort(function(a, b) { return b.proshop - a.proshop; })[0];
-  var topGolf = DATA.slice().sort(function(a, b) { return b.golf - a.golf; })[0];
-
-  document.getElementById('insTop').textContent = fmtFull(sorted[0].total);
-  document.getElementById('insTopName').textContent = sorted[0].name;
-  document.getElementById('insFnbTop').textContent = fmtFull(topFnb.fnb);
-  document.getElementById('insFnbName').textContent = topFnb.name;
-  document.getElementById('insGolfTop').textContent = fmtFull(topGolf.golf);
-  document.getElementById('insGolfName').textContent = topGolf.name;
-  document.getElementById('insShopTop').textContent = fmtFull(topShop.proshop);
-  document.getElementById('insShopName').textContent = topShop.name;
-  document.getElementById('insMatch').textContent = matched + ' / ' + DATA.length;
-  document.getElementById('insDormant').textContent = dormant;
-
-  new Chart(document.getElementById('distChart'), {
-    type: 'bar',
-    data: {
-      labels: ['Zero','$1-200','$200-500','$500-1k','$1k-5k','$5k+'],
-      datasets: [{
-        label: 'Members',
-        data: [
-          DATA.filter(function(m) { return m.total === 0; }).length,
-          DATA.filter(function(m) { return m.total > 0 && m.total < 200; }).length,
-          DATA.filter(function(m) { return m.total >= 200 && m.total < 500; }).length,
-          DATA.filter(function(m) { return m.total >= 500 && m.total < 1000; }).length,
-          DATA.filter(function(m) { return m.total >= 1000 && m.total < 5000; }).length,
-          DATA.filter(function(m) { return m.total >= 5000; }).length
-        ],
-        backgroundColor: ['rgba(139,26,26,.7)','rgba(184,99,10,.7)','rgba(43,51,92,.4)','rgba(43,51,92,.6)','rgba(26,122,62,.7)','rgba(43,51,92,.9)'],
-        borderRadius: 2
-      }]
-    },
-    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#eee' } }, x: { grid: { display: false } } } }
-  });
-
-  new Chart(document.getElementById('catChart'), {
-    type: 'doughnut',
-    data: {
-      labels: ['F&B','Pro Shop','Golf Fees','Other'],
-      datasets: [{ data: [fnbT, shopT, golfT, otherT], backgroundColor: ['rgba(37,99,235,.8)','rgba(124,58,237,.8)','rgba(5,150,105,.8)','rgba(137,139,141,.5)'], borderWidth: 0 }]
-    },
-    options: { plugins: { legend: { position: 'right', labels: { font: { size: 11 } } } } }
-  });
-
-  var top20 = sorted.slice(0, 20);
-  new Chart(document.getElementById('top20Chart'), {
-    type: 'bar',
-    data: {
-      labels: top20.map(function(m) { var parts = m.name.split(' '); return parts[parts.length - 1]; }),
-      datasets: [
-        { label: 'F&B', data: top20.map(function(m) { return m.fnb; }), backgroundColor: 'rgba(37,99,235,.8)', borderRadius: 2 },
-        { label: 'Pro Shop', data: top20.map(function(m) { return m.proshop; }), backgroundColor: 'rgba(124,58,237,.8)', borderRadius: 2 },
-        { label: 'Golf', data: top20.map(function(m) { return m.golf; }), backgroundColor: 'rgba(5,150,105,.8)', borderRadius: 2 },
-        { label: 'Other', data: top20.map(function(m) { return m.other || 0; }), backgroundColor: 'rgba(137,139,141,.4)', borderRadius: 2 }
-      ]
-    },
-    options: {
-      plugins: { legend: { position: 'top' } },
-      scales: {
-        x: { stacked: true, grid: { display: false } },
-        y: { stacked: true, grid: { color: '#eee' }, ticks: { callback: function(v) { return fmt(v); } } }
-      }
-    }
-  });
-}
-
-function buildSegments() {
-  if (segBuilt) return;
-  segBuilt = true;
-
-  var whales = DATA.filter(function(m) { return m.total >= 5000; }).sort(function(a, b) { return b.total - a.total; });
-  var high = DATA.filter(function(m) { return m.total >= 1000 && m.total < 5000; }).sort(function(a, b) { return b.total - a.total; }).slice(0, 20);
-  var dormant = DATA.filter(function(m) { return m.total === 0 && m._matched; });
-
-  document.getElementById('segWhale').innerHTML = whales.map(function(m) {
-    return '<div class="seg-list-item"><span style="font-weight:600">' + m.name + '</span><span style="font-weight:700;color:var(--navy)">' + fmtFull(m.total) + '</span></div>';
-  }).join('');
-
-  document.getElementById('segHigh').innerHTML = high.map(function(m) {
-    return '<div class="seg-list-item"><span style="font-weight:600">' + m.name + '</span><span style="font-weight:700;color:var(--green)">' + fmtFull(m.total) + '</span></div>';
-  }).join('');
-
-  var dormantHtml = dormant.slice(0, 20).map(function(m) {
-    return '<div class="seg-list-item"><span style="color:var(--muted)">' + m.name + '</span><span style="font-size:.6rem;color:var(--red);font-weight:700">$0.00</span></div>';
-  }).join('');
-  if (dormant.length > 20) dormantHtml += '<div style="font-size:.65rem;color:var(--muted);padding-top:8px">+' + (dormant.length - 20) + ' more</div>';
-  document.getElementById('segDormant').innerHTML = dormantHtml || '<div style="color:var(--muted);font-size:.75rem;padding:8px">All matched members have some spend</div>';
-
-  var grandTotal = DATA.reduce(function(s, m) { return s + m.total; }, 0);
-  var segs = [
-    { key: 'whale', label: '🐋 Whale ($5k+)', fn: function(m) { return m.total >= 5000; } },
-    { key: 'high', label: '⬆ High ($1k-$5k)', fn: function(m) { return m.total >= 1000 && m.total < 5000; } },
-    { key: 'mid', label: '➡ Mid ($200-$1k)', fn: function(m) { return m.total >= 200 && m.total < 1000; } },
-    { key: 'low', label: '⬇ Low ($1-$200)', fn: function(m) { return m.total > 0 && m.total < 200; } },
-    { key: 'dormant', label: '💤 Zero Spend', fn: function(m) { return m.total === 0; } }
-  ];
-
-  document.getElementById('segTable').innerHTML = segs.map(function(s) {
-    var members = DATA.filter(s.fn);
-    var rev = members.reduce(function(sum, m) { return sum + m.total; }, 0);
-    var avg = members.length ? rev / members.length : 0;
-    return '<tr>' +
-      '<td><span class="seg ' + s.key + '">' + s.label + '</span></td>' +
-      '<td style="font-weight:700">' + members.length + '</td>' +
-      '<td style="font-weight:700">' + fmtFull(rev) + '</td>' +
-      '<td>' + (avg > 0 ? fmtFull(avg) : '—') + '</td>' +
-      '<td>' + (grandTotal > 0 ? (rev / grandTotal * 100).toFixed(1) + '%' : '—') + '</td>' +
-    '</tr>';
-  }).join('');
-}
-
-function switchTab(name, el) {
-  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
-  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
-  el.classList.add('active');
-  document.getElementById('panel-' + name).classList.add('active');
-  if (name === 'overview') buildOverview();
-  if (name === 'segments') buildSegments();
-}
-</script>
+<script src="assets/spend-tracking/app.js"></script>
+<script src="assets/spend-tracking/report.js"></script>
 </body>
 </html>

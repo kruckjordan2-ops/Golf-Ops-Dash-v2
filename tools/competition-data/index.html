@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VGC Competition Data</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+<style>
+:root{
+  --navy:    #2b335c;
+  --navy2:   #1e2540;
+  --navy3:   #3d4678;
+  --silver:  #898b8d;
+  --silver2: #b8b9bb;
+  --silver3: #e4e5e6;
+  --charcoal:#5a585c;
+  --white:   #ffffff;
+  --bg:      #f2f3f5;
+  --card:    #ffffff;
+  --border:  #dddee3;
+  --text:    #1e2230;
+  --muted:   #6b6d7a;
+  --green:   #2e7d32;
+  --amber:   #e65100;
+  --sidebar-w:260px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px;overflow-x:hidden}
+
+/* HEADER */
+.hdr{position:fixed;top:0;left:0;right:0;z-index:200;background:var(--navy);height:56px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 20px 0 16px;
+  box-shadow:0 2px 12px rgba(0,0,0,.35)}
+.hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--silver) 0%,var(--charcoal) 50%,var(--silver) 100%)}
+.hdr-brand{display:flex;align-items:center;gap:12px}
+.hdr-logo{width:36px;height:36px;flex-shrink:0}
+.hdr-title{color:#fff}
+.hdr-title h1{font-size:1rem;font-weight:700;letter-spacing:.3px}
+.hdr-title p{font-size:.65rem;opacity:.55;letter-spacing:.4px;text-transform:uppercase}
+.hdr-meta{display:flex;gap:8px;align-items:center}
+.hdr-badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
+  border-radius:3px;padding:3px 10px;font-size:.65rem;color:rgba(255,255,255,.8);
+  letter-spacing:.4px;text-transform:uppercase}
+
+/* LAYOUT */
+.app{display:flex;margin-top:56px;min-height:calc(100vh - 56px)}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:#fff;border-right:1px solid var(--border);
+  position:fixed;top:56px;left:0;bottom:0;overflow-y:auto;
+  box-shadow:2px 0 8px rgba(43,51,92,.06);z-index:100;display:flex;flex-direction:column}
+.sidebar-section{border-bottom:1px solid var(--silver3);padding:14px 16px}
+.sidebar-section:last-child{border-bottom:none;flex:1}
+.sidebar-label{font-size:.6rem;font-weight:700;color:var(--navy);
+  text-transform:uppercase;letter-spacing:.9px;margin-bottom:10px;
+  display:flex;align-items:center;gap:6px}
+.sidebar-label::after{content:'';flex:1;height:1px;background:var(--silver3)}
+
+.seg{display:flex;flex-direction:column;gap:4px}
+.seg-row{display:flex;gap:3px;flex-wrap:wrap}
+.seg-btn{flex:1;min-width:0;padding:5px 4px;border:1px solid var(--border);background:#f7f8fa;
+  font-size:.68rem;font-weight:600;cursor:pointer;color:var(--muted);
+  border-radius:3px;text-align:center;transition:all .12s;font-family:inherit;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.seg-btn:hover:not(.active){background:var(--silver3);color:var(--navy)}
+
+.search-input{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:3px;
+  font-size:.74rem;font-family:inherit;color:var(--text);outline:none;transition:border .12s}
+.search-input:focus{border-color:var(--navy)}
+.search-input::placeholder{color:var(--silver2)}
+
+.reset-btn{width:100%;padding:7px;margin-top:8px;background:#f7f8fa;
+  border:1px solid var(--border);border-radius:3px;font-size:.72rem;font-weight:600;
+  cursor:pointer;color:var(--navy);font-family:inherit;transition:all .12s}
+.reset-btn:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* MAIN */
+.main{margin-left:var(--sidebar-w);flex:1;min-width:0;display:flex;flex-direction:column}
+
+/* TAB BAR */
+.tabbar{position:sticky;top:0;z-index:90;background:#fff;border-bottom:2px solid var(--border);
+  display:flex;padding:0 20px;box-shadow:0 1px 4px rgba(43,51,92,.06)}
+.tab{padding:14px 18px;font-size:.78rem;font-weight:600;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .12s;white-space:nowrap}
+.tab:hover{color:var(--navy)}
+.tab.active{color:var(--navy);border-bottom-color:var(--navy)}
+
+/* PANELS */
+.panel{display:none;padding:20px}
+.panel.active{display:block}
+
+/* KPI STRIP */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px}
+.kpi{background:var(--card);border-radius:5px;padding:14px 16px;
+  border:1px solid var(--border);border-left:4px solid var(--navy)}
+.kpi.s1{border-left-color:#4a5490}
+.kpi.s2{border-left-color:var(--navy3)}
+.kpi.s3{border-left-color:var(--silver)}
+.kpi.s4{border-left-color:#2e7d32}
+.kpi.s5{border-left-color:var(--charcoal)}
+.kpi-lbl{font-size:.62rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px}
+.kpi-val{font-size:1.55rem;font-weight:700;line-height:1;margin:5px 0 3px;color:var(--navy)}
+.kpi-sub{font-size:.68rem;color:var(--muted)}
+
+/* CHART CARDS */
+.charts-grid{display:grid;gap:16px}
+.charts-grid.cols-2{grid-template-columns:repeat(2,1fr)}
+.charts-grid.cols-3{grid-template-columns:repeat(3,1fr)}
+.chart-card{background:var(--card);border-radius:5px;padding:16px 18px;
+  border:1px solid var(--border)}
+.chart-card.span2{grid-column:span 2}
+.chart-title{font-size:.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:4px}
+.chart-sub{font-size:.66rem;color:var(--muted);margin-bottom:12px}
+.chart-wrap{position:relative}
+.chart-wrap canvas{max-height:260px}
+.chart-wrap.tall canvas{max-height:320px}
+.chart-wrap.short canvas{max-height:180px}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;max-height:520px;overflow-y:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:.74rem}
+.tbl th{background:#f0f1f5;color:var(--navy);font-weight:700;font-size:.6rem;
+  text-transform:uppercase;letter-spacing:.4px;padding:7px 10px;
+  border-bottom:2px solid var(--navy);text-align:right;white-space:nowrap;
+  position:sticky;top:0;cursor:pointer;user-select:none}
+.tbl th:first-child,.tbl th:nth-child(2){text-align:left}
+.tbl th.sort-asc::after{content:' \2191'}
+.tbl th.sort-desc::after{content:' \2193'}
+.tbl td{padding:6px 10px;border-bottom:1px solid var(--silver3);text-align:right;
+  vertical-align:middle}
+.tbl td:first-child,.tbl td:nth-child(2){text-align:left}
+.tbl td:first-child{font-weight:600;color:var(--navy2)}
+.tbl tr:hover td{background:#f8f9fc}
+
+/* BAR MINI */
+.bar-mini{display:inline-flex;height:8px;border-radius:2px;background:var(--silver3);
+  overflow:hidden;width:60px;vertical-align:middle;margin-left:6px}
+.bar-mini-fill{background:var(--navy);border-radius:2px}
+
+/* BADGE */
+.badge-cat{display:inline-block;padding:2px 7px;border-radius:10px;font-size:.62rem;
+  font-weight:600;background:#eef0f8;color:var(--navy)}
+
+/* SUMMARY TILES */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+.sum-tile{background:var(--card);border:1px solid var(--border);border-radius:5px;
+  padding:14px 16px;text-align:center}
+.sum-tile-val{font-size:1.8rem;font-weight:700;color:var(--navy);line-height:1}
+.sum-tile-lbl{font-size:.65rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.4px}
+.sum-tile-bar{height:4px;border-radius:2px;margin-top:8px;background:var(--silver3);overflow:hidden}
+.sum-tile-fill{height:100%;border-radius:2px;background:var(--navy)}
+
+/* FILTER SUMMARY */
+.filter-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;
+  background:#eef0f8;border-radius:10px;font-size:.66rem;font-weight:600;
+  color:var(--navy);margin:0 3px 6px 0}
+#filterSummary{padding:0 20px 6px;margin-top:-8px}
+
+/* RESPONSIVE */
+@media (max-width:900px){
+  .sidebar{display:none}
+  .main{margin-left:0}
+  .charts-grid.cols-2{grid-template-columns:1fr}
+  .chart-card.span2{grid-column:span 1}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-brand">
+    <svg class="hdr-logo" viewBox="0 0 40 40" fill="none">
+      <circle cx="20" cy="20" r="19" stroke="rgba(255,255,255,.18)" stroke-width="1.2"/>
+      <path d="M20 6C13.4 6 8 11.4 8 18c0 4.5 2.4 8.4 6 10.6V34l6-3 6 3v-5.4c3.6-2.2 6-6.1 6-10.6 0-6.6-5.4-12-12-12z" fill="rgba(255,255,255,.12)" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
+      <circle cx="20" cy="18" r="4" fill="rgba(255,255,255,.6)"/>
+    </svg>
+    <div class="hdr-title">
+      <h1>Competition Data</h1>
+      <p>The Victoria Golf Club</p>
+    </div>
+  </div>
+  <div class="hdr-meta">
+    <span class="hdr-badge" id="hdrRange">Q1 2026</span>
+    <span class="hdr-badge" id="hdrTotal">— members</span>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Search</div>
+      <input class="search-input" id="searchInput" type="text" placeholder="Search by name..." oninput="applyFilters()">
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Category</div>
+      <div class="seg" id="catSeg"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Age Bracket</div>
+      <div class="seg" id="ageSeg"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <button class="reset-btn" onclick="resetFilters()">Reset All Filters</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <div id="filterSummary"></div>
+
+    <!-- TAB BAR -->
+    <div class="tabbar">
+      <div class="tab active" onclick="showTab('overview')">Overview</div>
+      <div class="tab" onclick="showTab('members')">Members</div>
+      <div class="tab" onclick="showTab('category')">By Category</div>
+      <div class="tab" onclick="showTab('age')">By Age</div>
+    </div>
+
+    <!-- OVERVIEW TAB -->
+    <div class="panel active" id="tab-overview">
+      <div class="kpi-row" id="kpiRow"></div>
+      <div class="charts-grid cols-2">
+        <div class="chart-card span2">
+          <div class="chart-title">Competition vs Social Rounds by Category</div>
+          <div class="chart-sub">Stacked bar — all membership categories</div>
+          <div class="chart-wrap tall"><canvas id="catStackChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Overall Split</div>
+          <div class="chart-sub">Competition vs Social rounds</div>
+          <div class="chart-wrap short"><canvas id="splitChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Member Engagement</div>
+          <div class="chart-sub">Comp-only, Social-only, Both</div>
+          <div class="chart-wrap short"><canvas id="engagementChart"></canvas></div>
+        </div>
+        <div class="chart-card span2">
+          <div class="chart-title">Top 20 Most Active Competition Players</div>
+          <div class="chart-sub">By competition rounds played</div>
+          <div class="chart-wrap tall"><canvas id="topCompChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEMBERS TAB -->
+    <div class="panel" id="tab-members">
+      <div class="chart-card">
+        <div class="chart-title">All Members — Competition &amp; Social Participation</div>
+        <div class="chart-sub" id="memberTableSub">Click column headers to sort</div>
+        <div class="tbl-wrap">
+          <table class="tbl" id="memberTable">
+            <thead>
+              <tr>
+                <th onclick="sortTable('name')" data-col="name">Member</th>
+                <th onclick="sortTable('category')" data-col="category">Category</th>
+                <th onclick="sortTable('age')" data-col="age">Age</th>
+                <th onclick="sortTable('compRounds')" data-col="compRounds">Comp</th>
+                <th onclick="sortTable('socialRounds')" data-col="socialRounds">Social</th>
+                <th onclick="sortTable('totalRounds')" data-col="totalRounds" class="sort-desc">Total</th>
+                <th onclick="sortTable('compPct')" data-col="compPct">Comp %</th>
+              </tr>
+            </thead>
+            <tbody id="memberTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- BY CATEGORY TAB -->
+    <div class="panel" id="tab-category">
+      <div class="summary-grid" id="catKPIs"></div>
+      <div class="charts-grid cols-2">
+        <div class="chart-card span2">
+          <div class="chart-title">Average Rounds per Member by Category</div>
+          <div class="chart-sub">Comp vs Social — grouped bar</div>
+          <div class="chart-wrap tall"><canvas id="catAvgChart"></canvas></div>
+        </div>
+        <div class="chart-card span2">
+          <div class="chart-title">Competition % by Category</div>
+          <div class="chart-sub">Share of total rounds that are competition</div>
+          <div class="chart-wrap"><canvas id="catCompPctChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BY AGE TAB -->
+    <div class="panel" id="tab-age">
+      <div class="summary-grid" id="ageKPIs"></div>
+      <div class="charts-grid cols-2">
+        <div class="chart-card span2">
+          <div class="chart-title">Rounds by Age Bracket</div>
+          <div class="chart-sub">Competition vs Social — stacked bar</div>
+          <div class="chart-wrap"><canvas id="ageStackChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Average Rounds per Member by Age</div>
+          <div class="chart-sub">Comp vs Social — grouped bar</div>
+          <div class="chart-wrap"><canvas id="ageAvgChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Member Count by Age Bracket</div>
+          <div class="chart-sub">Number of active members</div>
+          <div class="chart-wrap"><canvas id="ageCountChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

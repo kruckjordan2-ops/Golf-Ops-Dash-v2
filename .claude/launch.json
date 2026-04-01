@@ -24,6 +24,62 @@
         "site"
       ],
       "port": 8766
+    },
+    {
+      "name": "spend-tracking",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8768"
+      ],
+      "port": 8768
+    },
+    {
+      "name": "fnb-sync",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8767",
+        "--directory",
+        "tools/fnb-sync"
+      ],
+      "port": 8767
+    },
+    {
+      "name": "booking-analysis",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8769",
+        "--directory",
+        "tools/booking-analysis"
+      ],
+      "port": 8769
+    },
+    {
+      "name": "sales-dashboard",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8770"
+      ],
+      "port": 8770
+    },
+    {
+      "name": "competition-data",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8771",
+        "--directory",
+        "tools/competition-data"
+      ],
+      "port": 8771
     }
   ]
 }

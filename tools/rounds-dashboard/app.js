@@ -73,7 +73,14 @@ const SC_STACK={x:{stacked:true,...SC.x},y:{stacked:true,...SC.y}};
 const SC_PCT={...SC,y:{...SC.y,ticks:{...SC.y.ticks,callback:v=>v+'%'},suggestedMin:0,suggestedMax:100}};
 
 // ── DATA GETTERS ──────────────────────────────────────
-function getYears(){return S.year==='all'?YEARS:[S.year];}
+function getYears(){
+  // FY spans two calendar years — return both
+  if(S.periodType==='fy'&&S.period){
+    const fy=parseInt(S.period.replace('fy',''));
+    return [fy-1,fy].filter(y=>YEARS.includes(y));
+  }
+  return S.year==='all'?YEARS:[S.year];
+}
 const CURRENT_YEAR=new Date().getFullYear();
 function getYearsNoPartial(){return getYears().filter(y=>y<CURRENT_YEAR);}
 
@@ -88,24 +95,48 @@ function getActiveMos(){
     return (sm[S.period]||[1,2,3,4,5,6,7,8,9,10,11,12]).filter(m=>[...S.months].includes(MONTHS[m-1]));
   }
   if(S.periodType==='month')return S.period?[parseInt(S.period)]:[1,2,3,4,5,6,7,8,9,10,11,12];
-  if(S.periodType==='fy')return [1,2,3,4,5,6,7,8,9,10,11,12]; // FY uses all months but split across years
+  if(S.periodType==='fy')return [1,2,3,4,5,6,7,8,9,10,11,12];
   return [1,2,3,4,5,6,7,8,9,10,11,12];
 }
 
-// FY helper: sum across two calendar years for Jul-Jun
-function fySum(key){
-  if(S.periodType!=='fy'||!S.period)return filteredSum(key);
-  const fyYear=parseInt(S.period.replace('fy',''));
-  // Jul-Dec of previous calendar year + Jan-Jun of fyYear
-  const h1=sumMos(fyYear-1,[7,8,9,10,11,12],key); // Jul-Dec year-1
-  const h2=sumMos(fyYear,[1,2,3,4,5,6],key);       // Jan-Jun fyYear
-  return h1+h2;
+// For FY: returns which months to use for a given calendar year
+function getMosForYear(year){
+  if(S.periodType==='fy'&&S.period){
+    const fy=parseInt(S.period.replace('fy',''));
+    if(year===fy-1) return [7,8,9,10,11,12]; // Jul–Dec of prior year
+    if(year===fy)   return [1,2,3,4,5,6];     // Jan–Jun of FY year
+    return [];
+  }
+  return getActiveMos();
+}
+
+// Returns [{y,m,label}] for the Jul-Jun sequence of the selected FY, or null
+function getFYSeries(){
+  if(S.periodType!=='fy'||!S.period) return null;
+  const fy=parseInt(S.period.replace('fy',''));
+  return [
+    ...[7,8,9,10,11,12].map(m=>({y:fy-1,m,label:MO[m-1]})),
+    ...[1,2,3,4,5,6]   .map(m=>({y:fy,  m,label:MO[m-1]})),
+  ];
 }
 
 function fyLabel(){
   if(S.periodType!=='fy'||!S.period)return '';
   const y=parseInt(S.period.replace('fy',''));
   return 'FY'+y+' (Jul '+(y-1)+'–Jun '+y+')';
+}
+
+// Sum a key across the FY sequence
+function fySum(key){
+  const fyS=getFYSeries();
+  if(!fyS)return 0;
+  return fyS.reduce((s,pt)=>s+mVal(pt.y,pt.m,key),0);
+}
+
+// Resolve year for single-year charts: for FY use the end year, else use selection or latest
+function resolveDisplayYear(){
+  if(S.periodType==='fy'&&S.period) return parseInt(S.period.replace('fy',''));
+  return S.year==='all'?YEARS[YEARS.length-1]:S.year;
 }
 
 function getActiveDays(){return [...S.days];}
@@ -161,7 +192,7 @@ function filteredSum(key){
 }
 
 function filteredSumByYear(year,key){
-  return sumMos(year,getActiveMos(),key);
+  return sumMos(year,getMosForYear(year),key);
 }
 
 function avgByYear(key){
@@ -257,7 +288,20 @@ function toggleMonth(m,on){on?S.months.add(m):S.months.delete(m);updateFilterSum
 function toggleDay(d,on){on?S.days.add(d):S.days.delete(d);updateFilterSummary();renderAll();}
 
 function updateFilterSummary(){
-  const yr=S.year==='all'?'All Years':String(S.year);
+  let yr;
+  if(S.periodType==='fy'&&S.period){
+    yr=fyLabel();
+  } else if(S.periodType==='q'&&S.period){
+    yr=S.year==='all'?'All Years':String(S.year);
+    yr+=` · ${S.period.toUpperCase()}`;
+  } else if(S.periodType==='season'&&S.period){
+    yr=S.year==='all'?'All Years':String(S.year);
+    yr+=` · ${S.period.charAt(0).toUpperCase()+S.period.slice(1)}`;
+  } else if(S.periodType==='month'&&S.period){
+    yr=(S.year==='all'?'All Years':String(S.year))+' · '+MONTHS[parseInt(S.period)-1];
+  } else {
+    yr=S.year==='all'?'All Years':String(S.year);
+  }
   const mo=S.months.size===12?'All Months':S.months.size+' Months';
   const dy=S.days.size===7?'All Days':S.days.size+' Days';
   document.getElementById('filterSummary').textContent=`${yr} · ${mo} · ${dy}`;
@@ -281,8 +325,9 @@ function resetFilters(){
 // KPIs
 // ═══════════════════════════════════════════════════════
 function buildKPIs(){
-  const mos=getActiveMos();
   const years=getYears();
+  const isFY=S.periodType==='fy'&&S.period;
+  const fyYear=isFY?parseInt(S.period.replace('fy','')):null;
   const kpis=[
     {k:'total',l:'Total Rounds',cls:''},
     {k:'am',l:'AM Field',cls:'s1'},
@@ -292,20 +337,32 @@ function buildKPIs(){
     {k:'comp',l:'Competition',cls:'s5'},
     {k:'corporate',l:'Corporate',cls:'s6'},
   ];
+  // Total months across all selected years (for avg/day calc)
+  const totalMos=years.reduce((s,y)=>s+getMosForYear(y).length,0)||1;
   document.getElementById('kpiRow').innerHTML=kpis.map(({k,l,cls})=>{
-    const curr=years.reduce((s,y)=>s+sumMos(y,mos,k),0);
-    const total=years.reduce((s,y)=>s+sumMos(y,mos,'total'),0);
-    const prev=S.year!=='all'&&S.year>2023?sumMos(S.year-1,mos,k):null;
+    const curr=years.reduce((s,y)=>s+filteredSumByYear(y,k),0);
+    const total=years.reduce((s,y)=>s+filteredSumByYear(y,'total'),0);
+    // YoY delta: for FY compare FY-1, for single year compare prior year
+    let prev=null;
+    if(isFY&&fyYear){
+      const prevFYYears=[fyYear-2,fyYear-1].filter(y=>YEARS.includes(y));
+      prev=prevFYYears.length===2?sumMos(fyYear-2,[7,8,9,10,11,12],k)+sumMos(fyYear-1,[1,2,3,4,5,6],k):null;
+    } else if(S.year!=='all'){
+      const mos=getActiveMos();
+      prev=YEARS.includes(S.year-1)?sumMos(S.year-1,mos,k):null;
+    }
     const d=prev?delta(curr,prev):{txt:'',cls:'flat'};
-    const sub=k==='total'?`${fmtD(curr/(mos.length*26||1))} avg/day`:
+    const periodLbl=isFY?`FY${fyYear}`:S.year==='all'?'All years':String(S.year);
+    const sub=k==='total'?`${fmtD(curr/(totalMos*26||1))} avg/day`:
               k==='guests'?`${fmtP(curr/(total||1))} of total`:
               k==='comp'?`${fmtP(curr/(total||1))} of total`:
               k==='after3'&&curr===0?'Tracked from Oct 2025':'';
+    const deltaLbl=isFY?`vs FY${fyYear-1}`:S.year!=='all'?`vs ${S.year-1}`:'';
     return `<div class="kpi ${cls}">
       <div class="kpi-lbl">${l}</div>
       <div class="kpi-val">${fmtN(curr)}</div>
       <div class="kpi-sub">${sub}</div>
-      ${d.txt?`<div class="kpi-delta ${d.cls}">${d.txt} vs ${S.year-1}</div>`:''}
+      ${d.txt?`<div class="kpi-delta ${d.cls}">${d.txt} ${deltaLbl}</div>`:''}
     </div>`;
   }).join('');
 }
@@ -314,29 +371,38 @@ function buildKPIs(){
 // OVERVIEW CHARTS
 // ═══════════════════════════════════════════════════════
 function buildMainChart(){
-  const mos=getActiveMos(); const years=getYears();
-  const labels=mos.map(m=>MO[m-1]);
+  const fyS=getFYSeries();
   const type=S.chartType==='stack'?'bar':S.chartType;
   const stacked=S.chartType==='stack';
-  const ds=years.flatMap(y=>{
-    if(stacked){
-      return[
-        {label:`${y} AM`,data:mos.map(m=>mVal(y,m,'am')),backgroundColor:YC[y]+'dd',stack:`${y}`,type:'bar'},
-        {label:`${y} PM`,data:mos.map(m=>mVal(y,m,'pm')),backgroundColor:YC[y]+'77',stack:`${y}`,type:'bar'},
-      ];
-    }
-    return[{
-      label:String(y),
-      data:mos.map(m=>mVal(y,m,S.metric)),
-      backgroundColor:YC_A[y],
-      borderColor:YC[y],
-      borderWidth:type==='line'?2:1,
-      fill:type==='line'&&S.chartType==='line',
-      tension:.35,
-      pointRadius:type==='line'?3:0,
-      type,
+  let labels, ds;
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    labels=fyS.map(pt=>pt.label);
+    ds=stacked?[
+      {label:`FY${fyYear} AM`,data:fyS.map(pt=>mVal(pt.y,pt.m,'am')),backgroundColor:P[0]+'dd',stack:'fy',type:'bar'},
+      {label:`FY${fyYear} PM`,data:fyS.map(pt=>mVal(pt.y,pt.m,'pm')),backgroundColor:P[0]+'77',stack:'fy',type:'bar'},
+    ]:[{
+      label:`FY${fyYear}`,data:fyS.map(pt=>mVal(pt.y,pt.m,S.metric)),
+      backgroundColor:P[0]+'99',borderColor:P[0],borderWidth:type==='line'?2:1,
+      fill:false,tension:.35,pointRadius:type==='line'?3:0,type,
     }];
-  });
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    labels=mos.map(m=>MO[m-1]);
+    ds=years.flatMap(y=>{
+      if(stacked){
+        return[
+          {label:`${y} AM`,data:mos.map(m=>mVal(y,m,'am')),backgroundColor:YC[y]+'dd',stack:`${y}`,type:'bar'},
+          {label:`${y} PM`,data:mos.map(m=>mVal(y,m,'pm')),backgroundColor:YC[y]+'77',stack:`${y}`,type:'bar'},
+        ];
+      }
+      return[{
+        label:String(y),data:mos.map(m=>mVal(y,m,S.metric)),
+        backgroundColor:YC_A[y],borderColor:YC[y],borderWidth:type==='line'?2:1,
+        fill:type==='line'&&S.chartType==='line',tension:.35,pointRadius:type==='line'?3:0,type,
+      }];
+    });
+  }
   document.getElementById('mainChartSub').textContent=`${MLABELS[S.metric]||S.metric}`;
   mkChart('mainChart',type,{labels,datasets:ds},{
     scales:stacked?SC_STACK:SC,
@@ -390,16 +456,24 @@ function buildGuestDonut(){
 }
 
 function buildTrendLine(){
-  const mos=getActiveMos();
-  mkChart('trendLine','line',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:YEARS.map(y=>({
-      label:String(y),
-      data:mos.map(m=>mVal(y,m,S.metric)),
-      borderColor:YC[y],backgroundColor:'transparent',
-      tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
-    }))
-  },{scales:SC});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('trendLine','line',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[{label:`FY${fyYear}`,data:fyS.map(pt=>mVal(pt.y,pt.m,S.metric)),
+        borderColor:P[0],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true}]
+    },{scales:SC});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('trendLine','line',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.map(y=>({
+        label:String(y),data:mos.map(m=>mVal(y,m,S.metric)),
+        borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
+      }))
+    },{scales:SC});
+  }
 }
 
 function buildSeasonOverview(){
@@ -456,78 +530,147 @@ function buildInsights(){
 // MONTHLY PAGE
 // ═══════════════════════════════════════════════════════
 function buildMonthlyMain(){
-  const mos=getActiveMos(); const years=getYears();
-  const labels=mos.map(m=>MO[m-1]);
+  const fyS=getFYSeries();
   const type=S.chartType==='stack'?'bar':S.chartType;
   document.getElementById('monthlyChartSub').textContent=MLABELS[S.metric];
-  mkChart('monthlyMain',type,{
-    labels,
-    datasets:years.map(y=>({
-      label:String(y),data:mos.map(m=>mVal(y,m,S.metric)),
-      backgroundColor:YC_A[y],borderColor:YC[y],borderWidth:type==='line'?2:1,
-      tension:.35,pointRadius:type==='line'?3:0,fill:false,spanGaps:true
-    }))
-  },{scales:SC});
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('monthlyMain',type,{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[{
+        label:`FY${fyYear}`,data:fyS.map(pt=>mVal(pt.y,pt.m,S.metric)),
+        backgroundColor:P[0]+'99',borderColor:P[0],borderWidth:type==='line'?2:1,
+        tension:.35,pointRadius:type==='line'?3:0,fill:false,spanGaps:true
+      }]
+    },{scales:SC});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('monthlyMain',type,{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.map(y=>({
+        label:String(y),data:mos.map(m=>mVal(y,m,S.metric)),
+        backgroundColor:YC_A[y],borderColor:YC[y],borderWidth:type==='line'?2:1,
+        tension:.35,pointRadius:type==='line'?3:0,fill:false,spanGaps:true
+      }))
+    },{scales:SC});
+  }
 }
 
 function buildAmPmChart(){
-  const mos=getActiveMos(); const years=getYears();
-  const y=years[years.length-1]||YEARS[YEARS.length-1];
-  mkChart('amPmChart','bar',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:[
-      {label:'AM',data:mos.map(m=>mVal(y,m,'am')),backgroundColor:P[0]+'cc',stack:'a'},
-      {label:'PM',data:mos.map(m=>mVal(y,m,'pm')),backgroundColor:P[1]+'cc',stack:'a'},
-      {label:'After 3pm',data:mos.map(m=>mVal(y,m,'after3')),backgroundColor:P[2]+'cc',stack:'a'},
-    ]
-  },{scales:SC_STACK});
+  const fyS=getFYSeries();
+  if(fyS){
+    mkChart('amPmChart','bar',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[
+        {label:'AM',data:fyS.map(pt=>mVal(pt.y,pt.m,'am')),backgroundColor:P[0]+'cc',stack:'a'},
+        {label:'PM',data:fyS.map(pt=>mVal(pt.y,pt.m,'pm')),backgroundColor:P[1]+'cc',stack:'a'},
+        {label:'After 3pm',data:fyS.map(pt=>mVal(pt.y,pt.m,'after3')),backgroundColor:P[2]+'cc',stack:'a'},
+      ]
+    },{scales:SC_STACK});
+  } else {
+    const mos=getActiveMos();
+    const y=resolveDisplayYear();
+    mkChart('amPmChart','bar',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:[
+        {label:'AM',data:mos.map(m=>mVal(y,m,'am')),backgroundColor:P[0]+'cc',stack:'a'},
+        {label:'PM',data:mos.map(m=>mVal(y,m,'pm')),backgroundColor:P[1]+'cc',stack:'a'},
+        {label:'After 3pm',data:mos.map(m=>mVal(y,m,'after3')),backgroundColor:P[2]+'cc',stack:'a'},
+      ]
+    },{scales:SC_STACK});
+  }
 }
 
 function buildRatioChart(){
-  const mos=getActiveMos();
-  mkChart('ratioChart','line',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:YEARS.map(y=>({
-      label:String(y),
-      data:mos.map(m=>{const v=RAW[y]?.monthly?.[MONTHS[m-1]]?.guest_ratio;return v?(v*100).toFixed(1):null;}),
-      borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
-    }))
-  },{scales:SC_PCT});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('ratioChart','line',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[{label:`FY${fyYear}`,
+        data:fyS.map(pt=>{const v=RAW[pt.y]?.monthly?.[MONTHS[pt.m-1]]?.guest_ratio;return v?(v*100).toFixed(1):null;}),
+        borderColor:P[0],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true}]
+    },{scales:SC_PCT});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('ratioChart','line',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.map(y=>({
+        label:String(y),
+        data:mos.map(m=>{const v=RAW[y]?.monthly?.[MONTHS[m-1]]?.guest_ratio;return v?(v*100).toFixed(1):null;}),
+        borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
+      }))
+    },{scales:SC_PCT});
+  }
 }
 
 function buildCorpEventChart(){
-  const mos=getActiveMos(); const years=getYears();
-  mkChart('corpEventChart','bar',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:years.flatMap(y=>[
-      {label:`${y} Corp`,data:mos.map(m=>mVal(y,m,'corporate')),backgroundColor:YC[y]+'cc',stack:`${y}`},
-      {label:`${y} Event`,data:mos.map(m=>mVal(y,m,'event')),backgroundColor:YC[y]+'55',stack:`${y}`},
-    ])
-  },{scales:SC_STACK});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('corpEventChart','bar',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[
+        {label:`FY${fyYear} Corp`,data:fyS.map(pt=>mVal(pt.y,pt.m,'corporate')),backgroundColor:P[0]+'cc',stack:'fy'},
+        {label:`FY${fyYear} Event`,data:fyS.map(pt=>mVal(pt.y,pt.m,'event')),backgroundColor:P[0]+'55',stack:'fy'},
+      ]
+    },{scales:SC_STACK});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('corpEventChart','bar',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.flatMap(y=>[
+        {label:`${y} Corp`,data:mos.map(m=>mVal(y,m,'corporate')),backgroundColor:YC[y]+'cc',stack:`${y}`},
+        {label:`${y} Event`,data:mos.map(m=>mVal(y,m,'event')),backgroundColor:YC[y]+'55',stack:`${y}`},
+      ])
+    },{scales:SC_STACK});
+  }
 }
 
 function buildDailyAvgChart(){
-  const mos=getActiveMos();
-  mkChart('dailyAvgChart','line',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:YEARS.map(y=>({
-      label:String(y),
-      data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.total?.daily?.toFixed(1)||null),
-      borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
-    }))
-  },{scales:SC});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('dailyAvgChart','line',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[{label:`FY${fyYear}`,
+        data:fyS.map(pt=>RAW[pt.y]?.monthly_avgs?.[MONTHS[pt.m-1]]?.total?.daily?.toFixed(1)||null),
+        borderColor:P[0],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true}]
+    },{scales:SC});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('dailyAvgChart','line',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.map(y=>({
+        label:String(y),
+        data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.total?.daily?.toFixed(1)||null),
+        borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
+      }))
+    },{scales:SC});
+  }
 }
 
 function buildWeeklyAvgChart(){
-  const mos=getActiveMos();
-  mkChart('weeklyAvgChart','line',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:YEARS.map(y=>({
-      label:String(y),
-      data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.total?.weekly?.toFixed(0)||null),
-      borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
-    }))
-  },{scales:SC});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('weeklyAvgChart','line',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[{label:`FY${fyYear}`,
+        data:fyS.map(pt=>RAW[pt.y]?.monthly_avgs?.[MONTHS[pt.m-1]]?.total?.weekly?.toFixed(0)||null),
+        borderColor:P[0],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true}]
+    },{scales:SC});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('weeklyAvgChart','line',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.map(y=>({
+        label:String(y),
+        data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.total?.weekly?.toFixed(0)||null),
+        borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
+      }))
+    },{scales:SC});
+  }
 }
 
 function buildMonthlyTable(){
@@ -687,90 +830,171 @@ function buildOccTable(){
 // ═══════════════════════════════════════════════════════
 // DOW PAGE
 // ═══════════════════════════════════════════════════════
+// Sum a DOW metric across the correct months for a given year (FY-aware)
+function dowSum(y,d,key){
+  return getMosForYear(y).reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.[key]||0),0);
+}
+// Sum a DOW metric across ALL FY months (across two years)
+function dowFYSum(d,key){
+  const fyS=getFYSeries();
+  if(!fyS)return 0;
+  return fyS.reduce((s,pt)=>s+(RAW[pt.y]?.pivot?.[MONTHS[pt.m-1]]?.[d]?.[key]||0),0);
+}
+
 function buildDowTotal(){
   const years=getYears();
   const activeDays=DAYS.filter(d=>S.days.has(d));
+  const fyS=getFYSeries();
   document.getElementById('dowSub').textContent=MLABELS[S.metric];
-  mkChart('dowTotal','bar',{
-    labels:activeDays.map(d=>d.slice(0,3)),
-    datasets:years.map(y=>({
-      label:String(y),
-      data:activeDays.map(d=>getActiveMos().reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.[S.metric]||0),0)),
-      backgroundColor:YC[y]+'cc'
-    }))
-  },{scales:SC});
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('dowTotal','bar',{
+      labels:activeDays.map(d=>d.slice(0,3)),
+      datasets:[{label:`FY${fyYear}`,data:activeDays.map(d=>dowFYSum(d,S.metric)),backgroundColor:P[0]+'cc'}]
+    },{scales:SC});
+  } else {
+    mkChart('dowTotal','bar',{
+      labels:activeDays.map(d=>d.slice(0,3)),
+      datasets:years.map(y=>({
+        label:String(y),
+        data:activeDays.map(d=>dowSum(y,d,S.metric)),
+        backgroundColor:YC[y]+'cc'
+      }))
+    },{scales:SC});
+  }
 }
 
 function buildDowAmPm(){
-  const y=S.year==='all'?YEARS[YEARS.length-1]:S.year;
-  const mos=getActiveMos();
-  mkChart('dowAmPm','bar',{
-    labels:DS,
-    datasets:[
-      {label:'AM',data:DAYS.map(d=>mos.reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.am||0),0)),backgroundColor:P[0]+'cc',stack:'a'},
-      {label:'PM',data:DAYS.map(d=>mos.reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.pm||0),0)),backgroundColor:P[1]+'cc',stack:'a'},
-      {label:'After 3pm',data:DAYS.map(d=>mos.reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.after3||0),0)),backgroundColor:P[2]+'cc',stack:'a'},
-    ]
-  },{scales:SC_STACK});
+  const activeDays=DAYS.filter(d=>S.days.has(d));
+  const fyS=getFYSeries();
+  if(fyS){
+    mkChart('dowAmPm','bar',{
+      labels:activeDays.map(d=>d.slice(0,3)),
+      datasets:[
+        {label:'AM',data:activeDays.map(d=>dowFYSum(d,'am')),backgroundColor:P[0]+'cc',stack:'a'},
+        {label:'PM',data:activeDays.map(d=>dowFYSum(d,'pm')),backgroundColor:P[1]+'cc',stack:'a'},
+        {label:'After 3pm',data:activeDays.map(d=>dowFYSum(d,'after3')),backgroundColor:P[2]+'cc',stack:'a'},
+      ]
+    },{scales:SC_STACK});
+  } else {
+    const y=resolveDisplayYear();
+    mkChart('dowAmPm','bar',{
+      labels:activeDays.map(d=>d.slice(0,3)),
+      datasets:[
+        {label:'AM',data:activeDays.map(d=>dowSum(y,d,'am')),backgroundColor:P[0]+'cc',stack:'a'},
+        {label:'PM',data:activeDays.map(d=>dowSum(y,d,'pm')),backgroundColor:P[1]+'cc',stack:'a'},
+        {label:'After 3pm',data:activeDays.map(d=>dowSum(y,d,'after3')),backgroundColor:P[2]+'cc',stack:'a'},
+      ]
+    },{scales:SC_STACK});
+  }
 }
 
 function buildDowGuestRatio(){
-  const years=getYears(); const mos=getActiveMos();
-  mkChart('dowGuestRatio','bar',{
-    labels:DS,
-    datasets:years.map(y=>({
-      label:String(y),
-      data:DAYS.map(d=>{
-        const t=mos.reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.total||0),0);
-        const g=mos.reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.guests||0),0);
+  const years=getYears();
+  const activeDays=DAYS.filter(d=>S.days.has(d));
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('dowGuestRatio','bar',{
+      labels:activeDays.map(d=>d.slice(0,3)),
+      datasets:[{label:`FY${fyYear}`,data:activeDays.map(d=>{
+        const t=dowFYSum(d,'total'), g=dowFYSum(d,'guests');
         return t?(g/t*100).toFixed(1):0;
-      }),
-      backgroundColor:YC[y]+'cc'
-    }))
-  },{scales:{x:SC.x,y:{...SC.y,ticks:{callback:v=>v+'%'}}}});
+      }),backgroundColor:P[0]+'cc'}]
+    },{scales:{x:SC.x,y:{...SC.y,ticks:{callback:v=>v+'%'}}}});
+  } else {
+    mkChart('dowGuestRatio','bar',{
+      labels:activeDays.map(d=>d.slice(0,3)),
+      datasets:years.map(y=>({
+        label:String(y),
+        data:activeDays.map(d=>{
+          const t=dowSum(y,d,'total'), g=dowSum(y,d,'guests');
+          return t?(g/t*100).toFixed(1):0;
+        }),
+        backgroundColor:YC[y]+'cc'
+      }))
+    },{scales:{x:SC.x,y:{...SC.y,ticks:{callback:v=>v+'%'}}}});
+  }
 }
 
 function buildDowComp(){
-  const years=getYears(); const mos=getActiveMos();
-  mkChart('dowComp','bar',{
-    labels:DS,
-    datasets:years.map(y=>({
-      label:String(y),
-      data:DAYS.map(d=>mos.reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.comp||0),0)),
-      backgroundColor:YC[y]+'cc'
-    }))
-  },{scales:SC});
+  const years=getYears();
+  const activeDays=DAYS.filter(d=>S.days.has(d));
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('dowComp','bar',{
+      labels:activeDays.map(d=>d.slice(0,3)),
+      datasets:[{label:`FY${fyYear}`,data:activeDays.map(d=>dowFYSum(d,'comp')),backgroundColor:P[0]+'cc'}]
+    },{scales:SC});
+  } else {
+    mkChart('dowComp','bar',{
+      labels:activeDays.map(d=>d.slice(0,3)),
+      datasets:years.map(y=>({
+        label:String(y),
+        data:activeDays.map(d=>dowSum(y,d,'comp')),
+        backgroundColor:YC[y]+'cc'
+      }))
+    },{scales:SC});
+  }
 }
 
 function buildDowShare(){
-  const years=getYears(); const mos=getActiveMos();
-  mkChart('dowShare','line',{
-    labels:DS,
-    datasets:years.map(y=>({
-      label:String(y),
-      data:DAYS.map(d=>{
-        const t=mos.reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.total||0),0);
-        const yr=mos.reduce((s,m)=>s+(RAW[y]?.monthly?.[MONTHS[m-1]]?.total||0),0)||1;
-        return (t/yr*100).toFixed(1);
-      }),
-      borderColor:YC[y],backgroundColor:'transparent',tension:.3,pointRadius:4,borderWidth:2
-    }))
-  },{scales:{x:SC.x,y:{...SC.y,ticks:{callback:v=>v+'%'}}}});
+  const years=getYears();
+  const activeDays=DAYS.filter(d=>S.days.has(d));
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    const totalFY=activeDays.reduce((s,d)=>s+dowFYSum(d,'total'),0)||1;
+    mkChart('dowShare','line',{
+      labels:activeDays.map(d=>d.slice(0,3)),
+      datasets:[{label:`FY${fyYear}`,data:activeDays.map(d=>(dowFYSum(d,'total')/totalFY*100).toFixed(1)),
+        borderColor:P[0],backgroundColor:'transparent',tension:.3,pointRadius:4,borderWidth:2}]
+    },{scales:{x:SC.x,y:{...SC.y,ticks:{callback:v=>v+'%'}}}});
+  } else {
+    mkChart('dowShare','line',{
+      labels:activeDays.map(d=>d.slice(0,3)),
+      datasets:years.map(y=>({
+        label:String(y),
+        data:activeDays.map(d=>{
+          const t=dowSum(y,d,'total');
+          const yr=getMosForYear(y).reduce((s,m)=>s+(RAW[y]?.monthly?.[MONTHS[m-1]]?.total||0),0)||1;
+          return (t/yr*100).toFixed(1);
+        }),
+        borderColor:YC[y],backgroundColor:'transparent',tension:.3,pointRadius:4,borderWidth:2
+      }))
+    },{scales:{x:SC.x,y:{...SC.y,ticks:{callback:v=>v+'%'}}}});
+  }
 }
 
 function buildDowCorpEvent(){
-  const years=getYears(); const mos=getActiveMos();
-  mkChart('dowCorpEvent','bar',{
-    labels:DS,
-    datasets:years.flatMap(y=>[
-      {label:`${y} Corp`,data:DAYS.map(d=>mos.reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.corporate||0),0)),backgroundColor:YC[y]+'cc',stack:`${y}`},
-      {label:`${y} Event`,data:DAYS.map(d=>mos.reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.event||0),0)),backgroundColor:YC[y]+'55',stack:`${y}`},
-    ])
-  },{scales:SC_STACK});
+  const years=getYears();
+  const activeDays=DAYS.filter(d=>S.days.has(d));
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('dowCorpEvent','bar',{
+      labels:activeDays.map(d=>d.slice(0,3)),
+      datasets:[
+        {label:`FY${fyYear} Corp`,data:activeDays.map(d=>dowFYSum(d,'corporate')),backgroundColor:P[0]+'cc',stack:'fy'},
+        {label:`FY${fyYear} Event`,data:activeDays.map(d=>dowFYSum(d,'event')),backgroundColor:P[0]+'55',stack:'fy'},
+      ]
+    },{scales:SC_STACK});
+  } else {
+    mkChart('dowCorpEvent','bar',{
+      labels:activeDays.map(d=>d.slice(0,3)),
+      datasets:years.flatMap(y=>[
+        {label:`${y} Corp`,data:activeDays.map(d=>dowSum(y,d,'corporate')),backgroundColor:YC[y]+'cc',stack:`${y}`},
+        {label:`${y} Event`,data:activeDays.map(d=>dowSum(y,d,'event')),backgroundColor:YC[y]+'55',stack:`${y}`},
+      ])
+    },{scales:SC_STACK});
+  }
 }
 
 function buildDowTable(){
-  const years=getYears(); const mos=getActiveMos();
+  const years=getYears();
+  const activeDays=DAYS.filter(d=>S.days.has(d));
+  const fyS=getFYSeries();
   const metrics=[
     {l:'Total',k:'total'},{l:'AM',k:'am'},{l:'PM',k:'pm'},{l:'After 3pm',k:'after3'},
     {l:'Guests',k:'guests'},{l:'Guest %',k:'_gp'},{l:'Members',k:'members'},
@@ -778,17 +1002,22 @@ function buildDowTable(){
     {l:'Member Intro',k:'memb_intro'},{l:'Interstate',k:'interstate'},{l:'International',k:'intl'},
   ];
   const tbl=document.getElementById('dowTable');
-  const hdr=`<thead><tr><th>Metric</th>${years.flatMap(y=>DAYS.map(d=>`<th style="color:${YC[y]}">${y} ${d.substring(0,3)}</th>`)).join('')}</tr></thead>`;
-  const body='<tbody>'+metrics.map(({l,k})=>`<tr><td>${l}</td>${years.flatMap(y=>DAYS.map(d=>{
-    if(k==='_gp'){
-      const t=mos.reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.total||0),0);
-      const g=mos.reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.guests||0),0);
-      return `<td>${t?(g/t*100).toFixed(1)+'%':'—'}</td>`;
-    }
-    const v=mos.reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.[k]||0),0);
-    return `<td>${fmtN(v)}</td>`;
-  })).join('')}</tr>`).join('')+'</tbody>';
-  tbl.innerHTML=hdr+body;
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    const hdr=`<thead><tr><th>Metric</th>${activeDays.map(d=>`<th>FY${fyYear} ${d.substring(0,3)}</th>`).join('')}</tr></thead>`;
+    const body='<tbody>'+metrics.map(({l,k})=>`<tr><td>${l}</td>${activeDays.map(d=>{
+      if(k==='_gp'){const t=dowFYSum(d,'total'),g=dowFYSum(d,'guests');return `<td>${t?(g/t*100).toFixed(1)+'%':'—'}</td>`;}
+      return `<td>${fmtN(dowFYSum(d,k))}</td>`;
+    }).join('')}</tr>`).join('')+'</tbody>';
+    tbl.innerHTML=hdr+body;
+  } else {
+    const hdr=`<thead><tr><th>Metric</th>${years.flatMap(y=>activeDays.map(d=>`<th style="color:${YC[y]}">${y} ${d.substring(0,3)}</th>`)).join('')}</tr></thead>`;
+    const body='<tbody>'+metrics.map(({l,k})=>`<tr><td>${l}</td>${years.flatMap(y=>activeDays.map(d=>{
+      if(k==='_gp'){const t=dowSum(y,d,'total'),g=dowSum(y,d,'guests');return `<td>${t?(g/t*100).toFixed(1)+'%':'—'}</td>`;}
+      return `<td>${fmtN(dowSum(y,d,k))}</td>`;
+    })).join('')}</tr>`).join('')+'</tbody>';
+    tbl.innerHTML=hdr+body;
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -805,65 +1034,114 @@ function buildGuestKPIs(){
 }
 
 function buildGuestTrend(){
-  const mos=getActiveMos(); const y=S.year==='all'?YEARS[YEARS.length-1]:S.year;
-  document.getElementById('guestTrendSub').textContent=String(y);
-  mkChart('guestTrend','bar',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:[
-      {label:'Memb Intro',data:mos.map(m=>mVal(y,m,'memb_intro')),backgroundColor:P[0]+'cc',stack:'a'},
-      {label:'Corporate',data:mos.map(m=>mVal(y,m,'corporate')),backgroundColor:P[1]+'cc',stack:'a'},
-      {label:'Interstate',data:mos.map(m=>mVal(y,m,'interstate')),backgroundColor:P[2]+'cc',stack:'a'},
-      {label:'International',data:mos.map(m=>mVal(y,m,'intl')),backgroundColor:P[3]+'cc',stack:'a'},
-      {label:'Voucher',data:mos.map(m=>mVal(y,m,'voucher')),backgroundColor:P[4]+'cc',stack:'a'},
-      {label:'Reciprocal',data:mos.map(m=>mVal(y,m,'recip')),backgroundColor:P[5]+'cc',stack:'a'},
-    ]
-  },{scales:SC_STACK});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    document.getElementById('guestTrendSub').textContent=`FY${fyYear}`;
+    mkChart('guestTrend','bar',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[
+        {label:'Memb Intro',data:fyS.map(pt=>mVal(pt.y,pt.m,'memb_intro')),backgroundColor:P[0]+'cc',stack:'a'},
+        {label:'Corporate',data:fyS.map(pt=>mVal(pt.y,pt.m,'corporate')),backgroundColor:P[1]+'cc',stack:'a'},
+        {label:'Interstate',data:fyS.map(pt=>mVal(pt.y,pt.m,'interstate')),backgroundColor:P[2]+'cc',stack:'a'},
+        {label:'International',data:fyS.map(pt=>mVal(pt.y,pt.m,'intl')),backgroundColor:P[3]+'cc',stack:'a'},
+        {label:'Voucher',data:fyS.map(pt=>mVal(pt.y,pt.m,'voucher')),backgroundColor:P[4]+'cc',stack:'a'},
+        {label:'Reciprocal',data:fyS.map(pt=>mVal(pt.y,pt.m,'recip')),backgroundColor:P[5]+'cc',stack:'a'},
+      ]
+    },{scales:SC_STACK});
+  } else {
+    const mos=getActiveMos(); const y=resolveDisplayYear();
+    document.getElementById('guestTrendSub').textContent=String(y);
+    mkChart('guestTrend','bar',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:[
+        {label:'Memb Intro',data:mos.map(m=>mVal(y,m,'memb_intro')),backgroundColor:P[0]+'cc',stack:'a'},
+        {label:'Corporate',data:mos.map(m=>mVal(y,m,'corporate')),backgroundColor:P[1]+'cc',stack:'a'},
+        {label:'Interstate',data:mos.map(m=>mVal(y,m,'interstate')),backgroundColor:P[2]+'cc',stack:'a'},
+        {label:'International',data:mos.map(m=>mVal(y,m,'intl')),backgroundColor:P[3]+'cc',stack:'a'},
+        {label:'Voucher',data:mos.map(m=>mVal(y,m,'voucher')),backgroundColor:P[4]+'cc',stack:'a'},
+        {label:'Reciprocal',data:mos.map(m=>mVal(y,m,'recip')),backgroundColor:P[5]+'cc',stack:'a'},
+      ]
+    },{scales:SC_STACK});
+  }
 }
 
 function buildGuestMix(){
-  const mos=getActiveMos();
+  const mos=getActiveMos(); const years=getYears();
   const cats=['memb_intro','corporate','interstate','intl','voucher','recip','industry'];
   mkChart('guestMix','bar',{
-    labels:YEARS,
+    labels:years,
     datasets:cats.map((k,i)=>({
       label:MLABELS[k]||k,
-      data:YEARS.map(y=>sumMos(y,mos,k)),
+      data:years.map(y=>sumMos(y,mos,k)),
       backgroundColor:P[i%P.length]+'cc',stack:'a'
     }))
   },{scales:SC_STACK});
 }
 
 function buildTravelChart(){
-  const mos=getActiveMos();
-  mkChart('travelChart','bar',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:YEARS.flatMap(y=>[
-      {label:`${y} Interstate`,data:mos.map(m=>mVal(y,m,'interstate')),backgroundColor:YC[y]+'cc',stack:`${y}`},
-      {label:`${y} Intl`,data:mos.map(m=>mVal(y,m,'intl')),backgroundColor:YC[y]+'55',stack:`${y}`},
-    ])
-  },{scales:SC_STACK});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('travelChart','bar',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[
+        {label:`FY${fyYear} Interstate`,data:fyS.map(pt=>mVal(pt.y,pt.m,'interstate')),backgroundColor:P[0]+'cc',stack:'fy'},
+        {label:`FY${fyYear} Intl`,data:fyS.map(pt=>mVal(pt.y,pt.m,'intl')),backgroundColor:P[0]+'55',stack:'fy'},
+      ]
+    },{scales:SC_STACK});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('travelChart','bar',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.flatMap(y=>[
+        {label:`${y} Interstate`,data:mos.map(m=>mVal(y,m,'interstate')),backgroundColor:YC[y]+'cc',stack:`${y}`},
+        {label:`${y} Intl`,data:mos.map(m=>mVal(y,m,'intl')),backgroundColor:YC[y]+'55',stack:`${y}`},
+      ])
+    },{scales:SC_STACK});
+  }
 }
 
 function buildCorpMonth(){
-  const mos=getActiveMos();
-  mkChart('corpMonth','line',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:YEARS.map(y=>({
-      label:String(y),data:mos.map(m=>mVal(y,m,'corporate')),
-      borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
-    }))
-  },{scales:SC});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('corpMonth','line',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[{label:`FY${fyYear}`,data:fyS.map(pt=>mVal(pt.y,pt.m,'corporate')),
+        borderColor:P[0],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true}]
+    },{scales:SC});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('corpMonth','line',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.map(y=>({
+        label:String(y),data:mos.map(m=>mVal(y,m,'corporate')),
+        borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
+      }))
+    },{scales:SC});
+  }
 }
 
 function buildMembIntroChart(){
-  const mos=getActiveMos();
-  mkChart('membIntroChart','line',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:YEARS.map(y=>({
-      label:String(y),data:mos.map(m=>mVal(y,m,'memb_intro')),
-      borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
-    }))
-  },{scales:SC});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('membIntroChart','line',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[{label:`FY${fyYear}`,data:fyS.map(pt=>mVal(pt.y,pt.m,'memb_intro')),
+        borderColor:P[0],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true}]
+    },{scales:SC});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('membIntroChart','line',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.map(y=>({
+        label:String(y),data:mos.map(m=>mVal(y,m,'memb_intro')),
+        borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
+      }))
+    },{scales:SC});
+  }
 }
 
 function buildGuestTable(){
@@ -902,7 +1180,7 @@ function buildSeasonCards(){
 function buildSeasonYear(){
   mkChart('seasonYear','bar',{
     labels:SEASONS.map(s=>s.l),
-    datasets:YEARS.map(y=>({
+    datasets:getYears().map(y=>({
       label:String(y),data:SEASONS.map(s=>sumMos(y,s.m,'total')),backgroundColor:YC[y]+'cc'
     }))
   },{scales:SC});
@@ -911,7 +1189,7 @@ function buildSeasonYear(){
 function buildQuarterChart(){
   mkChart('quarterChart','bar',{
     labels:QUARTERS.map(q=>q.l),
-    datasets:YEARS.map(y=>({
+    datasets:getYears().map(y=>({
       label:String(y),data:QUARTERS.map(q=>sumMos(y,q.m,'total')),backgroundColor:YC[y]+'cc'
     }))
   },{scales:SC});
@@ -920,7 +1198,7 @@ function buildQuarterChart(){
 function buildSeasonGuests(){
   mkChart('seasonGuests','bar',{
     labels:SEASONS.map(s=>s.l),
-    datasets:YEARS.map(y=>({
+    datasets:getYears().map(y=>({
       label:String(y),data:SEASONS.map(s=>sumMos(y,s.m,'guests')),backgroundColor:YC[y]+'cc'
     }))
   },{scales:SC});
@@ -984,7 +1262,7 @@ function buildHeatmap(containerId,getVal,formatVal){
 }
 
 function buildAllHeatmaps(){
-  const yr=S.year==='all'?2025:S.year;
+  const yr=resolveDisplayYear();
   buildHeatmap('hmRounds',(y,mn,d)=>RAW[y]?.pivot?.[mn]?.[d]?.total||0,fmtN);
   buildHeatmap('hmOcc',(y,mn,d)=>{const v=RAW[y]?.occ_report?.[mn]?.[d]?.total_occ;return v?(v*100):0;},v=>v.toFixed(0)+'%');
   buildHeatmap('hmGuest',(y,mn,d)=>{const t=RAW[y]?.pivot?.[mn]?.[d]?.total||0,g=RAW[y]?.pivot?.[mn]?.[d]?.guests||0;return t?(g/t*100):0;},v=>v.toFixed(0)+'%');
@@ -1080,74 +1358,141 @@ function buildCmpMonthTable(){
 // AVERAGES PAGE
 // ═══════════════════════════════════════════════════════
 function buildAvgDaily(){
-  const mos=getActiveMos();
-  mkChart('avgDaily','line',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:YEARS.map(y=>({
-      label:String(y),
-      data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.total?.daily?.toFixed(1)||null),
-      borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
-    }))
-  },{scales:SC});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('avgDaily','line',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[{label:`FY${fyYear}`,
+        data:fyS.map(pt=>RAW[pt.y]?.monthly_avgs?.[MONTHS[pt.m-1]]?.total?.daily?.toFixed(1)||null),
+        borderColor:P[0],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true}]
+    },{scales:SC});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('avgDaily','line',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.map(y=>({
+        label:String(y),
+        data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.total?.daily?.toFixed(1)||null),
+        borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
+      }))
+    },{scales:SC});
+  }
 }
 
 function buildAvgWeekly(){
-  const mos=getActiveMos();
-  mkChart('avgWeekly','line',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:YEARS.map(y=>({
-      label:String(y),
-      data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.total?.weekly?.toFixed(0)||null),
-      borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
-    }))
-  },{scales:SC});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('avgWeekly','line',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[{label:`FY${fyYear}`,
+        data:fyS.map(pt=>RAW[pt.y]?.monthly_avgs?.[MONTHS[pt.m-1]]?.total?.weekly?.toFixed(0)||null),
+        borderColor:P[0],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true}]
+    },{scales:SC});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('avgWeekly','line',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.map(y=>({
+        label:String(y),
+        data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.total?.weekly?.toFixed(0)||null),
+        borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:2,spanGaps:true
+      }))
+    },{scales:SC});
+  }
 }
 
 function buildAvgGuests(){
-  const mos=getActiveMos();
-  mkChart('avgGuests','bar',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:YEARS.map(y=>({
-      label:String(y),
-      data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.guests?.daily?.toFixed(1)||null),
-      backgroundColor:YC[y]+'cc',spanGaps:true
-    }))
-  },{scales:SC});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('avgGuests','bar',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[{label:`FY${fyYear}`,
+        data:fyS.map(pt=>RAW[pt.y]?.monthly_avgs?.[MONTHS[pt.m-1]]?.guests?.daily?.toFixed(1)||null),
+        backgroundColor:P[0]+'cc',spanGaps:true}]
+    },{scales:SC});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('avgGuests','bar',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.map(y=>({
+        label:String(y),
+        data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.guests?.daily?.toFixed(1)||null),
+        backgroundColor:YC[y]+'cc',spanGaps:true
+      }))
+    },{scales:SC});
+  }
 }
 
 function buildAvgComp(){
-  const mos=getActiveMos();
-  mkChart('avgComp','bar',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:YEARS.map(y=>({
-      label:String(y),
-      data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.comp?.daily?.toFixed(1)||null),
-      backgroundColor:YC[y]+'cc',spanGaps:true
-    }))
-  },{scales:SC});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('avgComp','bar',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[{label:`FY${fyYear}`,
+        data:fyS.map(pt=>RAW[pt.y]?.monthly_avgs?.[MONTHS[pt.m-1]]?.comp?.daily?.toFixed(1)||null),
+        backgroundColor:P[0]+'cc',spanGaps:true}]
+    },{scales:SC});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('avgComp','bar',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.map(y=>({
+        label:String(y),
+        data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.comp?.daily?.toFixed(1)||null),
+        backgroundColor:YC[y]+'cc',spanGaps:true
+      }))
+    },{scales:SC});
+  }
 }
 
 function buildAvgCorp(){
-  const mos=getActiveMos();
-  mkChart('avgCorp','bar',{
-    labels:mos.map(m=>MO[m-1]),
-    datasets:YEARS.map(y=>({
-      label:String(y),
-      data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.corporate?.daily?.toFixed(2)||null),
-      backgroundColor:YC[y]+'cc',spanGaps:true
-    }))
-  },{scales:SC});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('avgCorp','bar',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[{label:`FY${fyYear}`,
+        data:fyS.map(pt=>RAW[pt.y]?.monthly_avgs?.[MONTHS[pt.m-1]]?.corporate?.daily?.toFixed(2)||null),
+        backgroundColor:P[0]+'cc',spanGaps:true}]
+    },{scales:SC});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('avgCorp','bar',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.map(y=>({
+        label:String(y),
+        data:mos.map(m=>RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.corporate?.daily?.toFixed(2)||null),
+        backgroundColor:YC[y]+'cc',spanGaps:true
+      }))
+    },{scales:SC});
+  }
 }
 
 function buildAvgTable(){
-  const mos=getActiveMos(); const tbl=document.getElementById('avgTable');
+  const fyS=getFYSeries();
+  const tbl=document.getElementById('avgTable');
   const metrics=[{l:'Total',k:'total'},{l:'AM',k:'am'},{l:'PM',k:'pm'},{l:'Guests',k:'guests'},{l:'Members',k:'members'},{l:'Competition',k:'comp'},{l:'Corporate',k:'corporate'}];
-  const hdr=`<thead><tr><th>Metric</th>${YEARS.flatMap(y=>mos.map(m=>`<th style="color:${YC[y]}">${y} ${MO[m-1]} Daily</th>`)).join('')}</tr></thead>`;
-  const body='<tbody>'+metrics.map(({l,k})=>`<tr><td>${l}</td>${YEARS.flatMap(y=>mos.map(m=>{
-    const v=RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.[k]?.daily;
-    return `<td>${v!=null?v.toFixed(1):'—'}</td>`;
-  })).join('')}</tr>`).join('')+'</tbody>';
-  tbl.innerHTML=hdr+body;
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    const hdr=`<thead><tr><th>Metric</th>${fyS.map(pt=>`<th>FY${fyYear} ${pt.label} Daily</th>`).join('')}</tr></thead>`;
+    const body='<tbody>'+metrics.map(({l,k})=>`<tr><td>${l}</td>${fyS.map(pt=>{
+      const v=RAW[pt.y]?.monthly_avgs?.[MONTHS[pt.m-1]]?.[k]?.daily;
+      return `<td>${v!=null?v.toFixed(1):'—'}</td>`;
+    }).join('')}</tr>`).join('')+'</tbody>';
+    tbl.innerHTML=hdr+body;
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    const hdr=`<thead><tr><th>Metric</th>${years.flatMap(y=>mos.map(m=>`<th style="color:${YC[y]}">${y} ${MO[m-1]} Daily</th>`)).join('')}</tr></thead>`;
+    const body='<tbody>'+metrics.map(({l,k})=>`<tr><td>${l}</td>${years.flatMap(y=>mos.map(m=>{
+      const v=RAW[y]?.monthly_avgs?.[MONTHS[m-1]]?.[k]?.daily;
+      return `<td>${v!=null?v.toFixed(1):'—'}</td>`;
+    })).join('')}</tr>`).join('')+'</tbody>';
+    tbl.innerHTML=hdr+body;
+  }
 }
 
 // ═══════════════════════════════════════════════════════

@@ -43,6 +43,8 @@ PAGES = {
     "spend-tracking":      "spend-tracking",
     "fnb-sync":            "fnb-sync",
     "booking-analysis":    "booking-analysis",
+    "sales-dashboard":     "sales-dashboard",
+    "competition-data":    "competition-data",
 }
 
 DATA_TARGETS = {
@@ -52,6 +54,8 @@ DATA_TARGETS = {
     "pace-of-play":        "pace_data.js",
     "spend-tracking":      "sales_data.js",
     "booking-analysis":    "booking-analysis.data.js",
+    "sales-dashboard":     "sales_data.js",
+    "competition-data":    "competition-data.data.js",
 }
 
 MONTH_MAP = {
@@ -622,7 +626,25 @@ def process_bookings():
         print(f"\n  ✅ booking-analysis.data.js regenerated ({kb:.0f} KB)")
 
 
-# ── STEP 6: BUILD SITE ────────────────────────────────────────────────────────
+# ── STEP 6: COMPETITION DATA ─────────────────────────────────────────────────
+
+def process_competition():
+    section("COMPETITION DATA")
+    gen = BASE / "generate_competition.py"
+    if not gen.exists():
+        print("  ⚠  generate_competition.py not found — skipping")
+        return
+    result = subprocess.run([sys.executable, str(gen)], cwd=str(BASE))
+    if result.returncode != 0:
+        print("  ⚠  generate_competition.py failed")
+        return
+    src = DATA_EXPORTS / "competition-data.data.js"
+    if src.exists():
+        kb = src.stat().st_size / 1024
+        print(f"\n  ✅ competition-data.data.js regenerated ({kb:.0f} KB)")
+
+
+# ── STEP 7: BUILD SITE ────────────────────────────────────────────────────────
 
 def build_site():
     section("BUILDING SITE")
@@ -660,6 +682,8 @@ def build_site():
         html = html.replace('href="../spend-tracking/index.html"',      'href="spend-tracking.html"')
         html = html.replace('href="../fnb-sync/index.html"',             'href="fnb-sync.html"')
         html = html.replace('href="../booking-analysis/index.html"',   'href="booking-analysis.html"')
+        html = html.replace('href="../sales-dashboard/index.html"',    'href="sales-dashboard.html"')
+        html = html.replace('href="../competition-data/index.html"',   'href="competition-data.html"')
         html = html.replace('src="course-map.jpg"',                      f'src="assets/{tool_name}/course-map.jpg"')
 
         target = "index.html" if slug == "index" else f"{slug}.html"
@@ -699,6 +723,7 @@ def main():
     process_sales()
     process_members()
     process_bookings()
+    process_competition()
     build_site()
 
     print("\n" + "="*50)

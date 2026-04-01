@@ -62,13 +62,13 @@ function fmtMins(m) {
 
 function getPaceRating(mins) {
   if (mins < 240) return 'fast';
-  if (mins < 285) return 'ok';
-  if (mins < 300) return 'watch';
+  if (mins < 260) return 'ok';
+  if (mins < 280) return 'watch';
   return 'slow';
 }
 
 function getPaceLabel(rating) {
-  return { fast:'⚡ Fast', ok:'✅ On Pace', watch:'👀 Watch', slow:'🐢 Slow' }[rating];
+  return { fast:'⚡ Great', ok:'✅ On Pace', watch:'👀 Watch', slow:'🐢 Slow' }[rating];
 }
 
 function getClubAvg(gender) {
@@ -198,7 +198,7 @@ function buildOverview() {
   document.getElementById('insSlowName').textContent = slowest.name;
   document.getElementById('insFastest').textContent = fmtMins(fastest.avgMins);
   document.getElementById('insFastName').textContent = fastest.name;
-  document.getElementById('insSlowCount').textContent = all.filter(m=>m.avgMins>=300).length;
+  document.getElementById('insSlowCount').textContent = all.filter(m=>m.avgMins>=280).length;
 
   // Distribution chart
   const bins = [180,195,210,225,240,255,270,285,300,315,330];
@@ -215,7 +215,7 @@ function buildOverview() {
       datasets:[{
         label:'Members',
         data:counts,
-        backgroundColor: bins.map(b => b<240?'rgba(26,122,62,.7)':b<285?'rgba(43,51,92,.7)':b<300?'rgba(184,99,10,.7)':'rgba(139,26,26,.7)'),
+        backgroundColor: bins.map(b => b<240?'rgba(26,122,62,.7)':b<260?'rgba(43,51,92,.7)':b<280?'rgba(184,99,10,.7)':'rgba(139,26,26,.7)'),
         borderRadius:2
       }]
     },
@@ -228,7 +228,7 @@ function buildOverview() {
   new Chart(document.getElementById('paceChart'), {
     type:'doughnut',
     data:{
-      labels:['Fast (<4h)','On Pace (4h–4h45)','Watch (4h45–5h)','Slow (>5h)'],
+      labels:['Great (<4h)','On Pace (4h–4h20)','Watch (4h20–4h40)','Slow (>4h40)'],
       datasets:[{data:rCounts,backgroundColor:['rgba(26,122,62,.8)','rgba(43,51,92,.8)','rgba(184,99,10,.8)','rgba(139,26,26,.8)'],borderWidth:0}]
     },
     options:{plugins:{legend:{position:'right',labels:{font:{size:11}}}}}

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VGC Sales Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="assets/sales-dashboard/styles.css">
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<div class="hdr">
+  <div class="hdr-brand">
+    <a class="back-link" href="index.html">&#8592; Hub</a>
+    <svg class="hdr-logo" viewBox="0 0 52 52" fill="none">
+      <ellipse cx="26" cy="26" rx="24" ry="24" fill="none" stroke="#898b8d" stroke-width="1.2" opacity="0.5"/>
+      <path d="M12 14 L26 38 L40 14" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M33 19 A10 10 0 1 0 33 33" fill="none" stroke="#898b8d" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+    <div class="hdr-title">
+      <h1>Sales Dashboard</h1>
+      <p>The Victoria Golf Club</p>
+    </div>
+  </div>
+  <div class="hdr-meta">
+    <span class="hdr-badge" id="activeTabBadge">Overview</span>
+    <span class="hdr-badge" id="filterBadge">No Filters</span>
+    <span class="hdr-badge" id="dataBadge">Loading...</span>
+  </div>
+</div>
+
+<div class="app">
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<aside class="sidebar">
+
+  <!-- SEARCH -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Search PLU Group</div>
+    <input class="sb-input" type="text" id="sSearch" placeholder="Group name..." oninput="setSearch(this.value)">
+  </div>
+
+  <!-- CATEGORY -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Category</div>
+    <div class="seg-row">
+      <button class="seg-btn active" onclick="setCategory('all',this)">All</button>
+      <button class="seg-btn" onclick="setCategory('fnb',this)">F&amp;B</button>
+    </div>
+    <div class="seg-row" style="margin-top:3px">
+      <button class="seg-btn" onclick="setCategory('shop',this)">Pro Shop</button>
+      <button class="seg-btn" onclick="setCategory('golf',this)">Golf</button>
+    </div>
+  </div>
+
+  <!-- MIN REVENUE -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Min Revenue</div>
+    <select class="sb-select" id="sMinRev" onchange="setMinRevenue(this.value)">
+      <option value="0">Any</option>
+      <option value="1000">$1,000+</option>
+      <option value="5000">$5,000+</option>
+      <option value="10000">$10,000+</option>
+      <option value="50000">$50,000+</option>
+    </select>
+  </div>
+
+  <!-- RESET + REPORT -->
+  <div class="sidebar-section">
+    <button class="reset-btn" onclick="resetFilters()">Reset All Filters</button>
+    <button class="report-btn" onclick="openSalesReport()">Generate Report</button>
+  </div>
+
+</aside>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<div class="main">
+
+  <div class="tabbar">
+    <div class="tab active" onclick="showTab('overview',this)">Overview</div>
+    <div class="tab" onclick="showTab('plu',this)">PLU Groups</div>
+    <div class="tab" onclick="showTab('deepdive',this)">Category Deep-Dive</div>
+    <div class="tab" onclick="showTab('contribution',this)">Member Contribution</div>
+  </div>
+
+  <!-- ── PAGE: OVERVIEW ── -->
+  <div class="page active" id="pg-overview">
+    <div class="kpi-row" id="overviewKPIs"></div>
+    <div class="g21">
+      <div class="card"><div class="card-hdr">Top 10 PLU Groups<span class="sub">by revenue</span></div><canvas id="top10Chart"></canvas></div>
+      <div class="card"><div class="card-hdr">Revenue by Category</div><canvas id="catDoughnut"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Category Revenue Comparison</div><canvas id="catBarChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Revenue per Transaction<span class="sub">by category</span></div><canvas id="rptChart"></canvas></div>
+    </div>
+    <div class="g3" id="overviewInsights"></div>
+  </div>
+
+  <!-- ── PAGE: PLU GROUPS ── -->
+  <div class="page" id="pg-plu">
+    <div class="result-bar">
+      <span class="result-count" id="pluCount">Loading...</span>
+    </div>
+    <div class="scroll-x">
+      <table class="tbl" id="pluTable">
+        <thead>
+          <tr>
+            <th style="text-align:center;width:36px">#</th>
+            <th onclick="sortBy('name',this)">PLU Group</th>
+            <th style="cursor:default">Category</th>
+            <th onclick="sortBy('revenue',this)" class="desc">Revenue</th>
+            <th onclick="sortBy('pct',this)">% Total</th>
+            <th onclick="sortBy('memberCount',this)">Members</th>
+            <th onclick="sortBy('avgPerMember',this)">Avg/Member</th>
+            <th style="cursor:default"></th>
+          </tr>
+        </thead>
+        <tbody id="pluBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── PAGE: CATEGORY DEEP-DIVE ── -->
+  <div class="page" id="pg-deepdive">
+    <div class="cat-selector">
+      <button class="cat-sel-btn active-fnb" id="ddFnb" onclick="setDeepDive('fnb')">F&amp;B</button>
+      <button class="cat-sel-btn" id="ddShop" onclick="setDeepDive('shop')">Pro Shop</button>
+      <button class="cat-sel-btn" id="ddGolf" onclick="setDeepDive('golf')">Golf</button>
+    </div>
+    <div class="kpi-row-4" id="ddKPIs"></div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Sub-Group Revenue Breakdown</div><canvas id="subGroupChart" style="max-height:400px"></canvas></div>
+      <div class="card"><div class="card-hdr">Revenue Share<span class="sub">% of category</span></div><canvas id="proportionChart" style="max-height:400px"></canvas></div>
+    </div>
+    <div class="full">
+      <div class="card">
+        <div class="card-hdr">Top 10 Members<span class="sub" id="ddCatLabel">in F&amp;B</span></div>
+        <div class="scroll-x">
+          <table class="tbl">
+            <thead><tr><th style="text-align:center;width:36px">#</th><th>Member</th><th>Category Spend</th><th>Total Spend</th><th>% of Their Total</th></tr></thead>
+            <tbody id="ddMemberBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: MEMBER CONTRIBUTION ── -->
+  <div class="page" id="pg-contribution">
+    <div class="kpi-row-4" id="contribKPIs"></div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Revenue Concentration<span class="sub">cumulative % of total</span></div><canvas id="concChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Cross-Category Analysis<span class="sub">members by category count</span></div><canvas id="crossCatChart"></canvas></div>
+    </div>
+    <div class="full">
+      <div class="card">
+        <div class="card-hdr">Top 25 Members by Revenue<span class="sub">with category breakdown</span></div>
+        <div class="scroll-x">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="text-align:center;width:36px">#</th>
+                <th>Member</th>
+                <th>Total</th>
+                <th>F&amp;B</th>
+                <th>Pro Shop</th>
+                <th>Golf</th>
+                <th>Transactions</th>
+                <th>Categories</th>
+              </tr>
+            </thead>
+            <tbody id="contribBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.main -->
+</div><!-- /.app -->
+
+<!-- ═══════════════ MODAL ═══════════════ -->
+<div class="modal-overlay hidden" id="detailModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h2 id="modalName">PLU Group Detail</h2>
+      <button class="modal-close" onclick="document.getElementById('detailModal').classList.add('hidden')">&#10005;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script src="assets/data/sales_data.js"></script>
+<script src="assets/sales-dashboard/app.js"></script>
+<script src="assets/sales-dashboard/report.js"></script>
+</body>
+</html>

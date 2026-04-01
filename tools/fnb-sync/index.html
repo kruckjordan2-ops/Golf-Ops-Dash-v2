@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VGC F&amp;B Course Sync</title>
+<style>
+:root {
+  --navy:#2b335c;--navy2:#1e2540;--navy3:#363d6e;
+  --silver:#898b8d;--silver-lt:#b8b9bb;--silver-xlt:#e4e5e6;
+  --charcoal:#5a585c;--white:#fff;--bg:#f2f2f0;
+  --text:#1a1f3a;--muted:#6b6d7a;--border:#dddee3;
+  --green:#1a7a3e;--green-lt:#e8f5ee;
+  --amber:#b8630a;--amber-lt:#fef3e2;
+  --red:#8b1a1a;--red-lt:#faeaea;
+  --fnb:#2563eb;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+
+/* HEADER */
+.hdr{background:var(--navy);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;box-shadow:0 2px 12px rgba(0,0,0,.3);position:relative}
+.hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--silver),var(--silver-lt),var(--silver),transparent)}
+.hdr-inner{position:relative;z-index:1;display:flex;align-items:center;gap:18px}
+.hdr-title h1{font-size:.95rem;font-weight:700;color:#fff;line-height:1.15}
+.hdr-title p{font-size:.6rem;color:rgba(255,255,255,.4);letter-spacing:1.5px;text-transform:uppercase}
+.hdr-right{position:relative;z-index:1;display:flex;gap:9px;align-items:center}
+.hdr-pill{font-size:.6rem;font-weight:700;letter-spacing:.9px;text-transform:uppercase;padding:4px 11px;border-radius:2px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.55)}
+.back-link{font-size:.65rem;font-weight:600;color:rgba(255,255,255,.5);text-decoration:none;letter-spacing:.5px;text-transform:uppercase;transition:color .15s}
+.back-link:hover{color:rgba(255,255,255,.85)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:5px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* TOOLBAR */
+.toolbar{background:#fff;border-bottom:1px solid var(--border);padding:12px 24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.toolbar-group{display:flex;align-items:center;gap:8px}
+.toolbar-label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+.sel{padding:6px 10px;border:1px solid var(--border);border-radius:3px;font-size:.75rem;font-family:inherit;color:var(--text);background:#f7f8fa;cursor:pointer}
+.sel:focus{outline:none;border-color:var(--navy)}
+.btn{padding:6px 14px;border-radius:3px;font-size:.72rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;font-family:inherit;border:none;transition:all .15s}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:hover{background:var(--navy2)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-ghost:hover{border-color:var(--navy);color:var(--navy)}
+.divider{width:1px;height:24px;background:var(--border)}
+.clock{font-size:.78rem;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;min-width:52px}
+
+/* UPLOAD ZONE */
+.upload-zone{margin:20px 24px;border:2px dashed var(--border);border-radius:4px;padding:32px;text-align:center;background:#fff;cursor:pointer;transition:all .2s}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--navy);background:#f5f6fa}
+.upload-zone.hidden{display:none}
+.upload-icon{font-size:2rem;margin-bottom:10px;opacity:.3}
+.upload-title{font-size:.88rem;font-weight:700;color:var(--navy);margin-bottom:4px}
+.upload-sub{font-size:.72rem;color:var(--muted)}
+.upload-sub span{color:var(--navy);font-weight:600;cursor:pointer;text-decoration:underline}
+#fileInput{display:none}
+
+/* STATS BAR */
+.stats-bar{display:flex;gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.stat-box{flex:1;background:#fff;padding:14px 20px;display:flex;flex-direction:column;gap:2px}
+.stat-val{font-size:1.4rem;font-weight:700;color:var(--navy);line-height:1}
+.stat-val.urgent{color:var(--amber)}
+.stat-lbl{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+.stat-sub{font-size:.65rem;color:var(--silver)}
+
+/* COURSE MAP */
+.course-wrap{padding:20px 24px 0}
+.course-map{background:#fff;border:1px solid var(--border);border-radius:4px;overflow:hidden;position:relative}
+.course-map-inner{position:relative;width:100%;padding-bottom:74.08%}
+.course-map-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.course-marker{position:absolute;transform:translate(-50%,-100%);z-index:10;pointer-events:auto;cursor:default}
+.course-marker:hover .marker-tooltip{display:block}
+.marker-pin{width:22px;height:28px;position:relative;display:flex;align-items:flex-start;justify-content:center}
+.marker-pin svg{width:22px;height:28px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.35))}
+.marker-count{position:absolute;top:3px;left:50%;transform:translateX(-50%);font-size:.55rem;font-weight:800;color:#fff;z-index:2;line-height:1;pointer-events:none}
+.marker-hole{position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:.45rem;font-weight:700;background:rgba(0,0,0,.7);color:#fff;padding:1px 4px;border-radius:8px;white-space:nowrap;letter-spacing:.3px}
+.marker-tooltip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:4px;background:var(--navy);color:#fff;padding:6px 10px;border-radius:3px;font-size:.65rem;white-space:nowrap;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.marker-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--navy)}
+.marker-pulse{position:absolute;top:4px;left:50%;transform:translateX(-50%);width:16px;height:16px;border-radius:50%;animation:marker-pulse 2s infinite}
+.marker-pulse.green{background:rgba(26,122,62,.3)}
+.marker-pulse.amber{background:rgba(184,99,10,.3)}
+.marker-pulse.red{background:rgba(139,26,26,.4)}
+@keyframes marker-pulse{0%{transform:translateX(-50%) scale(1);opacity:1}100%{transform:translateX(-50%) scale(2.5);opacity:0}}
+.course-legend{display:flex;gap:16px;padding:10px 16px;border-top:1px solid var(--border);background:#fff}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:.6rem;color:var(--muted)}
+.legend-dot{width:8px;height:8px;border-radius:50%}
+.course-empty-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:5}
+.course-empty-msg{background:rgba(255,255,255,.9);padding:12px 20px;border-radius:4px;font-size:.75rem;color:var(--muted);font-weight:600;border:1px solid var(--border)}
+
+/* INCOMING PANEL */
+.incoming-panel{margin:16px 24px 0;border-radius:4px;overflow:hidden;border:1px solid rgba(37,99,235,.2)}
+.incoming-hdr{background:var(--fnb);padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
+.incoming-hdr span{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#fff}
+.incoming-hdr .count-pill{background:rgba(255,255,255,.2);padding:2px 8px;border-radius:10px;font-size:.65rem}
+.incoming-body{background:#fff;padding:0}
+.incoming-empty{padding:20px;text-align:center;font-size:.75rem;color:var(--muted)}
+
+/* INCOMING CARDS */
+.inc-card{padding:12px 16px;border-bottom:1px solid var(--silver-xlt);display:flex;align-items:center;gap:14px;transition:background .15s}
+.inc-card:last-child{border-bottom:none}
+.inc-card.finishing{background:var(--amber-lt)}
+.inc-card.very-soon{background:var(--red-lt)}
+.inc-eta{min-width:64px;text-align:center}
+.inc-eta-val{font-size:1.1rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.inc-eta-val.green{color:var(--green)}
+.inc-eta-val.amber{color:var(--amber)}
+.inc-eta-val.red{color:var(--red)}
+.inc-eta-lbl{font-size:.5rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-top:1px}
+.inc-detail{flex:1;min-width:0}
+.inc-names{font-size:.78rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inc-meta{font-size:.62rem;color:var(--muted);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
+.inc-meta-item{display:flex;align-items:center;gap:3px}
+.inc-covers{background:var(--navy);color:#fff;border-radius:2px;padding:4px 10px;font-size:.72rem;font-weight:700;text-align:center;min-width:42px}
+.inc-covers-lbl{font-size:.45rem;text-transform:uppercase;letter-spacing:.3px;color:rgba(255,255,255,.6);margin-top:1px}
+
+/* HOLE PROGRESS MINI */
+.hole-mini{display:flex;gap:1px;align-items:center}
+.hole-pip{width:6px;height:6px;border-radius:1px;background:var(--silver-xlt)}
+.hole-pip.done{background:var(--navy)}
+.hole-pip.current{background:var(--amber);animation:pulse 1.5s infinite}
+
+/* STATUS BADGES */
+.status{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:2px;font-size:.6rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+.status.on-course{background:var(--green-lt);color:var(--green);border:1px solid rgba(26,122,62,.2)}
+.status.finishing{background:var(--amber-lt);color:var(--amber);border:1px solid rgba(184,99,10,.2)}
+.status.not-started{background:var(--silver-xlt);color:var(--charcoal);border:1px solid var(--border)}
+.status.completed{background:#f0f0f0;color:var(--muted);border:1px solid var(--border)}
+.status-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+
+/* TEE BADGE */
+.tee-badge{font-size:.55rem;font-weight:700;padding:2px 5px;border-radius:2px;text-transform:uppercase;letter-spacing:.3px}
+.tee-1{background:rgba(43,51,92,.1);color:var(--navy)}
+.tee-10{background:rgba(90,88,92,.1);color:var(--charcoal)}
+
+/* LEADERBOARD MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center}
+.modal-overlay.hidden{display:none}
+.modal{background:#fff;border-radius:4px;width:480px;max-width:90vw;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+.modal-hdr{background:var(--navy);padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.modal-hdr h2{font-size:.88rem;font-weight:700;color:#fff}
+.modal-close{background:none;border:none;color:rgba(255,255,255,.5);font-size:1.2rem;cursor:pointer;line-height:1}
+.modal-body{padding:20px}
+.modal-body label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);display:block;margin-bottom:5px}
+.modal-input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:3px;font-size:.82rem;font-family:inherit;color:var(--text);margin-bottom:14px}
+.modal-input:focus{outline:none;border-color:var(--navy)}
+.modal-note{font-size:.68rem;color:var(--muted);background:var(--bg);border-radius:3px;padding:10px 12px;margin-bottom:14px;line-height:1.5}
+.modal-foot{padding:0 20px 20px;display:flex;gap:8px;justify-content:flex-end}
+
+/* EMPTY STATE */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--muted);text-align:center;gap:10px}
+.empty-icon{font-size:2.5rem;opacity:.2}
+.empty-title{font-size:.95rem;font-weight:600;color:var(--charcoal)}
+.empty-sub{font-size:.77rem;max-width:320px}
+
+/* COMPLETED SECTION */
+.completed-section{margin:16px 24px 24px;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.completed-hdr{background:var(--silver-xlt);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.completed-hdr span{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+.completed-body{background:#fff;padding:0}
+.completed-body.collapsed{display:none}
+.comp-row{padding:8px 16px;border-bottom:1px solid var(--silver-xlt);display:flex;align-items:center;gap:12px;opacity:.5;font-size:.72rem}
+.comp-row:last-child{border-bottom:none}
+.comp-time{font-weight:700;min-width:40px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.comp-names{flex:1;color:var(--muted)}
+.comp-covers{font-weight:700;color:var(--muted)}
+
+@media(max-width:768px){
+  .hdr{padding:0 14px}
+  .stats-bar{flex-wrap:wrap}
+  .stat-box{min-width:45%}
+  .course-wrap,.incoming-panel,.completed-section{margin-left:12px;margin-right:12px}
+  .toolbar{padding:10px 14px}
+  .inc-card{flex-wrap:wrap;gap:8px}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-inner">
+    <a class="back-link" href="index.html">&#8592; Hub</a>
+    <svg width="36" height="36" viewBox="0 0 52 52" fill="none">
+      <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
+      <path d="M13 15 L26 37 L39 15" fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M32 20 A9 9 0 1 0 32 32" fill="none" stroke="#898b8d" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+    <div class="hdr-title"><h1>F&amp;B Course Sync</h1><p>The Victoria Golf Club</p></div>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-pill" id="compName">No tee sheet loaded</span>
+    <span class="hdr-pill"><span class="live-dot"></span><span id="clockDisplay">--:--</span></span>
+  </div>
+</header>
+
+<div class="toolbar" id="toolbar">
+  <div class="toolbar-group">
+    <span class="toolbar-label">Format</span>
+    <select class="sel" id="fmtSel" onchange="recalc()">
+      <option value="stableford">Stableford</option>
+      <option value="par">Par</option>
+      <option value="stroke">Stroke / Nett</option>
+      <option value="ambrose">Ambrose / Social</option>
+    </select>
+  </div>
+  <div class="divider"></div>
+  <div class="toolbar-group">
+    <span class="toolbar-label">Alert window</span>
+    <select class="sel" id="alertWindow" onchange="render()">
+      <option value="15">15 min</option>
+      <option value="20" selected>20 min</option>
+      <option value="30">30 min</option>
+    </select>
+  </div>
+  <div class="divider"></div>
+  <button class="btn btn-ghost" onclick="document.getElementById('lbModal').classList.remove('hidden')">&#9971; Link Leaderboard</button>
+  <span class="toolbar-label" id="lbStatus" style="color:var(--muted)"></span>
+  <div style="margin-left:auto" class="toolbar-group">
+    <span class="toolbar-label">Time</span>
+    <span class="clock" id="liveTime">--:--:--</span>
+  </div>
+</div>
+
+<!-- UPLOAD ZONE -->
+<div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+  <div class="upload-icon">&#127958;</div>
+  <div class="upload-title">Drop the MiClub tee sheet PDF</div>
+  <div class="upload-sub">Drag and drop here, or <span onclick="event.stopPropagation();document.getElementById('fileInput').click()">browse files</span></div>
+  <input type="file" id="fileInput" accept=".pdf,.csv,.txt" onchange="handleFile(this.files[0])">
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar" id="statsBar" style="display:none">
+  <div class="stat-box">
+    <div class="stat-val" id="statOnCourse">0</div>
+    <div class="stat-lbl">On Course</div>
+    <div class="stat-sub" id="statCovers">0 covers</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-val urgent" id="statFinishing">0</div>
+    <div class="stat-lbl">Finishing Soon</div>
+    <div class="stat-sub" id="statWindow">Within 20 min</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-val" id="statNextETA">--</div>
+    <div class="stat-lbl">Next Group ETA</div>
+    <div class="stat-sub" id="statNextName">--</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-val" id="statTotal">0</div>
+    <div class="stat-lbl">Total Groups</div>
+    <div class="stat-sub" id="statTotalCovers">0 covers today</div>
+  </div>
+</div>
+
+<!-- COURSE MAP -->
+<div class="course-wrap" id="courseWrap" style="display:none">
+  <div class="course-map">
+    <div class="course-map-inner">
+      <img class="course-map-img" src="course-map.jpg" alt="VGC Course Map">
+      <div id="courseMarkers"></div>
+      <div class="course-empty-overlay" id="courseEmptyOverlay" style="display:none">
+        <div class="course-empty-msg">No groups currently on course</div>
+      </div>
+    </div>
+    <div class="course-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> 30+ min</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div> 10-30 min</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> &lt;10 min</div>
+    </div>
+  </div>
+</div>
+
+<!-- INCOMING GROUPS -->
+<div class="incoming-panel" id="incomingPanel" style="display:none">
+  <div class="incoming-hdr">
+    <span>&#127860; Incoming Groups &mdash; Sorted by ETA</span>
+    <span class="count-pill" id="incomingCount">0</span>
+  </div>
+  <div class="incoming-body" id="incomingBody">
+    <div class="incoming-empty">No groups on course yet</div>
+  </div>
+</div>
+
+<!-- COMPLETED -->
+<div class="completed-section" id="completedSection" style="display:none">
+  <div class="completed-hdr" onclick="toggleCompleted()">
+    <span id="completedTitle">Completed (0)</span>
+    <span id="completedToggle" style="font-size:.7rem">&#9660;</span>
+  </div>
+  <div class="completed-body" id="completedBody"></div>
+</div>
+
+<!-- LEADERBOARD MODAL -->
+<div class="modal-overlay hidden" id="lbModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h2>Link MiClub Leaderboard</h2>
+      <button class="modal-close" onclick="document.getElementById('lbModal').classList.add('hidden')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <label>Leaderboard ID</label>
+      <input class="modal-input" type="text" id="lbId" placeholder="e.g. 22663232" value="">
+      <label>Club slug</label>
+      <input class="modal-input" type="text" id="lbClub" placeholder="victoria" value="victoria">
+      <div class="modal-note">
+        &#128204; Find the ID in your MiClub leaderboard URL:<br>
+        <strong>members.victoriagolf.com.au/...?compId=<u>22663061</u></strong><br>
+        <strong>leaderboard.miclub.com.au/...?leaderboardId=<u>22663061</u></strong><br><br>
+        During a live comp, hole-by-hole progress updates every 60 seconds.
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="document.getElementById('lbModal').classList.add('hidden')">Cancel</button>
+      <button class="btn btn-primary" onclick="linkLeaderboard()">Link &amp; Fetch</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DURATION TABLES (minutes) ────────────────────────────────────
+const DURATIONS = {
+  stableford: { m: 256, f: 255 },
+  par:        { m: 237, f: 271 },
+  stroke:     { m: 262, f: 296 },
+  ambrose:    { m: 256, f: 254 },
+};
+
+// ── STATE ────────────────────────────────────────────────────────
+let groups = [];
+let leaderboardId = '';
+let leaderboardClub = 'victoria';
+let lbInterval = null;
+let renderInterval = null;
+let completedCollapsed = false;
+
+// ── CLOCK ────────────────────────────────────────────────────────
+function tickClock() {
+  const now = new Date();
+  const t = now.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+  document.getElementById('liveTime').textContent = t;
+  document.getElementById('clockDisplay').textContent = t.slice(0,5);
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+// ── FILE HANDLING ────────────────────────────────────────────────
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+}
+
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target.result;
+    if (file.name.endsWith('.pdf') || file.type === 'application/pdf') {
+      parsePDFText(text);
+    } else {
+      parseCSV(text);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ── PDF PARSER ───────────────────────────────────────────────────
+function parsePDFText(text) {
+  groups = [];
+  const compMatch = text.match(/(?:Saturday|Sunday|Monday|Tuesday|Wednesday|Thursday|Friday)\s+Timesheet[^\n]*/i)
+                 || text.match(/The Victoria Golf Club\s*:\s*([^\n]*)/i);
+  if (compMatch) {
+    let name = compMatch[0].replace(/The Victoria Golf Club\s*:\s*/i,'').trim();
+    document.getElementById('compName').textContent = name.slice(0,50);
+  }
+
+  const fmt = detectFormat(text);
+  document.getElementById('fmtSel').value = fmt;
+
+  const teePattern = /(1st|10th)\s+Tee(?:\s*-\s*Social\s*Play)?\s+(\d{2}:\d{2})\s*(am|pm)/gi;
+  let match;
+  const teeEntries = [];
+
+  while ((match = teePattern.exec(text)) !== null) {
+    teeEntries.push({ pos: match.index, tee: match[1] === '1st' ? 1 : 10, timeStr: match[2] + ' ' + match[3] });
+  }
+
+  for (let i = 0; i < teeEntries.length; i++) {
+    const start = teeEntries[i].pos;
+    const end = teeEntries[i + 1] ? teeEntries[i + 1].pos : text.length;
+    const chunk = text.slice(start, end);
+
+    const players = extractPlayers(chunk);
+    if (players.length === 0) continue;
+
+    const teeTime = parseTime(teeEntries[i].timeStr);
+    const gender = detectGender(players);
+    const duration = getDuration(fmt, gender);
+    const finishTime = new Date(teeTime.getTime() + duration * 60000);
+
+    groups.push({
+      id: i,
+      tee: teeEntries[i].tee,
+      teeTime,
+      teeTimeStr: teeEntries[i].timeStr,
+      players,
+      gender,
+      finishTime,
+      format: fmt,
+      hole: null,
+    });
+  }
+
+  showData();
+}
+
+function detectFormat(text) {
+  const t = text.toLowerCase();
+  if (t.includes('stableford')) return 'stableford';
+  if (t.includes('par') && !t.includes('stroke')) return 'par';
+  if (t.includes('stroke') || t.includes('nett')) return 'stroke';
+  return 'stableford';
+}
+
+function detectGender(players) {
+  return 'm';
+}
+
+function extractPlayers(chunk) {
+  const players = [];
+  const playerPattern = /([A-Z][a-z\-']+(?:\s+[A-Z][\w\-']*)*),\s+([A-Z][a-z\-']+(?:\s+[A-Z][\w\-']*)*)\s*(?:\[([+\-]?\d+\.?\d*)\])?\s+([A-Z]{3,}[A-Z0-9]*\d*)/g;
+  let m;
+  while ((m = playerPattern.exec(chunk)) !== null) {
+    players.push({
+      name: m[2] + ' ' + m[1],
+      handicap: m[3] ? parseFloat(m[3]) : null,
+      code: m[4],
+    });
+  }
+  return players;
+}
+
+function parseTime(str) {
+  const [time, meridiem] = str.trim().split(' ');
+  let [h, m] = time.split(':').map(Number);
+  if (meridiem === 'pm' && h !== 12) h += 12;
+  if (meridiem === 'am' && h === 12) h = 0;
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d;
+}
+
+function getDuration(fmt, gender) {
+  const g = gender === 'f' ? 'f' : 'm';
+  return DURATIONS[fmt]?.[g] || 255;
+}
+
+// ── CSV PARSER ───────────────────────────────────────────────────
+function parseCSV(text) {
+  groups = [];
+  const rows = text.split('\n').slice(1);
+  rows.forEach((row, i) => {
+    const cols = row.split(',').map(c => c.trim());
+    if (!cols[0]) return;
+    const teeTime = parseTime(cols[0]);
+    const tee = parseInt(cols[1]) || 1;
+    const players = cols.slice(2).filter(Boolean).map(n => ({ name: n, handicap: null, code: '' }));
+    const fmt = document.getElementById('fmtSel').value;
+    const duration = getDuration(fmt, 'm');
+    const finishTime = new Date(teeTime.getTime() + duration * 60000);
+    groups.push({ id: i, tee, teeTime, teeTimeStr: cols[0], players, gender: 'm', finishTime, format: fmt, hole: null });
+  });
+  showData();
+}
+
+// ── RECALC ───────────────────────────────────────────────────────
+function recalc() {
+  const fmt = document.getElementById('fmtSel').value;
+  groups.forEach(g => {
+    const duration = getDuration(fmt, g.gender);
+    g.finishTime = new Date(g.teeTime.getTime() + duration * 60000);
+    g.format = fmt;
+  });
+  render();
+}
+
+// ── STATUS LOGIC ─────────────────────────────────────────────────
+function getStatus(g) {
+  const now = new Date();
+  const alertMins = parseInt(document.getElementById('alertWindow').value);
+  const alertMs = alertMins * 60000;
+  if (now < g.teeTime) return 'not-started';
+  if (now >= g.finishTime) return 'completed';
+  if (now >= new Date(g.finishTime.getTime() - alertMs)) return 'finishing';
+  return 'on-course';
+}
+
+function getCountdown(g) {
+  const now = new Date();
+  const diff = g.finishTime - now;
+  if (diff < 0) return { text: 'Done', mins: -1 };
+  const mins = Math.floor(diff / 60000);
+  const hrs = Math.floor(mins / 60);
+  const rem = mins % 60;
+  if (hrs > 0) return { text: `~${hrs}h ${rem}m`, mins };
+  return { text: `~${mins} min`, mins };
+}
+
+function getHoleEstimate(g) {
+  const now = new Date();
+  if (now < g.teeTime) return 0;
+  const elapsed = (now - g.teeTime) / 60000;
+  const duration = getDuration(g.format, g.gender);
+  const holeEstimate = Math.min(18, Math.round((elapsed / duration) * 18));
+  return g.hole !== null ? g.hole : holeEstimate;
+}
+
+function getUrgencyClass(mins) {
+  if (mins < 0) return '';
+  if (mins <= 10) return 'red';
+  if (mins <= 30) return 'amber';
+  return 'green';
+}
+
+// ── SHOW DATA ────────────────────────────────────────────────────
+function showData() {
+  document.getElementById('uploadZone').classList.add('hidden');
+  document.getElementById('statsBar').style.display = 'flex';
+  document.getElementById('courseWrap').style.display = 'block';
+  document.getElementById('incomingPanel').style.display = 'block';
+  document.getElementById('completedSection').style.display = 'block';
+  render();
+  if (renderInterval) clearInterval(renderInterval);
+  renderInterval = setInterval(render, 30000);
+}
+
+// ── MAIN RENDER ──────────────────────────────────────────────────
+function render() {
+  const now = new Date();
+  const alertMins = parseInt(document.getElementById('alertWindow').value);
+  document.getElementById('statWindow').textContent = `Within ${alertMins} min`;
+
+  // Categorise groups
+  const onCourse = [];
+  const finishing = [];
+  const notStarted = [];
+  const completed = [];
+
+  groups.forEach(g => {
+    const s = getStatus(g);
+    if (s === 'on-course') onCourse.push(g);
+    else if (s === 'finishing') finishing.push(g);
+    else if (s === 'not-started') notStarted.push(g);
+    else completed.push(g);
+  });
+
+  const activeGroups = [...finishing, ...onCourse].sort((a,b) => a.finishTime - b.finishTime);
+  const activeCovers = activeGroups.reduce((s,g) => s + g.players.length, 0);
+  const finishingCovers = finishing.reduce((s,g) => s + g.players.length, 0);
+
+  // Stats
+  document.getElementById('statOnCourse').textContent = activeGroups.length;
+  document.getElementById('statCovers').textContent = `${activeCovers} covers`;
+  document.getElementById('statFinishing').textContent = finishing.length;
+  document.getElementById('statTotal').textContent = groups.length;
+  document.getElementById('statTotalCovers').textContent = groups.reduce((s,g) => s + g.players.length, 0) + ' covers today';
+
+  if (activeGroups.length > 0) {
+    const next = activeGroups[0];
+    const cd = getCountdown(next);
+    document.getElementById('statNextETA').textContent = cd.text;
+    document.getElementById('statNextName').textContent = next.players[0]?.name.split(' ').pop() + ' group';
+  } else {
+    document.getElementById('statNextETA').textContent = '--';
+    document.getElementById('statNextName').textContent = '--';
+  }
+
+  // Course map
+  renderCourseMap(activeGroups);
+
+  // Incoming list
+  renderIncoming(activeGroups, notStarted);
+
+  // Completed
+  renderCompleted(completed);
+}
+
+// ── HOLE POSITIONS (% of map image) ──────────────────────────────
+const HOLE_POS = {
+  1:  { x: 82, y: 13 },
+  2:  { x: 56, y: 7 },
+  3:  { x: 23, y: 7 },
+  4:  { x: 6,  y: 18 },
+  5:  { x: 5,  y: 57 },
+  6:  { x: 16, y: 53 },
+  7:  { x: 25, y: 63 },
+  8:  { x: 18, y: 36 },
+  9:  { x: 36, y: 14 },
+  10: { x: 39, y: 22 },
+  11: { x: 35, y: 47 },
+  12: { x: 17, y: 82 },
+  13: { x: 25, y: 89 },
+  14: { x: 39, y: 77 },
+  15: { x: 38, y: 44 },
+  16: { x: 44, y: 43 },
+  17: { x: 70, y: 59 },
+  18: { x: 72, y: 41 },
+};
+
+// ── COURSE MAP ───────────────────────────────────────────────────
+function renderCourseMap(activeGroups) {
+  const container = document.getElementById('courseMarkers');
+  const emptyOverlay = document.getElementById('courseEmptyOverlay');
+
+  // Build hole→groups mapping
+  const holeMap = {};
+  for (let h = 1; h <= 18; h++) holeMap[h] = [];
+
+  activeGroups.forEach(g => {
+    const hole = getHoleEstimate(g);
+    if (hole >= 1 && hole <= 18) {
+      const cd = getCountdown(g);
+      holeMap[hole].push({ group: g, urgency: getUrgencyClass(cd.mins), covers: g.players.length });
+    }
+  });
+
+  if (activeGroups.length === 0) {
+    emptyOverlay.style.display = 'flex';
+    container.innerHTML = '';
+    return;
+  }
+  emptyOverlay.style.display = 'none';
+
+  const pinSvg = (color) => `<svg viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.3 21.7 0 14 0z" fill="${color}"/>
+  </svg>`;
+
+  const colors = { green: '#1a7a3e', amber: '#b8630a', red: '#8b1a1a' };
+
+  let html = '';
+  for (let h = 1; h <= 18; h++) {
+    const gs = holeMap[h];
+    if (gs.length === 0) continue;
+
+    const pos = HOLE_POS[h];
+    const totalCovers = gs.reduce((s, g) => s + g.covers, 0);
+    // Use the most urgent color
+    let worstUrgency = 'green';
+    if (gs.some(g => g.urgency === 'red')) worstUrgency = 'red';
+    else if (gs.some(g => g.urgency === 'amber')) worstUrgency = 'amber';
+
+    const tooltip = gs.map(g => {
+      const surname = g.group.players[0]?.name.split(' ').pop() || '';
+      return `${surname} (${g.covers})`;
+    }).join(', ');
+
+    // Offset multiple groups at same hole slightly
+    gs.forEach((g, idx) => {
+      const surname = g.group.players[0]?.name.split(' ').pop() || '';
+      const offsetX = gs.length > 1 ? (idx - (gs.length-1)/2) * 2.2 : 0;
+      const color = colors[g.urgency] || colors.green;
+      const showLabel = idx === Math.floor((gs.length-1)/2); // only show hole label on middle pin
+
+      html += `<div class="course-marker" style="left:${pos.x + offsetX}%;top:${pos.y}%">
+        <div class="marker-pulse ${g.urgency}"></div>
+        <div class="marker-pin">
+          ${pinSvg(color)}
+          <span class="marker-count">${g.covers}</span>
+        </div>
+        ${showLabel ? `<span class="marker-hole">H${h}</span>` : ''}
+        <div class="marker-tooltip">${surname} group &mdash; ${g.covers} covers &mdash; ${getCountdown(g.group).text}</div>
+      </div>`;
+    });
+  }
+
+  container.innerHTML = html;
+}
+
+// ── INCOMING LIST ────────────────────────────────────────────────
+function renderIncoming(activeGroups, notStarted) {
+  const body = document.getElementById('incomingBody');
+  const countEl = document.getElementById('incomingCount');
+
+  // Include not-started groups arriving within 60 min
+  const upcoming = notStarted.filter(g => {
+    const mins = (g.teeTime - new Date()) / 60000;
+    return mins > 0 && mins <= 60;
+  }).sort((a,b) => a.teeTime - b.teeTime);
+
+  const allIncoming = [...activeGroups];
+  countEl.textContent = allIncoming.length + (upcoming.length > 0 ? ` + ${upcoming.length} upcoming` : '');
+
+  if (allIncoming.length === 0 && upcoming.length === 0) {
+    body.innerHTML = '<div class="incoming-empty">No groups currently on course</div>';
+    return;
+  }
+
+  let html = '';
+
+  // Active groups sorted by ETA (soonest first)
+  allIncoming.forEach(g => {
+    const cd = getCountdown(g);
+    const hole = getHoleEstimate(g);
+    const urgency = getUrgencyClass(cd.mins);
+    const status = getStatus(g);
+    const cardClass = cd.mins <= 10 ? 'very-soon' : status === 'finishing' ? 'finishing' : '';
+    const surname = g.players[0]?.name.split(' ').pop() || 'Group';
+
+    const holePips = `<div class="hole-mini">${Array.from({length:18},(_,i) => {
+      const cls = i < hole-1 ? 'done' : i === hole-1 ? 'current' : '';
+      return `<div class="hole-pip ${cls}"></div>`;
+    }).join('')}</div>`;
+
+    html += `<div class="inc-card ${cardClass}">
+      <div class="inc-eta">
+        <div class="inc-eta-val ${urgency}">${cd.text}</div>
+        <div class="inc-eta-lbl">ETA</div>
+      </div>
+      <div class="inc-detail">
+        <div class="inc-names">${surname} group &mdash; ${g.players.map(p => p.name.split(' ')[0]).join(', ')}</div>
+        <div class="inc-meta">
+          <span class="inc-meta-item"><span class="tee-badge tee-${g.tee}">${g.tee === 1 ? '1st' : '10th'}</span></span>
+          <span class="inc-meta-item">Hole ${hole}/18</span>
+          <span class="inc-meta-item">Finish ~${fmtTime(g.finishTime)}</span>
+        </div>
+        ${holePips}
+      </div>
+      <div>
+        <div class="inc-covers">${g.players.length}</div>
+        <div class="inc-covers-lbl">Covers</div>
+      </div>
+    </div>`;
+  });
+
+  // Upcoming tee times
+  if (upcoming.length > 0) {
+    html += `<div style="padding:8px 16px;background:var(--silver-xlt);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)">Upcoming Tee Times</div>`;
+    upcoming.forEach(g => {
+      const surname = g.players[0]?.name.split(' ').pop() || 'Group';
+      const minsUntil = Math.round((g.teeTime - new Date()) / 60000);
+      html += `<div class="inc-card" style="opacity:.6">
+        <div class="inc-eta">
+          <div class="inc-eta-val" style="color:var(--muted);font-size:.85rem">${g.teeTimeStr}</div>
+          <div class="inc-eta-lbl">Tee off</div>
+        </div>
+        <div class="inc-detail">
+          <div class="inc-names">${surname} group &mdash; ${g.players.map(p => p.name.split(' ')[0]).join(', ')}</div>
+          <div class="inc-meta">
+            <span class="inc-meta-item"><span class="tee-badge tee-${g.tee}">${g.tee === 1 ? '1st' : '10th'}</span></span>
+            <span class="inc-meta-item">Starts in ${minsUntil} min</span>
+          </div>
+        </div>
+        <div>
+          <div class="inc-covers" style="background:var(--silver)">${g.players.length}</div>
+          <div class="inc-covers-lbl">Covers</div>
+        </div>
+      </div>`;
+    });
+  }
+
+  body.innerHTML = html;
+}
+
+// ── COMPLETED ────────────────────────────────────────────────────
+function renderCompleted(completed) {
+  const section = document.getElementById('completedSection');
+  const title = document.getElementById('completedTitle');
+  const body = document.getElementById('completedBody');
+
+  title.textContent = `Completed (${completed.length})`;
+
+  if (completed.length === 0) {
+    body.innerHTML = '';
+    return;
+  }
+
+  completed.sort((a,b) => a.finishTime - b.finishTime);
+
+  body.innerHTML = completed.map(g => {
+    const surname = g.players[0]?.name.split(' ').pop() || 'Group';
+    return `<div class="comp-row">
+      <span class="comp-time">${fmtTime(g.finishTime)}</span>
+      <span class="comp-names">${surname} group (${g.players.map(p => p.name.split(' ')[0]).join(', ')})</span>
+      <span class="comp-covers">${g.players.length} covers</span>
+    </div>`;
+  }).join('');
+
+  if (completedCollapsed) body.classList.add('collapsed');
+  else body.classList.remove('collapsed');
+}
+
+function toggleCompleted() {
+  completedCollapsed = !completedCollapsed;
+  const body = document.getElementById('completedBody');
+  const toggle = document.getElementById('completedToggle');
+  body.classList.toggle('collapsed');
+  toggle.innerHTML = completedCollapsed ? '&#9654;' : '&#9660;';
+}
+
+// ── LEADERBOARD ──────────────────────────────────────────────────
+function linkLeaderboard() {
+  leaderboardId = document.getElementById('lbId').value.trim();
+  leaderboardClub = document.getElementById('lbClub').value.trim() || 'victoria';
+  document.getElementById('lbModal').classList.add('hidden');
+  if (leaderboardId) {
+    document.getElementById('lbStatus').textContent = 'Leaderboard linked';
+    document.getElementById('lbStatus').style.color = 'var(--green)';
+    fetchLeaderboard();
+    if (lbInterval) clearInterval(lbInterval);
+    lbInterval = setInterval(fetchLeaderboard, 60000);
+  }
+}
+
+function fetchLeaderboard() {
+  // Try JSON API first, then fall back to HTML scrape
+  const jsonUrl = `https://leaderboard.miclub.com.au/api/leaderboard?club=${leaderboardClub}&leaderboardId=${leaderboardId}`;
+  const htmlUrl = `https://leaderboard.miclub.com.au/display-leaderboard?club=${leaderboardClub}&leaderboardId=${leaderboardId}`;
+
+  fetch(jsonUrl, { mode: 'cors' })
+    .then(r => { if (!r.ok) throw new Error('API not available'); return r.json(); })
+    .then(data => {
+      if (data && data.players) {
+        data.players.forEach(p => {
+          groups.forEach(g => {
+            const match = g.players.find(gp => gp.code === p.memberCode || gp.name === p.name);
+            if (match) g.hole = p.currentHole || g.hole;
+          });
+        });
+        render();
+      }
+    })
+    .catch(() => {
+      // Fall back to HTML scrape of public leaderboard
+      fetch(htmlUrl, { mode: 'cors' })
+        .then(r => r.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const rows = doc.querySelectorAll('tr');
+          let updated = 0;
+
+          rows.forEach(row => {
+            const cells = [...row.querySelectorAll('td')];
+            if (cells.length < 5) return;
+
+            // Public leaderboard: cells are [Rank, Rank, Rep, PlayerName, Club, Total]
+            // During live play, player name cell may contain "Thru X" or hole indicator
+            const playerCell = cells[3];
+            const lastCell = cells[cells.length - 1];
+            if (!playerCell) return;
+
+            const playerText = playerCell.textContent.trim();
+            const totalText = lastCell.textContent.trim();
+
+            // Check if there's a "thru" indicator (shown during live rounds)
+            // The total column or an extra column may show holes completed
+            // Also check the player cell for embedded hole info
+            const thruMatch = playerText.match(/thru\s+(\d+)/i)
+                           || row.textContent.match(/thru\s+(\d+)/i);
+
+            if (!thruMatch) return; // no live hole data for this player
+
+            const currentHole = parseInt(thruMatch[1]);
+            const name = playerText.replace(/\s*thru\s+\d+/i, '').replace(/\s*\[.*?\]/, '').trim();
+
+            // Match against our groups by name (fuzzy: surname match)
+            const nameParts = name.split(/\s+/);
+            const surname = nameParts[nameParts.length - 1].toLowerCase();
+
+            groups.forEach(g => {
+              const match = g.players.find(gp => {
+                const gpSurname = gp.name.split(' ').pop().toLowerCase();
+                const gpFirst = gp.name.split(' ')[0].toLowerCase();
+                return gpSurname === surname && (nameParts[0].toLowerCase() === gpFirst || nameParts.length === 1);
+              });
+              if (match && currentHole > 0) {
+                g.hole = currentHole;
+                updated++;
+              }
+            });
+          });
+
+          if (updated > 0) render();
+          document.getElementById('lbStatus').textContent = updated > 0
+            ? `Live: ${updated} players synced`
+            : 'Linked (no live hole data)';
+        })
+        .catch(() => {
+          console.log('Leaderboard fetch failed — using estimated holes');
+          document.getElementById('lbStatus').textContent = 'Fetch failed';
+          document.getElementById('lbStatus').style.color = 'var(--amber)';
+        });
+    });
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────
+function fmtTime(d) {
+  return d.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:false });
+}
+</script>
+</body>
+</html>
