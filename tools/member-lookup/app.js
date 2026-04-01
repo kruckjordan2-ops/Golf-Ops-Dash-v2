@@ -61,6 +61,7 @@ function showMember(id){
       <span class="badge ${m.gender==='Female'?'bf':'bm'}">${m.gender||'Unknown'}</span>
       ${m.age?'<span class="badge bt">Age '+m.age+'</span>':''}
       ${m.tenure?'<span class="badge bt">'+m.tenure+'yr member</span>':''}
+      ${m.status==='Missing from Golf Genius'?'<span class="badge" style="background:#FFF3E0;color:#e65100">MiClub only</span>':m.status==='Missing from MiClub'?'<span class="badge" style="background:#E3F2FD;color:#0d47a1">GG only</span>':''}
     </div>
   </div>
 </div>
@@ -73,8 +74,11 @@ function showMember(id){
   </div>
   <div class="mc-section">
     <div class="sct">Membership</div>
+    ${val(m.membership_type)?`<div class="fr"><span class="fl">Type</span><span class="fv">${m.membership_type}</span></div>`:''}
+    ${val(m.member_code)?`<div class="fr"><span class="fl">Member code</span><span class="fv">${m.member_code}</span></div>`:''}
     <div class="fr"><span class="fl">Joined</span><span class="fv${!val(m.join_date)?' em':''}">${val(m.join_date)||'Unknown'}</span></div>
     <div class="fr"><span class="fl">Tenure</span><span class="fv">${m.tenure?m.tenure+' years':'—'}</span></div>
+    ${m.handicap!=null?`<div class="fr"><span class="fl">Handicap</span><span class="fv">${m.handicap}</span></div>`:''}
     <div class="fr"><span class="fl">Date of birth</span><span class="fv${!val(m.birthday)?' em':''}">${val(m.birthday)||'—'}</span></div>
     <div class="fr"><span class="fl">Age</span><span class="fv">${m.age?m.age+' years':'—'}</span></div>
     ${m.tenure?`<div class="ten-track"><div class="ten-fill" style="width:${tenPct(m.tenure)}%"></div></div>

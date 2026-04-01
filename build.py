@@ -583,7 +583,25 @@ def process_sales():
     print(f"\n  ✅ {len(pdf_files)} PDF(s) · {len(data)} members · ${total_rev:,.2f} → {out.name}")
 
 
-# ── STEP 4: BUILD SITE ────────────────────────────────────────────────────────
+# ── STEP 4: MEMBERS ───────────────────────────────────────────────────────────
+
+def process_members():
+    section("MEMBER LOOKUP DATA")
+    gen = BASE / "generate_member.py"
+    if not gen.exists():
+        print("  ⚠  generate_member.py not found — skipping")
+        return
+    result = subprocess.run([sys.executable, str(gen)], cwd=str(BASE))
+    if result.returncode != 0:
+        print("  ⚠  generate_member.py failed")
+        return
+    src = DATA_EXPORTS / "member-lookup.data.js"
+    if src.exists():
+        kb = src.stat().st_size / 1024
+        print(f"\n  ✅ member-lookup.data.js regenerated ({kb:.0f} KB)")
+
+
+# ── STEP 5: BUILD SITE ────────────────────────────────────────────────────────
 
 def build_site():
     section("BUILDING SITE")
@@ -652,6 +670,7 @@ def main():
     process_rounds()
     process_pace()
     process_sales()
+    process_members()
     build_site()
 
     print("\n" + "="*50)
