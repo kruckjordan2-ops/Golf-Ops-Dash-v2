@@ -242,7 +242,7 @@ function setPeriodType(t){
     if(t==='q'){['Q1 (Jan–Mar)','Q2 (Apr–Jun)','Q3 (Jul–Sep)','Q4 (Oct–Dec)'].forEach((l,i)=>sel.innerHTML+=`<option value="q${i+1}">${l}</option>`);}
     else if(t==='season'){[{v:'summer',l:'☀️ Summer (Dec–Feb)'},{v:'autumn',l:'🍂 Autumn (Mar–May)'},{v:'winter',l:'❄️ Winter (Jun–Aug)'},{v:'spring',l:'🌸 Spring (Sep–Nov)'}].forEach(o=>sel.innerHTML+=`<option value="${o.v}">${o.l}</option>`);}
     else if(t==='month'){MONTHS.forEach((m,i)=>sel.innerHTML+=`<option value="${i+1}">${m}</option>`);}
-    else if(t==='fy'){['FY2023 (Jul 22–Jun 23)','FY2024 (Jul 23–Jun 24)','FY2025 (Jul 24–Jun 25)','FY2026 (Jul 25–Jun 26)'].forEach((l,i)=>sel.innerHTML+=`<option value="fy${2023+i}">${l}</option>`);}
+    else if(t==='fy'){YEARS.filter(y=>y>YEARS[0]).forEach(y=>sel.innerHTML+=`<option value="fy${y}">FY${y} (Jul ${y-1}–Jun ${y})</option>`);}
     S.period=sel.value;
   }
   updateFilterSummary();
@@ -406,7 +406,7 @@ function buildSeasonOverview(){
   const seasons=[{l:'Summer',m:[12,1,2]},{l:'Autumn',m:[3,4,5]},{l:'Winter',m:[6,7,8]},{l:'Spring',m:[9,10,11]}];
   mkChart('seasonOverview','bar',{
     labels:seasons.map(s=>s.l),
-    datasets:[2023,2024,2025].map(y=>({
+    datasets:YEARS.map(y=>({
       label:String(y),data:seasons.map(s=>sumMos(y,s.m,'total')),
       backgroundColor:YC[y]+'cc'
     }))
@@ -415,20 +415,41 @@ function buildSeasonOverview(){
 
 function buildInsights(){
   const mos=getActiveMos();
-  const t23=sumMos(2023,mos,'total'),t24=sumMos(2024,mos,'total'),t25=sumMos(2025,mos,'total');
-  const best25=mos.reduce((b,m)=>mVal(2025,m,'total')>mVal(2025,b,'total')?m:b,mos[0]||1);
-  const worst25=mos.reduce((b,m)=>mVal(2025,m,'total')<mVal(2025,b,'total')&&mVal(2025,m,'total')>0?m:b,mos[mos.length-1]||12);
-  const g25=sumMos(2025,mos,'guests'),tot25=sumMos(2025,mos,'total');
-  const corp24=sumMos(2024,mos,'corporate'),corp25=sumMos(2025,mos,'corporate');
+  const n=YEARS.length;
+  const latestYr=YEARS[n-1];
+  const prevYr=n>=2?YEARS[n-2]:null;
+  const prevPrevYr=n>=3?YEARS[n-3]:null;
+
+  const curr=sumMos(latestYr,mos,'total');
+  const prev=prevYr?sumMos(prevYr,mos,'total'):0;
+  const pprev=prevPrevYr?sumMos(prevPrevYr,mos,'total'):0;
+
+  const peakMo=mos.reduce((b,m)=>mVal(latestYr,m,'total')>mVal(latestYr,b,'total')?m:b,mos[0]||1);
+  const gCurr=sumMos(latestYr,mos,'guests');
+  const tCurr=sumMos(latestYr,mos,'total');
+  const corpCurr=sumMos(latestYr,mos,'corporate');
+  const corpPrev=prevYr?sumMos(prevYr,mos,'corporate'):0;
+  const a3Curr=sumMos(latestYr,mos,'after3');
+
+  const dowTotals=[...DAYS].map(d=>({d,v:mos.reduce((s,m)=>s+(RAW[latestYr]?.pivot?.[MONTHS[m-1]]?.[d]?.total||0),0)}));
+  const busiestDOW=dowTotals.sort((a,b)=>b.v-a.v)[0]||{d:'—',v:0};
+
+  const compCurr=sumMos(latestYr,mos,'comp');
+  const compPrev=prevYr?sumMos(prevYr,mos,'comp'):0;
+
+  const growthLine=prevYr
+    ?`${prevYr}→${latestYr}: ${delta(curr,prev).txt||'flat'}${pprev?` · ${prevPrevYr}→${prevYr}: ${delta(prev,pprev).txt||'flat'}`:''}`
+    :`${latestYr}: ${fmtN(curr)} rounds`;
+
   const ins=[
-    {cls:'',t:`📈 Growth Trend`,b:`2023→2024: ${delta(t24,t23).txt||'flat'} · 2024→2025: ${delta(t25,t24).txt||'flat'}`},
-    {cls:'blue',t:`🏆 Peak Month 2025`,b:`${MONTHS[best25-1]}: ${fmtN(mVal(2025,best25,'total'))} rounds — highest in 2025.`},
-    {cls:'',t:`👥 Guest Ratio 2025: ${fmtP(g25/(tot25||1))}`,b:`Wednesday highest at ~51% — corporate & member intro driven.`},
-    {cls:corp25<corp24?'amber':'',t:`🏢 Corporate ${corp25>=corp24?'▲':'▼'} ${Math.abs(((corp25-corp24)/(corp24||1))*100).toFixed(0)}%`,b:`${fmtN(corp24)} (2024) → ${fmtN(corp25)} (2025). Wednesdays & Fridays dominate.`},
-    {cls:'blue',t:'🌙 After 3pm Tracking',b:`1,793 rounds Oct–Dec 2025. 2026 tracking Jan–Feb: ${fmtN(sumMos(2026,[1,2],'after3'))} rounds.`},
-    {cls:'',t:'📆 Thursday — Competition Day',b:'Thursdays consistently carry highest comp rounds. Saturday highest occ rates.'},
+    {cls:'',t:`📈 Growth Trend`,b:`${growthLine} (${fmtN(prev||0)} → ${fmtN(curr)} rounds).`},
+    {cls:'blue',t:`🏆 Peak Month ${latestYr}`,b:`${MONTHS[peakMo-1]}: ${fmtN(mVal(latestYr,peakMo,'total'))} rounds — highest of any month in ${latestYr}.`},
+    {cls:'',t:`👥 Guest Ratio ${latestYr}: ${fmtP(gCurr/(tCurr||1))}`,b:`${fmtN(gCurr)} guest rounds from ${fmtN(tCurr)} total. Wednesday typically highest — corporate & member intro driven.`},
+    {cls:corpCurr<corpPrev?'amber':'',t:`🏢 Corporate ${prevYr?`${corpCurr>=corpPrev?'▲':'▼'} ${Math.abs(((corpCurr-corpPrev)/(corpPrev||1))*100).toFixed(0)}% vs ${prevYr}`:''}`,b:`${prevYr?fmtN(corpPrev)+' ('+prevYr+') → ':''}${fmtN(corpCurr)} (${latestYr}). Wednesdays & Fridays dominate corporate bookings.`},
+    {cls:'blue',t:'🌙 After 3pm Rounds',b:`${fmtN(a3Curr)} after-3pm rounds in ${latestYr}. Fridays see highest utilisation; Saturdays lowest.`},
+    {cls:'',t:`📆 Busiest Day: ${busiestDOW.d}`,b:`${fmtN(busiestDOW.v)} rounds in ${latestYr}. Competition rounds strongest on Thursdays & Saturdays.`},
   ];
-  document.getElementById('insights').innerHTML=ins.map(i=>`<div class="ins ${i.cls}"><strong>${i.t}</strong>${i.b}</div>`).join('');
+  document.getElementById('insights').innerHTML=ins.map(i=>`<div class="ins ${i.cls}"><strong>${i.t}</strong> ${i.b}</div>`).join('');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -451,7 +472,7 @@ function buildMonthlyMain(){
 
 function buildAmPmChart(){
   const mos=getActiveMos(); const years=getYears();
-  const y=years[years.length-1];
+  const y=years[years.length-1]||YEARS[YEARS.length-1];
   mkChart('amPmChart','bar',{
     labels:mos.map(m=>MO[m-1]),
     datasets:[
@@ -620,19 +641,22 @@ function buildOccPmChart(){
 }
 
 function buildOcc3pmChart(){
-  const data2025=RAW[2025]?.after3pm?.by_day||{};
-  const data2026=RAW[2026]?.after3pm?.by_day||{};
+  // Sum after3pm rounds by day of week from pivot (after3pm.by_day doesn't exist in data)
+  const mos=getActiveMos();
+  const n=YEARS.length;
+  const yr2=YEARS[n-1], yr1=n>=2?YEARS[n-2]:YEARS[0];
+  function a3byDay(y){return DAYS.map(d=>mos.reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.after3||0),0));}
   mkChart('occ3pmChart','bar',{
     labels:DS,
     datasets:[
-      {label:'2025',data:DAYS.map(d=>((data2025[d]?.occ||0)*100).toFixed(1)),backgroundColor:P[0]+'cc'},
-      {label:'2026',data:DAYS.map(d=>((data2026[d]?.occ||0)*100).toFixed(1)),backgroundColor:P[2]+'cc'},
+      {label:String(yr1),data:a3byDay(yr1),backgroundColor:P[0]+'cc'},
+      {label:String(yr2),data:a3byDay(yr2),backgroundColor:P[2]+'cc'},
     ]
-  },{scales:{x:SC.x,y:{...SC.y,ticks:{callback:v=>v+'%'}}}});
+  },{scales:SC});
 }
 
 function buildOccSpotsChart(){
-  const mos=getActiveMos(); const y=S.year==='all'?2025:S.year;
+  const mos=getActiveMos(); const y=S.year==='all'?YEARS[YEARS.length-1]:S.year;
   const ams=mos.map(m=>RAW[y]?.occ_report?.[MONTHS[m-1]]||{});
   const amBook=amos=>Object.values(amos).reduce((s,d)=>s+(d.am_book||0),0);
   const amSpots=amos=>Object.values(amos).reduce((s,d)=>s+(d.am_spots||0),0);
@@ -665,22 +689,20 @@ function buildOccTable(){
 // ═══════════════════════════════════════════════════════
 function buildDowTotal(){
   const years=getYears();
+  const activeDays=DAYS.filter(d=>S.days.has(d));
   document.getElementById('dowSub').textContent=MLABELS[S.metric];
   mkChart('dowTotal','bar',{
-    labels:DS,
+    labels:activeDays.map(d=>d.slice(0,3)),
     datasets:years.map(y=>({
       label:String(y),
-      data:DAYS.filter(d=>S.days.has(d)).map(d=>{
-        // Sum from pivot filtered months
-        return getActiveMos().reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.[S.metric]||0),0);
-      }),
+      data:activeDays.map(d=>getActiveMos().reduce((s,m)=>s+(RAW[y]?.pivot?.[MONTHS[m-1]]?.[d]?.[S.metric]||0),0)),
       backgroundColor:YC[y]+'cc'
     }))
   },{scales:SC});
 }
 
 function buildDowAmPm(){
-  const y=S.year==='all'?2025:S.year;
+  const y=S.year==='all'?YEARS[YEARS.length-1]:S.year;
   const mos=getActiveMos();
   mkChart('dowAmPm','bar',{
     labels:DS,
@@ -783,7 +805,7 @@ function buildGuestKPIs(){
 }
 
 function buildGuestTrend(){
-  const mos=getActiveMos(); const y=S.year==='all'?2025:S.year;
+  const mos=getActiveMos(); const y=S.year==='all'?YEARS[YEARS.length-1]:S.year;
   document.getElementById('guestTrendSub').textContent=String(y);
   mkChart('guestTrend','bar',{
     labels:mos.map(m=>MO[m-1]),
@@ -907,7 +929,7 @@ function buildSeasonGuests(){
 function buildSeasonOcc(){
   mkChart('seasonOcc','line',{
     labels:SEASONS.map(s=>s.l),
-    datasets:[2023,2024,2025].map(y=>({
+    datasets:getYearsNoPartial().map(y=>({
       label:String(y),
       data:SEASONS.map(s=>{
         const vals=s.m.flatMap(mn=>Object.values(RAW[y]?.occ_report?.[MONTHS[mn-1]]||{}).map(d=>d.total_occ).filter(Boolean));
@@ -940,22 +962,20 @@ function heatColor(val,min,max,alpha='dd'){
 }
 
 function buildHeatmap(containerId,getVal,formatVal){
-  const years=getYears(); const y=years[0]; // or pick active year
   const container=document.getElementById(containerId);
   if(!container)return;
-  // Build day x month grid for selected year(s)
-  const yr=S.year==='all'?2025:S.year;
-  const vals=DAYS.flatMap(d=>MONTHS.map(mn=>getVal(yr,mn,d)));
+  const yr=S.year==='all'?YEARS[YEARS.length-1]:S.year;
+  const vals=DAYS.flatMap(d=>MONTHS.map(mo=>getVal(yr,mo,d)));
   const nonZero=vals.filter(v=>v>0);
-  const mn=Math.min(...nonZero)||0,mx=Math.max(...nonZero)||1;
+  const valMin=Math.min(...nonZero)||0, valMax=Math.max(...nonZero)||1;
   let html=`<table class="hm-table"><tr><th></th>${MO.map(m=>`<th>${m}</th>`).join('')}</tr>`;
   for(const d of DAYS){
     html+=`<tr><td class="hm-row-lbl">${d}</td>`;
-    for(const mn of MONTHS){
-      const v=getVal(yr,mn,d);
-      const bg=v>0?heatColor(v,mn,mx):'#f5f5f7';
-      const c=v>0&&(v-mn)/(mx-mn)>0.6?'#fff':'var(--navy)';
-      html+=`<td title="${d}, ${mn}: ${formatVal(v)}" style="background:${bg};color:${c};font-weight:${v>0?600:400}">${v>0?formatVal(v):'—'}</td>`;
+    for(const mo of MONTHS){
+      const v=getVal(yr,mo,d);
+      const bg=v>0?heatColor(v,valMin,valMax):'#f5f5f7';
+      const c=v>0&&(v-valMin)/(valMax-valMin)>0.6?'#fff':'var(--navy)';
+      html+=`<td title="${d}, ${mo}: ${formatVal(v)}" style="background:${bg};color:${c};font-weight:${v>0?600:400}">${v>0?formatVal(v):'—'}</td>`;
     }
     html+='</tr>';
   }
@@ -967,7 +987,7 @@ function buildAllHeatmaps(){
   const yr=S.year==='all'?2025:S.year;
   buildHeatmap('hmRounds',(y,mn,d)=>RAW[y]?.pivot?.[mn]?.[d]?.total||0,fmtN);
   buildHeatmap('hmOcc',(y,mn,d)=>{const v=RAW[y]?.occ_report?.[mn]?.[d]?.total_occ;return v?(v*100):0;},v=>v.toFixed(0)+'%');
-  buildHeatmap('hmGuest',(y,mn,d)=>{const t=RAW[yr]?.pivot?.[mn]?.[d]?.total||0,g=RAW[yr]?.pivot?.[mn]?.[d]?.guests||0;return t?(g/t*100):0;},v=>v.toFixed(0)+'%');
+  buildHeatmap('hmGuest',(y,mn,d)=>{const t=RAW[y]?.pivot?.[mn]?.[d]?.total||0,g=RAW[y]?.pivot?.[mn]?.[d]?.guests||0;return t?(g/t*100):0;},v=>v.toFixed(0)+'%');
   buildHeatmap('hmComp',(y,mn,d)=>RAW[y]?.pivot?.[mn]?.[d]?.comp||0,fmtN);
   buildHeatmap('hmCorp',(y,mn,d)=>RAW[y]?.pivot?.[mn]?.[d]?.corporate||0,fmtN);
   document.getElementById('hmSub').textContent=`${yr}`;
@@ -1033,13 +1053,18 @@ function buildCmpTable(){
     {l:'Occ Total',k:'occ_total',fmt:v=>v?fmtPct(v):'—'},{l:'Occ AM',k:'occ_am',fmt:v=>v?fmtPct(v):'—'},
   ];
   const tbl=document.getElementById('cmpTable');
-  const hdr=`<thead><tr><th>Metric</th>${YEARS.map(y=>`<th style="color:${YC[y]}">${y}${y===2026?' YTD':''}</th>`).join('')}<th>Δ 23→24</th><th>Δ 24→25</th></tr></thead>`;
+  const n=YEARS.length;
+  const deltaHdrs=YEARS.slice(1).map((y,i)=>`<th>Δ ${YEARS[i]}→${y}${y===CURRENT_YEAR?' YTD':''}</th>`).join('');
+  const hdr=`<thead><tr><th>Metric</th>${YEARS.map(y=>`<th style="color:${YC[y]}">${y}${y===CURRENT_YEAR?' YTD':''}</th>`).join('')}${deltaHdrs}</tr></thead>`;
   const body='<tbody>'+metrics.map(({l,k,fmt})=>{
     const vals=YEARS.map(y=>yVal(y,k));
     const f=fmt||fmtN;
-    const d1=vals[0]&&vals[1]?((vals[1]-vals[0])/vals[0]*100).toFixed(1):'—';
-    const d2=vals[1]&&vals[2]?((vals[2]-vals[1])/vals[1]*100).toFixed(1):'—';
-    return `<tr><td>${l}</td>${vals.map(v=>`<td>${f(v)}</td>`).join('')}<td class="${d1!=='—'&&+d1>0?'best':d1!=='—'&&+d1<0?'worst':''}">${d1!=='—'?(+d1>=0?'+':'')+d1+'%':'—'}</td><td class="${d2!=='—'&&+d2>0?'best':d2!=='—'&&+d2<0?'worst':''}">${d2!=='—'?(+d2>=0?'+':'')+d2+'%':'—'}</td></tr>`;
+    const deltas=vals.slice(1).map((v,i)=>{
+      const p=vals[i]&&v?((v-vals[i])/vals[i]*100).toFixed(1):'—';
+      const cls=p!=='—'&&+p>0?'best':p!=='—'&&+p<0?'worst':'';
+      return `<td class="${cls}">${p!=='—'?(+p>=0?'+':'')+p+'%':'—'}</td>`;
+    }).join('');
+    return `<tr><td>${l}</td>${vals.map(v=>`<td>${f(v)}</td>`).join('')}${deltas}</tr>`;
   }).join('')+'</tbody>';
   tbl.innerHTML=hdr+body;
 }
@@ -1129,14 +1154,15 @@ function buildAvgTable(){
 // MEMBERS PAGE
 // ═══════════════════════════════════════════════════════
 function buildMembKPIs(){
+  const nowLabel=new Date().toLocaleString('default',{month:'short',year:'numeric'});
   const kd=[
-    {l:'Total Members',v:'1,399',s:'As of Mar 2026'},
+    {l:'Total Members',v:fmtN(MEMB.total),s:'As of '+nowLabel},
     {l:'Average Age',v:MEMB.avg_age+'yr',s:'Median '+MEMB.median_age+'yr'},
     {l:'Avg Tenure',v:MEMB.avg_tenure+'yr',s:'Average years of membership'},
-    {l:'Male Members',v:'1,009',s:(MEMB.male/MEMB.total*100).toFixed(0)+'% of total'},
-    {l:'Female Members',v:'388',s:(MEMB.female/MEMB.total*100).toFixed(0)+'% of total'},
-    {l:'New (2021+)',v:MEMB.new_5yr+'',s:'Joined last 5 years'},
-    {l:'10+ Year Members',v:MEMB.long_10plus+'',s:(MEMB.long_10plus/MEMB.total*100).toFixed(0)+'% long-standing'},
+    {l:'Male Members',v:fmtN(MEMB.male),s:(MEMB.male/MEMB.total*100).toFixed(0)+'% of total'},
+    {l:'Female Members',v:fmtN(MEMB.female),s:(MEMB.female/MEMB.total*100).toFixed(0)+'% of total'},
+    {l:'New (Last 5yr)',v:fmtN(MEMB.new_5yr),s:'Joined last 5 years'},
+    {l:'10+ Year Members',v:fmtN(MEMB.long_10plus),s:(MEMB.long_10plus/MEMB.total*100).toFixed(0)+'% long-standing'},
   ];
   document.getElementById('membKpiRow').innerHTML=kd.map((k,i)=>
     '<div class="kpi s'+i+'"><div class="kpi-lbl">'+k.l+'</div><div class="kpi-val">'+k.v+'</div><div class="kpi-sub">'+k.s+'</div></div>'
