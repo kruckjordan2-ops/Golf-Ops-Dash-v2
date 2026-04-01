@@ -18,7 +18,9 @@ function openSpendReport() {
   var sorted = filtered.slice().sort(function(a, b) { return b.total - a.total; });
 
   // Filter summary
+  var yearLabel = (S.year !== 'all' && YEARS.length > 1) ? S.year : 'All Years';
   var filterDesc = [];
+  if (S.year !== 'all' && YEARS.length > 1) filterDesc.push('Year: ' + S.year);
   if (S.segment !== 'all') filterDesc.push('Segment: ' + segLabel(S.segment));
   if (S.minSpend > 0) filterDesc.push('Min spend: $' + S.minSpend);
   if (S.categoryFocus) filterDesc.push('Category: ' + S.categoryFocus);
@@ -100,7 +102,7 @@ function openSpendReport() {
     '</style></head><body>' +
     '<button class="no-print" onclick="window.print()" style="position:fixed;top:10px;right:10px;background:#2b335c;color:#fff;border:none;border-radius:3px;padding:8px 16px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;font-family:inherit">Print Report</button>' +
 
-    '<div class="hdr"><div><h1>Member Spend Report</h1><p>The Victoria Golf Club</p></div><div class="hdr-right">' + genDate + ' ' + genTime + '<br>SwiftPOS Data</div></div>' +
+    '<div class="hdr"><div><h1>Member Spend Report — ' + yearLabel + '</h1><p>The Victoria Golf Club</p></div><div class="hdr-right">' + genDate + ' ' + genTime + '<br>SwiftPOS Data</div></div>' +
 
     (filterDesc.length ? '<div class="filter-note">Filtered: ' + filterText + '</div>' : '') +
 

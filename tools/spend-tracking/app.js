@@ -43,6 +43,7 @@ const SEG_DEFS = [
 // ── State ────────────────────────────────────────────────────────────────────
 
 let S = {
+  year: 'all',
   search: '',
   segment: 'all',
   minSpend: 0,
@@ -58,6 +59,8 @@ let S = {
 };
 
 let DATA = [];
+let YEARS = [];
+let YEAR_DATA = {};
 let MEMBER_INDEX = {};
 let charts = {};
 
@@ -147,19 +150,8 @@ var SC_HOR = {
 
 // ── Data init ────────────────────────────────────────────────────────────────
 
-function init() {
-  DATA = typeof SALES_DATA !== 'undefined' ? SALES_DATA.slice() : [];
-
-  // Build name index from member lookup
-  if (typeof MEMBER_LOOKUP_DATA !== 'undefined' && MEMBER_LOOKUP_DATA.members) {
-    MEMBER_LOOKUP_DATA.members.forEach(function(m) {
-      var key = (m.first + ' ' + m.last).toLowerCase().trim();
-      MEMBER_INDEX[key] = m;
-    });
-  }
-
-  // Cross-reference
-  DATA.forEach(function(sale) {
+function crossRef(arr) {
+  arr.forEach(function(sale) {
     var nameLower = sale.name.toLowerCase().trim();
     var matched = MEMBER_INDEX[nameLower];
     if (!matched) {
@@ -172,13 +164,116 @@ function init() {
     sale._matched = !!matched;
     sale._avg = sale.transactions > 0 ? sale.total / sale.transactions : 0;
   });
+}
 
+function mergeAllYears() {
+  // Merge members across years by ID, summing values
+  var merged = {};
+  YEARS.forEach(function(y) {
+    (YEAR_DATA[y] || []).forEach(function(m) {
+      if (!merged[m.id]) {
+        merged[m.id] = {
+          id: m.id, name: m.name, total: 0, fnb: 0, proshop: 0,
+          golf: 0, other: 0, transactions: 0, groups: {},
+          _member: m._member, _matched: m._matched
+        };
+      }
+      var t = merged[m.id];
+      t.total += m.total; t.fnb += m.fnb; t.proshop += m.proshop;
+      t.golf += m.golf; t.other += m.other; t.transactions += m.transactions;
+      // Use latest name and match info
+      if (m._matched) { t._member = m._member; t._matched = true; t.name = m.name; }
+      // Merge groups
+      Object.keys(m.groups || {}).forEach(function(g) {
+        t.groups[g] = (t.groups[g] || 0) + m.groups[g];
+      });
+    });
+  });
+  var arr = Object.values(merged);
+  arr.forEach(function(m) {
+    m.total = Math.round(m.total * 100) / 100;
+    m.fnb = Math.round(m.fnb * 100) / 100;
+    m.proshop = Math.round(m.proshop * 100) / 100;
+    m.golf = Math.round(m.golf * 100) / 100;
+    m.other = Math.round(m.other * 100) / 100;
+    m._avg = m.transactions > 0 ? m.total / m.transactions : 0;
+  });
+  return arr;
+}
+
+function buildActiveData() {
+  if (S.year === 'all') {
+    DATA = mergeAllYears();
+  } else {
+    DATA = (YEAR_DATA[S.year] || []).slice();
+  }
+  DATA.sort(function(a, b) { return b.total - a.total; });
+  updateMatchBadge();
+}
+
+function updateMatchBadge() {
   var matchedCount = DATA.filter(function(d) { return d._matched; }).length;
   var pct = DATA.length ? Math.round(matchedCount / DATA.length * 100) : 0;
   document.getElementById('matchBadge').textContent = matchedCount + ' matched (' + pct + '%)';
+}
+
+function init() {
+  // Build name index from member lookup
+  if (typeof MEMBER_LOOKUP_DATA !== 'undefined' && MEMBER_LOOKUP_DATA.members) {
+    MEMBER_LOOKUP_DATA.members.forEach(function(m) {
+      var key = (m.first + ' ' + m.last).toLowerCase().trim();
+      MEMBER_INDEX[key] = m;
+    });
+  }
+
+  // Handle both legacy flat array and new multi-year object
+  var raw = typeof SALES_DATA !== 'undefined' ? SALES_DATA : [];
+  if (Array.isArray(raw)) {
+    // Legacy flat array — single year
+    YEARS = ['All'];
+    YEAR_DATA = { 'All': raw };
+    crossRef(raw);
+    S.year = 'All';
+  } else {
+    // Multi-year object: { years: [...], data: { year: [...] } }
+    YEARS = raw.years || [];
+    YEAR_DATA = raw.data || {};
+    YEARS.forEach(function(y) { crossRef(YEAR_DATA[y] || []); });
+    S.year = 'all';
+  }
+
+  // Build year buttons
+  buildYearButtons();
+
+  // Set active data
+  buildActiveData();
 
   // Populate demographic dropdowns
   populateDemoDropdowns();
+}
+
+function buildYearButtons() {
+  var container = document.getElementById('yearButtons');
+  if (!container) return;
+  if (YEARS.length <= 1) {
+    // Single year / legacy — hide year section
+    container.closest('.sidebar-section').style.display = 'none';
+    return;
+  }
+  var html = '<button class="seg-btn active" onclick="setYear(\'all\',this)">All</button>';
+  YEARS.forEach(function(y) {
+    html += '<button class="seg-btn" onclick="setYear(\'' + y + '\',this)">' + y + '</button>';
+  });
+  container.innerHTML = html;
+}
+
+function setYear(v, btn) {
+  S.year = v;
+  var section = btn.closest('.sidebar-section');
+  section.querySelectorAll('.seg-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  buildActiveData();
+  renderAll();
 }
 
 function populateDemoDropdowns() {
@@ -277,7 +372,7 @@ function setMembershipType(v) { S.membershipType = v; renderAll(); }
 function setTenureBucket(v) { S.tenureBucket = v; renderAll(); }
 
 function resetFilters() {
-  S.search = ''; S.segment = 'all'; S.minSpend = 0; S.categoryFocus = '';
+  S.year = 'all'; S.search = ''; S.segment = 'all'; S.minSpend = 0; S.categoryFocus = '';
   S.matchFilter = ''; S.ageGroup = ''; S.gender = ''; S.membershipType = ''; S.tenureBucket = '';
   S.sortCol = 'total'; S.sortDir = -1;
 
@@ -289,7 +384,7 @@ function resetFilters() {
   document.getElementById('sMemberType').value = '';
   document.getElementById('sTenure').value = '';
 
-  // Reset segment buttons
+  // Reset all seg buttons (including year)
   document.querySelectorAll('.sidebar .seg-btn').forEach(function(b) { b.classList.remove('active'); });
   document.querySelectorAll('.sidebar .seg-btn').forEach(function(b) {
     if (b.textContent === 'All') b.classList.add('active');
@@ -300,11 +395,13 @@ function resetFilters() {
   var totalTh = document.querySelector('#memberTable th.desc, #memberTable th:nth-child(3)');
   if (totalTh) totalTh.classList.add('desc');
 
+  buildActiveData();
   renderAll();
 }
 
 function updateFilterSummary() {
   var filters = [];
+  if (S.year !== 'all' && YEARS.length > 1) filters.push(S.year);
   if (S.search) filters.push('Search');
   if (S.segment !== 'all') filters.push(segLabel(S.segment));
   if (S.minSpend > 0) filters.push('$' + S.minSpend + '+');

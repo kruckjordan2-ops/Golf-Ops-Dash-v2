@@ -102,6 +102,18 @@
         "8773"
       ],
       "port": 8773
+    },
+    {
+      "name": "data-manager",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8774",
+        "--directory",
+        "tools/data-manager"
+      ],
+      "port": 8774
     }
   ]
 }

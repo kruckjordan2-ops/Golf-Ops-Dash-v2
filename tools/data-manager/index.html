@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VGC Data Manager</title>
+<link rel="stylesheet" href="../shared/fonts.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<div class="hdr">
+  <div class="hdr-inner">
+    <a class="back-link" href="../home/index.html">&#8592; Hub</a>
+    <svg class="hdr-logo" viewBox="0 0 52 52" fill="none">
+      <ellipse cx="26" cy="26" rx="24" ry="24" fill="none" stroke="#898b8d" stroke-width="1.2" opacity="0.5"/>
+      <path d="M12 14 L26 38 L40 14" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M33 19 A10 10 0 1 0 33 33" fill="none" stroke="#898b8d" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+    <div class="hdr-title">
+      <h1>Data Manager</h1>
+      <p>The Victoria Golf Club</p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-pill">Admin Tool</span>
+  </div>
+</div>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<div class="main">
+
+  <!-- STEP 1: Paste Data -->
+  <div class="step" id="step1">
+    <div class="step-header">
+      <div class="step-num" id="step1Num">1</div>
+      <div class="step-label">Paste Your Data</div>
+      <div class="step-meta">CSV or tab-separated from Excel / MiClub exports</div>
+    </div>
+    <div class="step-body">
+      <textarea class="paste-area" id="pasteArea"
+        placeholder="Paste CSV or tab-separated data here...&#10;&#10;Tip: Copy rows from Excel or a MiClub export and paste directly.&#10;Headers should be in the first row.&#10;&#10;Supported formats:&#10;  &#8226; Booking Analysis &mdash; Event Date, Tee Time, Name, Category, Gender, Comp, Checked In&#10;  &#8226; Competition Data &mdash; Membership #, Name, Category, Age, Competition/Social Rounds&#10;  &#8226; Pace of Play &mdash; Participant, Round Time (HH:MM)"></textarea>
+
+      <div class="paste-controls">
+        <div class="paste-info hidden" id="pasteInfo">
+          <span id="rowCount">0</span> rows &middot;
+          <span id="colCount">0</span> columns
+        </div>
+        <div style="margin-left:auto; display:flex; gap:8px;">
+          <button class="btn btn-ghost" id="btnClear">Clear</button>
+        </div>
+      </div>
+
+      <div class="upload-row">
+        <span class="upload-label">Or upload a file:</span>
+        <a class="upload-link" id="uploadLink" href="#">Choose .csv file</a>
+        <input type="file" id="fileInput" accept=".csv,.tsv,.txt">
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Select Target -->
+  <div class="step hidden" id="step2">
+    <div class="step-header">
+      <div class="step-num" id="step2Num">2</div>
+      <div class="step-label">Target Dashboard</div>
+      <div class="step-meta">Auto-detected or select manually</div>
+    </div>
+    <div class="step-body">
+      <div class="detect-bar hidden" id="detectBar"></div>
+      <div class="target-grid" id="targetGrid"></div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Process -->
+  <div class="step hidden" id="step3">
+    <div class="step-header">
+      <div class="step-num" id="step3Num">3</div>
+      <div class="step-label">Process &amp; Preview</div>
+      <div class="step-meta" id="step3Meta"></div>
+    </div>
+    <div class="step-body">
+
+      <!-- Competition two-paste tabs -->
+      <div class="comp-tabs hidden" id="compTabs">
+        <div class="comp-tab active" id="tabComp">
+          Comp Sheet <span class="tab-dot no-data"></span>
+        </div>
+        <div class="comp-tab" id="tabSocial">
+          Social Sheet <span class="tab-dot no-data"></span>
+        </div>
+        <div class="comp-tab" id="tabCombined">
+          Combined (single paste)
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-lg" id="btnProcess" disabled>
+        Process Data
+      </button>
+
+      <div class="progress-wrap hidden" id="progressWrap" style="margin-top:16px;">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <div class="hidden" id="resultsArea" style="margin-top:16px;">
+        <div class="stats-row" id="statsRow"></div>
+        <div class="warnings" id="warnings"></div>
+        <div class="preview-wrap">
+          <div class="preview-toggle" id="previewToggle">&#9654; Show JSON preview</div>
+          <div class="preview-json hidden" id="previewJson"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: Export -->
+  <div class="step hidden" id="step4">
+    <div class="step-header">
+      <div class="step-num" id="step4Num">4</div>
+      <div class="step-label">Export</div>
+      <div class="step-meta">Download or copy the generated data file</div>
+    </div>
+    <div class="step-body">
+      <div class="export-actions">
+        <button class="btn btn-success btn-lg" id="btnDownload">
+          &#11015; Download data.js
+        </button>
+        <button class="btn btn-ghost" id="btnCopy">
+          Copy to Clipboard
+        </button>
+        <span class="copy-feedback" id="copyFeedback"></span>
+      </div>
+      <div class="export-info" id="exportInfo"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="parsers.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -485,6 +485,26 @@ def process_pace():
 
 def process_sales():
     section("MEMBER SPEND DATA (SwiftPOS)")
+
+    # ── Delegate to generate_sales.py if available (XLSX multi-year support) ──
+    gen = BASE / "generate_sales.py"
+    if gen.exists():
+        # Try external source dir first, then data/raw/sales/
+        ext_dir = Path.home() / "Desktop" / "Golf Ops Data For Dashboard" / "Sales Report" / "Member"
+        sales_dir = DATA_RAW / "sales"
+        src = str(ext_dir) if ext_dir.exists() else str(sales_dir) if sales_dir.exists() else None
+        if src:
+            args = [sys.executable, str(gen), src]
+            print(f"  Using generate_sales.py for XLSX multi-year output...")
+            result = subprocess.run(args, cwd=str(BASE))
+            if result.returncode == 0:
+                out = DATA_EXPORTS / "sales_data.js"
+                if out.exists():
+                    kb = out.stat().st_size / 1024
+                    print(f"\n  ✅ sales_data.js regenerated ({kb:.0f} KB)")
+                return
+            print("  ⚠  generate_sales.py failed — falling back to PDF parser")
+
     sales_dir = DATA_RAW / "sales"
     if not sales_dir.exists():
         print("  ⚠  data/raw/sales/ not found")
@@ -626,7 +646,245 @@ def process_bookings():
         print(f"\n  ✅ booking-analysis.data.js regenerated ({kb:.0f} KB)")
 
 
-# ── STEP 6: COMPETITION DATA ─────────────────────────────────────────────────
+# ── STEP 6: YEARLY SALES (PLU Sales by Product Group) ────────────────────────
+
+def read_sales_xlsx(filepath):
+    """
+    Read a SwiftPOS 'PLU Sales by Location by Product Group' XLSX file.
+    Returns list of dicts: {plu, desc, qty, cost, sales, gp, gpPct, group, location}
+    """
+    NS = {'ss': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+
+    with zipfile.ZipFile(filepath) as zf:
+        names = zf.namelist()
+
+        # Shared strings
+        shared = []
+        if 'xl/sharedStrings.xml' in names:
+            tree = ET.parse(zf.open('xl/sharedStrings.xml'))
+            for si in tree.findall('.//ss:si', NS):
+                shared.append(''.join(t.text or '' for t in si.findall('.//ss:t', NS)))
+
+        sheet_file = 'xl/worksheets/sheet1.xml'
+        sheet = ET.parse(zf.open(sheet_file))
+
+        # Build sparse row/col data
+        rows_data = {}
+        for row_el in sheet.findall('.//ss:row', NS):
+            row_num = int(row_el.get('r', 0))
+            row_cells = {}
+            for cell in row_el.findall('ss:c', NS):
+                ref = cell.get('r', '')
+                col_letters = ''.join(c for c in ref if c.isalpha())
+                col_idx = 0
+                for ch in col_letters:
+                    col_idx = col_idx * 26 + (ord(ch.upper()) - ord('A') + 1)
+                col_idx -= 1
+
+                cell_type = cell.get('t', '')
+                val_el = cell.find('ss:v', NS)
+                if val_el is None:
+                    val = ''
+                elif cell_type == 's':
+                    val = shared[int(val_el.text)] if val_el.text else ''
+                else:
+                    val = val_el.text or ''
+                row_cells[col_idx] = val
+            rows_data[row_num] = row_cells
+
+    # Parse hierarchical structure (skip header rows 1-8)
+    records = []
+    current_location = ''
+    current_group = ''
+
+    for row_num in sorted(rows_data.keys()):
+        if row_num <= 9:
+            continue  # Skip header/metadata rows
+        row = rows_data[row_num]
+        if not row:
+            continue
+
+        col_a = safe_str(row.get(0, ''))
+        col_c = safe_str(row.get(2, ''))
+        col_e = safe_str(row.get(4, ''))
+        col_g = safe_str(row.get(6, ''))
+        col_i = safe_str(row.get(8, ''))
+
+        # Location row
+        if col_a == 'Location:':
+            current_location = col_c
+            continue
+
+        # Product Group row
+        if col_e == 'Product Group:':
+            # Strip numeric prefix: "1 - BULK BEER" → "BULK BEER"
+            g = col_g
+            dash_pos = g.find(' - ')
+            if dash_pos >= 0:
+                g = g[dash_pos + 3:]
+            current_group = g.strip()
+            continue
+
+        # Subtotal row — skip
+        if 'Total for' in col_i or 'Total Reported' in col_a:
+            continue
+
+        # Data row — PLU must be numeric
+        if not col_a:
+            continue
+        try:
+            float(col_a)
+        except ValueError:
+            continue
+
+        def nf(idx):
+            v = row.get(idx, '')
+            if v == '': return 0.0
+            try: return float(v)
+            except: return 0.0
+
+        records.append({
+            'plu':      col_a,
+            'desc':     safe_str(row.get(3, '')),
+            'qty':      nf(9),
+            'cost':     nf(12),
+            'sales':    nf(16),     # Sales Inc
+            'gp':       nf(19),
+            'gpPct':    nf(20),
+            'group':    current_group,
+            'location': current_location,
+        })
+
+    return records
+
+
+def process_yearly_sales():
+    section("YEARLY SALES DATA")
+
+    SALES_SRC = Path("/Users/jordankruck/Desktop/Golf Ops Data For Dashboard/Sales Report/Golf Ops")
+    files = {
+        '2023':    SALES_SRC / 'Golf Ops Sales 2023.xlsx',
+        '2024':    SALES_SRC / 'Golf Ops Sales 2024.xlsx',
+        '2025':    SALES_SRC / 'Golf Ops Sales 2025.xlsx',
+        '2026 Q1': SALES_SRC / 'Golf Ops Sales 2026 Q1.xlsx',
+    }
+
+    all_years = []
+    year_data = {}  # year → list of records
+
+    for year_label, filepath in files.items():
+        if not filepath.exists():
+            print(f"  ⚠  Missing: {filepath.name}")
+            continue
+        records = read_sales_xlsx(filepath)
+        year_data[year_label] = records
+        all_years.append(year_label)
+        print(f"  ✓  {filepath.name}: {len(records)} PLU items")
+
+    if not year_data:
+        print("  ⚠  No sales XLSX files found — skipping")
+        return
+
+    # Aggregate by product group
+    groups = {}     # groupName → { category, yearly: { year → {qty,sales,cost,gp} }, items: { plu → { desc, yearly } } }
+    categories = {} # catKey → { year → {sales,cost,gp,qty} }
+    totals = {}     # year → {sales,cost,gp,qty}
+
+    def get_cat(group_name):
+        g = group_name.strip()
+        if g in SALES_CATEGORY_MAP:
+            return SALES_CATEGORY_MAP[g]
+        gu = g.upper()
+        for k, v in SALES_CATEGORY_MAP.items():
+            if k.upper() in gu:
+                return v
+        return 'other'
+
+    for year_label, records in year_data.items():
+        totals[year_label] = {'sales': 0, 'cost': 0, 'gp': 0, 'qty': 0}
+
+        for rec in records:
+            gn = rec['group']
+            cat = get_cat(gn)
+
+            # Init group
+            if gn not in groups:
+                groups[gn] = {'category': cat, 'yearly': {}, 'items': {}}
+            g = groups[gn]
+
+            # Group yearly
+            if year_label not in g['yearly']:
+                g['yearly'][year_label] = {'qty': 0, 'sales': 0, 'cost': 0, 'gp': 0}
+            gy = g['yearly'][year_label]
+            gy['qty']   += rec['qty']
+            gy['sales'] += rec['sales']
+            gy['cost']  += rec['cost']
+            gy['gp']    += rec['gp']
+
+            # Item yearly
+            plu_key = rec['plu']
+            if plu_key not in g['items']:
+                g['items'][plu_key] = {'desc': rec['desc'], 'yearly': {}}
+            item = g['items'][plu_key]
+            if year_label not in item['yearly']:
+                item['yearly'][year_label] = {'qty': 0, 'sales': 0}
+            item['yearly'][year_label]['qty']   += rec['qty']
+            item['yearly'][year_label]['sales'] += rec['sales']
+
+            # Category yearly
+            if cat not in categories:
+                categories[cat] = {}
+            if year_label not in categories[cat]:
+                categories[cat][year_label] = {'sales': 0, 'cost': 0, 'gp': 0, 'qty': 0}
+            cy = categories[cat][year_label]
+            cy['sales'] += rec['sales']
+            cy['cost']  += rec['cost']
+            cy['gp']    += rec['gp']
+            cy['qty']   += rec['qty']
+
+            # Totals
+            ty = totals[year_label]
+            ty['sales'] += rec['sales']
+            ty['cost']  += rec['cost']
+            ty['gp']    += rec['gp']
+            ty['qty']   += rec['qty']
+
+    # Convert items dict to sorted list
+    for gn, g in groups.items():
+        items_list = []
+        for plu_key, item in g['items'].items():
+            items_list.append({'plu': plu_key, 'desc': item['desc'], 'yearly': item['yearly']})
+        # Sort by total sales desc
+        items_list.sort(key=lambda x: sum(y.get('sales', 0) for y in x['yearly'].values()), reverse=True)
+        g['items'] = items_list
+
+    # Round all numbers
+    def rnd(d):
+        if isinstance(d, dict):
+            return {k: rnd(v) for k, v in d.items()}
+        if isinstance(d, list):
+            return [rnd(v) for v in d]
+        if isinstance(d, float):
+            return round(d, 2)
+        return d
+
+    output = {
+        'years': all_years,
+        'groups': rnd(groups),
+        'categories': rnd(categories),
+        'totals': rnd(totals),
+    }
+
+    out_file = DATA_EXPORTS / 'yearly_sales.js'
+    out_file.write_text(
+        'const YEARLY_SALES = ' + json.dumps(output, ensure_ascii=False) + ';\n',
+        encoding='utf-8'
+    )
+    kb = out_file.stat().st_size / 1024
+    print(f"\n  ✅ yearly_sales.js: {kb:.0f} KB — {len(groups)} groups, {len(all_years)} years")
+
+
+# ── STEP 7: COMPETITION DATA ─────────────────────────────────────────────────
 
 def process_competition():
     section("COMPETITION DATA")

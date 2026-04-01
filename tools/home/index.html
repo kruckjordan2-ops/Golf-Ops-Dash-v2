@@ -69,8 +69,6 @@ body {
 .brand-logo {
   height: 38px; width: 38px; flex-shrink: 0;
   object-fit: contain;
-  filter: brightness(0) invert(1);
-  opacity: .85;
 }
 .brand-wordmark {}
 .brand-wordmark h1 {
@@ -432,7 +430,6 @@ body {
 .footer-left { display: flex; align-items: center; gap: 12px; }
 .footer-logo {
   width: 26px; height: 26px; opacity: .5;
-  filter: brightness(0) invert(1);
   object-fit: contain;
 }
 .footer-name {
@@ -487,7 +484,7 @@ body {
   <div class="hdr-chevron"></div>
   <div class="hdr-inner">
     <a class="brand" href="index.html">
-      <img class="brand-logo" src="assets/VGC Starters Hut - lg.png" alt="VGC">
+      <img class="brand-logo" src="../shared/assets/vgc-crest-white.png" alt="VGC">
       <div class="brand-wordmark">
         <h1>VGC Golf Operations Hub</h1>
         <p>The Victoria Golf Club</p>
@@ -955,6 +952,39 @@ body {
     </a>
 
     <!-- MICLUB PORTAL -->
+    <a href="../data-manager/index.html" class="card">
+      <div class="card-bar" style="background:linear-gradient(90deg,#059669,#2b335c)"></div>
+      <span class="card-status card-status--live">Live</span>
+      <div class="card-icon-row">
+        <div class="card-icon" style="background:rgba(5,150,105,.07)">
+          <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+            <rect x="4" y="3" width="20" height="22" rx="2" stroke="#059669" stroke-width="1.5"/>
+            <path d="M9 9h10M9 13h10M9 17h6" stroke="#059669" stroke-width="1.3" stroke-linecap="round" opacity=".5"/>
+            <path d="M18 16l3 3-3 3" stroke="#2b335c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 19h-6" stroke="#2b335c" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <span class="card-tag">Admin</span>
+          <div class="card-name">Data Manager</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Paste CSV data from MiClub exports to generate updated data files for dashboards. Supports booking analysis, competition data and pace of play.</p>
+        <div class="chips">
+          <span class="chip">CSV Import</span>
+          <span class="chip">Auto-Detect</span>
+          <span class="chip">Data Export</span>
+        </div>
+        <div class="card-foot">
+          <span class="card-cta-text">Open Data Manager</span>
+          <span class="card-arrow">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M6 2l4 4-4 4" stroke="#2b335c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+        </div>
+      </div>
+    </a>
+
     <a href="https://members.victoriagolf.com.au/views/admin/portal/index.xhtml" target="_blank" rel="noopener" class="card">
       <div class="card-bar" style="background:linear-gradient(90deg,#363d6e,#2b335c)"></div>
       <span class="card-status card-status--live">External</span>
@@ -1160,7 +1190,7 @@ body {
 <div class="footer">
   <div class="footer-inner">
     <div class="footer-left">
-      <img class="footer-logo" src="assets/VGC Logo-98x250px.png" alt="VGC">
+      <img class="footer-logo" src="../shared/assets/vgc-hut-white.png" alt="VGC">
       <span class="footer-name">The Victoria Golf Club</span>
       <span class="footer-copy">Golf Operations Hub &middot; Internal Use Only</span>
     </div>

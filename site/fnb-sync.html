@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VGC F&amp;B Course Sync</title>
+<link rel="stylesheet" href="../shared/fonts.css">
 <style>
 :root {
   --navy:#2b335c;--navy2:#1e2540;--navy3:#363d6e;
@@ -529,6 +530,7 @@ function showData() {
   document.getElementById('courseWrap').style.display = 'block';
   document.getElementById('incomingPanel').style.display = 'block';
   document.getElementById('completedSection').style.display = 'block';
+  try { localStorage.setItem('fnb_teesheet_date', new Date().toDateString()); } catch(e) {}
   render();
   if (renderInterval) clearInterval(renderInterval);
   renderInterval = setInterval(render, 30000);
@@ -805,6 +807,7 @@ function linkLeaderboard() {
   if (leaderboardId) {
     document.getElementById('lbStatus').textContent = 'Leaderboard linked';
     document.getElementById('lbStatus').style.color = 'var(--green)';
+    try { localStorage.setItem('fnb_leaderboard_date', new Date().toDateString()); } catch(e) {}
     fetchLeaderboard();
     if (lbInterval) clearInterval(lbInterval);
     lbInterval = setInterval(fetchLeaderboard, 60000);

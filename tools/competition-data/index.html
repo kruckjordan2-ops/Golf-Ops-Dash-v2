@@ -36,7 +36,7 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
 .hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;
   background:linear-gradient(90deg,var(--silver) 0%,var(--charcoal) 50%,var(--silver) 100%)}
 .hdr-brand{display:flex;align-items:center;gap:12px}
-.hdr-logo{width:36px;height:36px;flex-shrink:0}
+.hdr-logo{width:36px;height:36px;flex-shrink:0;object-fit:contain}
 .hdr-title{color:#fff}
 .hdr-title h1{font-size:1rem;font-weight:700;letter-spacing:.3px}
 .hdr-title p{font-size:.65rem;opacity:.55;letter-spacing:.4px;text-transform:uppercase}
@@ -175,11 +175,7 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
 <!-- HEADER -->
 <header class="hdr">
   <div class="hdr-brand">
-    <svg class="hdr-logo" viewBox="0 0 40 40" fill="none">
-      <circle cx="20" cy="20" r="19" stroke="rgba(255,255,255,.18)" stroke-width="1.2"/>
-      <path d="M20 6C13.4 6 8 11.4 8 18c0 4.5 2.4 8.4 6 10.6V34l6-3 6 3v-5.4c3.6-2.2 6-6.1 6-10.6 0-6.6-5.4-12-12-12z" fill="rgba(255,255,255,.12)" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
-      <circle cx="20" cy="18" r="4" fill="rgba(255,255,255,.6)"/>
-    </svg>
+    <img class="hdr-logo" src="../shared/assets/vgc-crest-white.png" alt="VGC">
     <div class="hdr-title">
       <h1>Competition Data</h1>
       <p>The Victoria Golf Club</p>
