@@ -148,10 +148,19 @@ def main():
         last  = str(ref.get("Last Name", "")).strip()
         raw_cat = str(ref.get("Category", "")).strip()
         raw_age = ref.get("Age", 0)
-        age = int(raw_age) if raw_age else 0
+        try:
+            age = int(float(raw_age)) if raw_age else 0
+        except (ValueError, TypeError):
+            age = 0
 
-        comp_rounds   = int(cr.get("Competition Rounds", 0)) if cr else 0
-        social_rounds = int(sr.get("Social Rounds", 0)) if sr else 0
+        try:
+            comp_rounds   = int(float(cr.get("Competition Rounds", 0))) if cr else 0
+        except (ValueError, TypeError):
+            comp_rounds = 0
+        try:
+            social_rounds = int(float(sr.get("Social Rounds", 0))) if sr else 0
+        except (ValueError, TypeError):
+            social_rounds = 0
         total = comp_rounds + social_rounds
 
         members.append({
@@ -249,7 +258,7 @@ def main():
     # Assemble output
     data = {
         "meta": {
-            "period":    "Q1 2026 (Jan-Mar)",
+            "period":    XLS_FILE.stem.replace("Competition & Social Rounds", "").strip(),
             "generated": TODAY,
             "source":    XLS_FILE.name,
         },

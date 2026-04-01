@@ -578,6 +578,111 @@ function buildMatchTbl(front, back, shots, gs, idx, td, fourball) {
 // ════════════════════════════════════════════════════════
 
 /**
+ * Build a symmetric single-player table (Player | Hole | Marker layout)
+ */
+function buildSingleTbl(front, back, idx, g1, fP, bP, fD, bD, sr, sl) {
+  const tot = fP + bP, totD = fD + bD;
+  const cw = ['12%','6%','8%','10%','8%','6%','10%','8%','8%','6%','12%'];
+  const colgroup = `<colgroup>${cw.map(w => `<col style="width:${w}">`).join('')}</colgroup>`;
+
+  let r = `<tr style="font-size:7px;font-weight:700;height:13px">
+    <td colspan="3" style="text-align:left;padding-left:2px;font-size:6px;white-space:normal;overflow:hidden;line-height:1.1">${v('d_course')}</td>
+    <td colspan="2" style="text-align:center">Player:</td>
+    <td style="border-left:2px solid #000;border-right:2px solid #000"></td>
+    <td colspan="2" style="text-align:center">Marker:</td>
+    <td colspan="3"></td></tr>
+  <tr>
+    <th style="font-size:7px">${distLbl()}</th>
+    <th style="font-size:7px">Par</th>
+    <th style="font-size:7px">Index</th>
+    <th style="font-size:7px">Score</th>
+    <th style="font-size:7px">Result</th>
+    <th style="font-size:7px;border-left:2px solid #000;border-right:2px solid #000">Hole</th>
+    <th style="font-size:7px">Score</th>
+    <th style="font-size:7px">Result</th>
+    <th style="font-size:7px">Index</th>
+    <th style="font-size:7px">Par</th>
+    <th style="font-size:7px">${distLbl()}</th>
+  </tr>`;
+
+  [...front, ...back].forEach((hole, i) => {
+    const par = getPar(hole, g1), si = getSI(hole, idx);
+    r += `<tr class="hr">
+      <td>${dist(hole.D)}</td>
+      <td style="font-weight:700">${par}</td>
+      <td>${si ?? ''}</td>
+      <td></td><td></td>
+      <td style="font-weight:700;border-left:2px solid #000;border-right:2px solid #000">${hole.n}</td>
+      <td></td><td></td>
+      <td>${si ?? ''}</td>
+      <td style="font-weight:700">${par}</td>
+      <td>${dist(hole.D)}</td>
+    </tr>`;
+    if (i === front.length - 1) {
+      r += `<tr class="or">
+        <td style="font-weight:700">${dist(fD)}</td><td style="font-weight:700">${fP}</td>
+        <td></td><td></td><td></td>
+        <td style="font-weight:700;border-left:2px solid #000;border-right:2px solid #000">Out</td>
+        <td></td><td></td><td></td>
+        <td style="font-weight:700">${fP}</td><td style="font-weight:700">${dist(fD)}</td>
+      </tr>
+      <tr style="height:5px;background:#e8e8e8">
+        <td colspan="11" style="border-left:none;border-right:none;border-top:2px solid #000;border-bottom:2px solid #000;background:#e8e8e8"></td>
+      </tr>`;
+    }
+  });
+
+  r += `
+  <tr class="sr">
+    <td style="font-weight:700">${dist(bD)}</td><td style="font-weight:700">${bP}</td>
+    <td></td><td></td><td></td>
+    <td style="border-left:2px solid #000;border-right:2px solid #000">In</td>
+    <td></td><td></td><td></td>
+    <td style="font-weight:700">${bP}</td><td style="font-weight:700">${dist(bD)}</td>
+  </tr>
+  <tr class="sr">
+    <td style="font-weight:700">${dist(fD)}</td><td style="font-weight:700">${fP}</td>
+    <td></td><td></td><td></td>
+    <td style="border-left:2px solid #000;border-right:2px solid #000">Out</td>
+    <td></td><td></td><td></td>
+    <td style="font-weight:700">${fP}</td><td style="font-weight:700">${dist(fD)}</td>
+  </tr>
+  <tr class="sr">
+    <td style="font-weight:700">${dist(totD)}</td><td style="font-weight:700">${tot}</td>
+    <td></td><td></td><td></td>
+    <td style="font-weight:700;border-left:2px solid #000;border-right:2px solid #000">Total</td>
+    <td></td><td></td><td></td>
+    <td style="font-weight:700">${tot}</td><td style="font-weight:700">${dist(totD)}</td>
+  </tr>
+  <tr class="fr">
+    <td style="font-weight:700;text-align:left;padding-left:2px">Scratch Rtg</td>
+    <td style="font-weight:700">${sr}</td>
+    <td></td><td></td><td></td>
+    <td style="font-weight:700;border-left:2px solid #000;border-right:2px solid #000">Deduct H'cap</td>
+    <td></td><td></td><td></td>
+    <td style="font-weight:700">${sr}</td>
+    <td style="font-weight:700;text-align:right;padding-right:2px">Scratch Rtg</td>
+  </tr>
+  <tr class="fr">
+    <td style="font-weight:700;text-align:left;padding-left:2px">Slope</td>
+    <td style="font-weight:700">${sl}</td>
+    <td></td><td></td><td></td>
+    <td style="font-weight:700;border-left:2px solid #000;border-right:2px solid #000">Nett Score</td>
+    <td></td><td></td><td></td>
+    <td style="font-weight:700">${sl}</td>
+    <td style="font-weight:700;text-align:right;padding-right:2px">Slope</td>
+  </tr>
+  <tr class="sig">
+    <td colspan="5" style="font-weight:700;text-align:left;padding-left:4px;border-top:2px solid #000;border-right:2px solid #000">Player:</td>
+    <td style="border-top:2px solid #000;border-left:2px solid #000;border-right:2px solid #000"></td>
+    <td colspan="5" style="font-weight:700;text-align:left;padding-left:4px;border-top:2px solid #000">Marker:</td>
+  </tr>`;
+
+  return `<table class="ct ct-fill" style="table-layout:fixed;width:100%;flex:1">${colgroup}${r}</table>`;
+}
+
+
+/**
  * Build the left-side hole data table for strokeplay cards
  * @param {hole[]} front  - Front 9
  * @param {hole[]} back   - Back 9
@@ -912,9 +1017,9 @@ function show(id) {
   document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
   const card = el('card_' + id); if (card) card.classList.add('active');
   document.querySelectorAll('.tb:not(.pr)').forEach(b => {
-    const ids = ['mp2','mp4','sp1','sp2','sp2m','sp4a','fours','ls2','ls4','lssoc'];
+    const ids = ['mp2','mp4','cbk','sp1','sp2','sp2m','sp4a','fours','ls2','ls4','lssoc'];
     b.classList.toggle('active', ids.some(x => x === id && b.textContent.trim() ===
-      ({ mp2:'2-Ball', mp4:'4-Ball', sp1:'Single', sp2:'2-Player', sp2m:'Mixed Index',
+      ({ mp2:'2-Ball', mp4:'4-Ball', cbk:'CB Kelly', sp1:'Single', sp2:'2-Player', sp2m:'Mixed Index',
          sp4a:'Ambrose/4-Ball', fours:'Foursomes', ls2:'2-Ball', ls4:'4-Ball', lssoc:'Social' }[id])));
   });
   upd();
@@ -977,8 +1082,8 @@ function upd() {
   const players = [
     { name: v('p1n'), gl: v('p1gl'), ga: v('p1ga'), daily: das[0], shots: sh1 },
     { name: v('p2n'), gl: v('p2gl'), ga: v('p2ga'), daily: das[1], shots: sh2 },
-    { name: v('p3n'), gl: '',        ga: v('p3ga'), daily: das[2], shots: sh3 },
-    { name: v('p4n'), gl: '',        ga: v('p4ga'), daily: das[3], shots: sh4 },
+    { name: v('p3n'), gl: v('p3gl'), ga: v('p3ga'), daily: das[2], shots: sh3 },
+    { name: v('p4n'), gl: v('p4gl'), ga: v('p4ga'), daily: das[3], shots: sh4 },
   ];
 
   // Sync comp hidden field if "other" is selected
@@ -1024,12 +1129,56 @@ function upd() {
   el('m4tbl').innerHTML = buildMatchTbl(front, back, shots, gs, idx, td, true);
   el('m4tbl').style.height = '100%';
 
+  // ── CB Kelly — Mixed Canadian Foursomes Matchplay ──
+  const cbkBlueTd = TEE.Blue, cbkRedTd = TEE.Red;
+  const cbkDailies = [0,1,2,3].map(i => {
+    const ga = v(`p${i+1}ga`);
+    const g = gs[i];
+    const ptd = g === 'F' ? cbkRedTd : cbkBlueTd;
+    const ppar = ptd.h.slice(0,18).reduce((sum, h) => sum + (g === 'F' ? h.PF : h.PM), 0);
+    return calcDaily(ga, g, ptd, ppar);
+  });
+  const cbkT1 = (cbkDailies[0] ?? 0) + (cbkDailies[1] ?? 0);
+  const cbkT2 = (cbkDailies[2] ?? 0) + (cbkDailies[3] ?? 0);
+  const cbkHasT1 = cbkDailies[0] !== null || cbkDailies[1] !== null;
+  const cbkHasT2 = cbkDailies[2] !== null || cbkDailies[3] !== null;
+  const cbkDiff = Math.abs(cbkT1 - cbkT2);
+  const cbkStr = Math.round(cbkDiff * 3 / 8);
+  const cbkSh1 = (cbkT1 >= cbkT2) ? cbkStr : 0;
+  const cbkSh2 = (cbkT2 > cbkT1) ? cbkStr : 0;
+
+  s('cbkcomp', comp); s('cbktee', 'Blue (M) / Red (F)'); s('cbkdate', date); s('cbktime', time);
+
+  const cbkPairLine = (label, pA, pB, dA, dB, combined, colA, colB) =>
+    `<div style="display:flex;align-items:baseline;gap:4px;flex-wrap:wrap">
+      <b style="font-size:10px">${label}:</b>
+      <span>${pA || '—'}</span>
+      <span style="background:${colA};padding:0 4px;border-radius:2px;font-size:8px;font-weight:700">${dA ?? '–'}</span>
+      <span>&amp;</span>
+      <span>${pB || '—'}</span>
+      <span style="background:${colB};padding:0 4px;border-radius:2px;font-size:8px;font-weight:700">${dB ?? '–'}</span>
+      <span style="font-size:8px;color:#555">Combined:</span>
+      <span style="background:#e8f5e9;padding:0 5px;border-radius:2px;font-weight:700;font-size:9px">${combined}</span>
+    </div>`;
+  el('cbkpairs').innerHTML =
+    cbkPairLine('Pair 1', v('p1n'), v('p2n'), cbkDailies[0], cbkDailies[1], cbkHasT1 ? cbkT1 : '–', PCOL[0], PCOL[1]) +
+    cbkPairLine('Pair 2', v('p3n'), v('p4n'), cbkDailies[2], cbkDailies[3], cbkHasT2 ? cbkT2 : '–', PCOL[2], PCOL[3]);
+
+  const cbkReceiver = cbkT1 > cbkT2 ? 'Pair 1' : cbkT2 > cbkT1 ? 'Pair 2' : 'Even';
+  el('cbkstrokes').innerHTML = cbkHasT1 && cbkHasT2
+    ? `3/8 Rule: Diff ${cbkDiff} × 3/8 = <b style="font-size:11px;color:#c41e3a">${cbkStr} strokes</b> to ${cbkReceiver}`
+    : '<span style="color:#999">Enter all 4 players to calculate 3/8 strokes</span>';
+
+  let cbkHtml = buildMatchTbl(front, back, [cbkSh1, cbkSh2, null, null], gs, 'match', td, false);
+  cbkHtml = cbkHtml.replace('>Player 1<', '>Pair 1<').replace('>Player 2<', '>Pair 2<');
+  el('cbktbl').innerHTML = cbkHtml;
+  el('cbktbl').style.height = '100%';
+
   // ── Single Strokeplay ──
   s('sp1p1', v('p1n')); s('sp1hc', das[0] ?? ''); s('sp1gl', v('p1gl'));
   s('sp1date', date); s('sp1time', time); s('sp1tee', tee);
   s('sp1sr', sr1); s('sp1sl', sl1); s('sp1comp', comp);
-  el('sp1ltbl').innerHTML = spLeftTbl(front, back, ['Metres','Par','Index','Shots','Player','Marker','TPH'], idx, g1, fP, bP, fD, bD);
-  el('sp1grid').innerHTML = spGrid(front, back, null);
+  el('sp1tbl').innerHTML = buildSingleTbl(front, back, idx, g1, fP, bP, fD, bD, sr1, sl1);
 
   // ── 2-Player Strokeplay (4BBB) ──
   el('sp2p1').innerHTML = `${v('p1n') || '—'}&nbsp;<span style="color:#1a6b3a;font-size:9px">${das[0] ?? ''}</span>&nbsp;<span style="font-size:9px">${v('p1gl')}</span>`;
@@ -1059,7 +1208,7 @@ function upd() {
   s('fodate', date); s('fosr', sr1); s('fosl', sl1); s('fotee', tee); s('fotime', time);
   el('fop1').innerHTML = `${v('p1n') || '—'}&nbsp;<span style="font-size:9px">${v('p1gl')}</span>&nbsp;<b style="color:#1a6b3a;font-size:9px">${das[0] ?? ''}</b>`;
   el('fop2').innerHTML = `${v('p2n') || '—'}&nbsp;<span style="font-size:9px">${v('p2gl')}</span>&nbsp;<b style="color:#1a6b3a;font-size:9px">${das[1] ?? ''}</b>`;
-  el('foltbl').innerHTML = spLeftTbl(front, back, ['Metres','Par','Index','Player','Marker'], idx, g1, fP, bP, fD, bD);
+  el('foltbl').innerHTML = spLeftTbl(front, back, ['Metres','Par','Index','Player','Result','Marker','Result'], idx, g1, fP, bP, fD, bD);
   el('fogrid').innerHTML = spGrid(front, back, null);
 
   // ── Landscape Cards ──

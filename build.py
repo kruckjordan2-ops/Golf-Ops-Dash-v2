@@ -197,7 +197,8 @@ def read_xlsx(filepath, sheet_name='Daily Numbers'):
                 if val_el is None:
                     val = ''
                 elif cell_type == 's':
-                    val = shared[int(val_el.text)] if val_el.text else ''
+                    idx = int(val_el.text) if val_el.text else -1
+                    val = shared[idx] if 0 <= idx < len(shared) else ''
                 else:
                     val = val_el.text or ''
                 row_cells[col_idx] = val
@@ -686,7 +687,8 @@ def read_sales_xlsx(filepath):
                 if val_el is None:
                     val = ''
                 elif cell_type == 's':
-                    val = shared[int(val_el.text)] if val_el.text else ''
+                    idx = int(val_el.text) if val_el.text else -1
+                    val = shared[idx] if 0 <= idx < len(shared) else ''
                 else:
                     val = val_el.text or ''
                 row_cells[col_idx] = val
@@ -761,7 +763,7 @@ def read_sales_xlsx(filepath):
 def process_yearly_sales():
     section("YEARLY SALES DATA")
 
-    SALES_SRC = Path("/Users/jordankruck/Desktop/Golf Ops Data For Dashboard/Sales Report/Golf Ops")
+    SALES_SRC = Path.home() / "Desktop" / "Golf Ops Data For Dashboard" / "Sales Report" / "Golf Ops"
     files = {
         '2023':    SALES_SRC / 'Golf Ops Sales 2023.xlsx',
         '2024':    SALES_SRC / 'Golf Ops Sales 2024.xlsx',

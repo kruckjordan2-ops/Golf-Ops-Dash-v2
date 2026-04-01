@@ -20,7 +20,7 @@ except ImportError:
     raise
 
 BASE   = Path(__file__).parent
-XLSX   = Path("/Users/jordankruck/Desktop/Golf Ops Data For Dashboard/Membership/Membership MiClub and GG.xlsx")
+XLSX   = Path.home() / "Desktop" / "Golf Ops Data For Dashboard" / "Membership" / "Membership MiClub and GG.xlsx"
 TODAY  = date.today()
 
 OUTPUTS = [
@@ -147,9 +147,12 @@ def main():
         # Age from MiClub (already computed), or derive from birthday
         age = None
         mc_age = r[COLS["age"]]
-        if mc_age and str(mc_age).isdigit():
-            age = int(mc_age)
-        elif birthday:
+        try:
+            if mc_age and str(mc_age).replace('.','',1).isdigit():
+                age = int(float(mc_age))
+        except (ValueError, TypeError):
+            pass
+        if age is None and birthday:
             try:
                 bd = datetime.strptime(birthday, "%d/%m/%Y").date()
                 age = TODAY.year - bd.year - ((TODAY.month, TODAY.day) < (bd.month, bd.day))

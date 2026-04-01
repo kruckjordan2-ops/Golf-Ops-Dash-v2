@@ -6,7 +6,7 @@
 <title>VGC Member Lookup</title>
 <link rel="icon" type="image/png" href="../shared/assets/vgc-crest.png">
 <link rel="stylesheet" href="../shared/fonts.css">
-<link rel="stylesheet" href="assets/member-lookup/styles.css">
+<link rel="stylesheet" href="styles.css">
 <style>
 :root{
   --navy:#2b335c;--navy2:#1e2540;--navy3:#363d6e;
@@ -16,7 +16,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
-.hdr{background:var(--navy);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;box-shadow:0 2px 12px rgba(0,0,0,.3);position:sticky;top:0;z-index:200;position:relative}
+.hdr{background:var(--navy);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;box-shadow:0 2px 12px rgba(0,0,0,.3);position:sticky;top:0;z-index:200}
 .hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--silver),var(--silver-lt),var(--silver),transparent)}
 .hdr-inner{position:relative;z-index:1;display:flex;align-items:center;gap:18px}
 .hdr-title h1{font-size:.95rem;font-weight:700;color:#fff;line-height:1.15}
@@ -80,17 +80,6 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
 </style>
 </head>
 <body>
-  <div class="gate-card">
-    <img class="gate-logo" src="../shared/assets/vgc-crest-white.png" alt="VGC" style="width:48px;height:48px;object-fit:contain">
-    <div class="gate-title">VGC Golf Operations</div>
-    <div class="gate-sub">The Victoria Golf Club &mdash; Staff Access</div>
-    <div class="gate-rule"></div>
-    <input class="gate-input" type="password" id="gateInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkGate()">
-    <button class="gate-btn" onclick="checkGate()">Access Hub</button>
-    <div class="gate-err" id="gateErr"></div>
-  </div>
-</div>
-
 
 <header class="hdr">
   <div class="hdr-inner">
@@ -164,8 +153,8 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
   </div>
 </div>
 
-<script src="assets/data/member-lookup.data.js"></script>
-<script src="assets/member-lookup/app.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
 <script src="report.js"></script>
 
 <script>

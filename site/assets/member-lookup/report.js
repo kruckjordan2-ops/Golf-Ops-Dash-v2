@@ -3,6 +3,8 @@
 //  Print-ready HTML report + CSV export
 // ─────────────────────────────────────────────────────────────────────────────
 
+function rptEsc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
 const RPT_CSS = `
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1e2230;background:#fff;padding:20px 32px}
@@ -170,13 +172,13 @@ function generateMemberReport(){
 
   // Member list (first 50)
   const memRows = list.slice(0,50).map(m => `<tr>
-    <td class="l">${m.first} ${m.last}</td>
-    <td class="r">${m.gender||'—'}</td>
+    <td class="l">${rptEsc(m.first)} ${rptEsc(m.last)}</td>
+    <td class="r">${rptEsc(m.gender)||'—'}</td>
     <td class="r">${m.age||'—'}</td>
-    <td>${m.membership_type||'—'}</td>
+    <td>${rptEsc(m.membership_type)||'—'}</td>
     <td class="r">${m.tenure||'—'}</td>
     <td class="r">${m.handicap!=null?m.handicap:'—'}</td>
-    <td class="dim">${m.city||'—'}</td>
+    <td class="dim">${rptEsc(m.city)||'—'}</td>
   </tr>`).join('');
   const memTable = `<table class="rpt-table">
     <thead><tr><th style="text-align:left">Name</th><th>Gender</th><th>Age</th><th>Type</th><th>Tenure</th><th>Hcp</th><th>City</th></tr></thead>
@@ -235,6 +237,7 @@ function generateMemberReport(){
   </body></html>`;
 
   const w = window.open('', '_blank');
+  if (!w) { alert('Popup blocked — please allow popups for this site.'); return; }
   w.document.write(html);
   w.document.close();
 }

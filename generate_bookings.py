@@ -105,8 +105,8 @@ def main():
     df["Gender"]              = df["Gender"].astype(str).str.strip()
     df["Event Date"]          = pd.to_datetime(df["Event Date"], errors="coerce")
     df["Tee Time"]            = pd.to_datetime(df["Tee Time"],   errors="coerce")
-    df["Played in Comp"]      = df["Played in Comp"].astype(bool)
-    df["Checked In"]          = df["Checked In"].astype(bool)
+    df["Played in Comp"]      = df["Played in Comp"].astype(str).str.strip().str.lower().isin(["yes","true","1","1.0"])
+    df["Checked In"]          = df["Checked In"].astype(str).str.strip().str.lower().isin(["yes","true","1","1.0"])
     df["Membership Number"]   = df["Membership Number"].astype(str).str.strip()
 
     df["month"]    = df["Event Date"].dt.strftime("%B")
@@ -276,7 +276,7 @@ def main():
     data = {
         "meta": {
             "generated":  TODAY,
-            "date_range": f"{months_present[0]} – {months_present[-1]} 2026",
+            "date_range": f"{months_present[0]} – {months_present[-1]} {df['Event Date'].dt.year.mode().iloc[0] if not df['Event Date'].isna().all() else 2026}",
             "months":     months_present,
         },
         "totals": {
@@ -301,7 +301,7 @@ def main():
     }
 
     js = (f"// VGC Booking Analysis — generated {TODAY}\n"
-          f"// {total:,} bookings · {months_present[0]}–{months_present[-1]} 2026\n"
+          f"// {total:,} bookings · {months_present[0]}–{months_present[-1]}\n"
           f"window.BOOKING_DATA = {json.dumps(data, separators=(',',':'))};\n")
 
     for out in OUTPUTS:

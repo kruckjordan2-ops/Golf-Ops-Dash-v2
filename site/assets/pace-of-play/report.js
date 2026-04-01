@@ -281,6 +281,7 @@ function generatePaceReport(){
   </body></html>`;
 
   const w = window.open('', '_blank');
+  if (!w) { alert('Popup blocked — please allow popups for this site.'); return; }
   w.document.write(html);
   w.document.close();
 }

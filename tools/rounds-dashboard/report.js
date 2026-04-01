@@ -634,6 +634,7 @@ function rpt_generateFiltered() {
     // Build using a custom approach since rpt_buildHTML expects a single year
     const html = rpt_buildFilteredHTML(dataPrior, title, subtitle);
     const w = window.open('', '_blank');
+    if (!w) { alert('Popup blocked — please allow popups for this site.'); return; }
     w.document.write(html);
     w.document.close();
     return;
@@ -649,6 +650,7 @@ function rpt_generateFiltered() {
     const subtitle = title;
     const html = rpt_buildHTML(year, monthNames, title, subtitle);
     const w = window.open('', '_blank');
+    if (!w) { alert('Popup blocked — please allow popups for this site.'); return; }
     w.document.write(html);
     w.document.close();
   } else {
@@ -674,6 +676,7 @@ function rpt_generateFiltered() {
     const subtitle = title;
     const html = rpt_buildFilteredHTML(combined, title, subtitle);
     const w = window.open('', '_blank');
+    if (!w) { alert('Popup blocked — please allow popups for this site.'); return; }
     w.document.write(html);
     w.document.close();
   }
@@ -919,6 +922,7 @@ function rpt_generate(type) {
   document.getElementById('rpt-modal').remove();
   const html = rpt_buildHTML(year, months, title, subtitle);
   const w = window.open('', '_blank');
+  if (!w) { alert('Popup blocked — please allow popups for this site.'); return; }
   w.document.write(html);
   w.document.close();
 }
