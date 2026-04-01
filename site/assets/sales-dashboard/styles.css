@@ -43,7 +43,7 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
   background:linear-gradient(90deg,var(--silver) 0%,var(--charcoal) 50%,var(--silver) 100%);
 }
 .hdr-brand{display:flex;align-items:center;gap:12px}
-.hdr-logo{width:36px;height:36px;flex-shrink:0}
+.hdr-logo{width:36px;height:36px;flex-shrink:0;object-fit:contain}
 .hdr-title{color:#fff}
 .hdr-title h1{font-size:1rem;font-weight:700;letter-spacing:.3px}
 .hdr-title p{font-size:.65rem;opacity:.55;letter-spacing:.4px;text-transform:uppercase}

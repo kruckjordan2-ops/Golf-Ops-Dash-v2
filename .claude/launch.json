@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "rounds-dashboard",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "/usr/local/bin/python3",
       "runtimeArgs": [
         "-m",
         "http.server",
@@ -15,7 +15,7 @@
     },
     {
       "name": "site",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "/usr/local/bin/python3",
       "runtimeArgs": [
         "-m",
         "http.server",
@@ -27,7 +27,7 @@
     },
     {
       "name": "spend-tracking",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "/usr/local/bin/python3",
       "runtimeArgs": [
         "-m",
         "http.server",
@@ -37,7 +37,7 @@
     },
     {
       "name": "fnb-sync",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "/usr/local/bin/python3",
       "runtimeArgs": [
         "-m",
         "http.server",
@@ -49,7 +49,7 @@
     },
     {
       "name": "booking-analysis",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "/usr/local/bin/python3",
       "runtimeArgs": [
         "-m",
         "http.server",
@@ -61,7 +61,7 @@
     },
     {
       "name": "sales-dashboard",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "/usr/local/bin/python3",
       "runtimeArgs": [
         "-m",
         "http.server",
@@ -71,7 +71,7 @@
     },
     {
       "name": "competition-data",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "/usr/local/bin/python3",
       "runtimeArgs": [
         "-m",
         "http.server",
@@ -83,7 +83,7 @@
     },
     {
       "name": "home",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "/usr/local/bin/python3",
       "runtimeArgs": [
         "-m",
         "http.server",
@@ -95,7 +95,7 @@
     },
     {
       "name": "scorecard",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "/usr/local/bin/python3",
       "runtimeArgs": [
         "-m",
         "http.server",
@@ -105,7 +105,7 @@
     },
     {
       "name": "data-manager",
-      "runtimeExecutable": "python3",
+      "runtimeExecutable": "/usr/local/bin/python3",
       "runtimeArgs": [
         "-m",
         "http.server",

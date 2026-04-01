@@ -241,6 +241,9 @@ function init() {
         textarea.value = e.target.result;
         onDataInput();
       };
+      reader.onerror = function() {
+        alert('Failed to read file. Please try again.');
+      };
       reader.readAsText(fileInput.files[0]);
     }
   });

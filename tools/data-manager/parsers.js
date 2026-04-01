@@ -137,7 +137,7 @@ var BookingAnalysisParser = {
       var dow = DOW_ORDER[(eventDate.getDay() + 6) % 7]; // JS: 0=Sun, we want Mon=0
 
       parsed.push({
-        month: month, dow: dow, hour: hour,
+        month: month, dow: dow, hour: hour, year: eventDate.getFullYear(),
         catGrp: catGrp, gender: gender,
         playedInComp: playedInComp, checkedIn: checkedIn,
         memNum: memNum, firstName: firstName, lastName: lastName,
@@ -312,9 +312,10 @@ var BookingAnalysisParser = {
     // Determine year from data
     var years = {};
     parsed.forEach(function(p) {
-      // We need to get year from the original date parse
+      years[p.year] = (years[p.year] || 0) + 1;
     });
-    var yearStr = new Date().getFullYear().toString();
+    var yearKeys = Object.keys(years).sort();
+    var yearStr = yearKeys.length ? yearKeys.join('-') : new Date().getFullYear().toString();
 
     var data = {
       meta: {
@@ -677,7 +678,9 @@ var PaceOfPlayParser = {
       var name = nameRaw;
       if (name.indexOf(',') !== -1) {
         var parts = name.split(',');
-        name = parts[1].trim() + ' ' + parts[0].trim();
+        if (parts.length === 2) {
+          name = parts[1].trim() + ' ' + parts[0].trim();
+        }
       }
       name = name.replace(/\s+/g, ' ').trim();
 
@@ -749,6 +752,7 @@ function parseDate(str) {
 
 function parseTeeTimeHour(teeTimeStr, eventDateStr) {
   if (!teeTimeStr) return -1;
+  teeTimeStr = teeTimeStr.toString().trim();
   // HH:MM or H:MM
   var hm = teeTimeStr.match(/(\d{1,2}):(\d{2})/);
   if (hm) return parseInt(hm[1]);

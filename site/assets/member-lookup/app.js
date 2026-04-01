@@ -7,6 +7,7 @@ let activeId = null;
 
 function ini(m){return((m.first||'?')[0]+(m.last||'?')[0]).toUpperCase();}
 function val(v,fb){if(!v||v==='nan'||v===''||v==='None'||v==='null')return fb||null;return v;}
+function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function tenPct(t){return Math.min(100,Math.round((t||0)/80*100));}
 
 function doSearch(){
@@ -31,11 +32,11 @@ function renderList(){
   const ul=document.getElementById('mList');
   if(!filtered.length){ul.innerHTML='<div class="no-results">No members match your filters.</div>';return;}
   const show=filtered.slice(0,200);
-  ul.innerHTML=show.map(m=>`<div class="member-item${m.id===activeId?' active':''}" onclick="showMember('${m.id}')">
+  ul.innerHTML=show.map(m=>`<div class="member-item${m.id===activeId?' active':''}" onclick="showMember('${esc(m.id)}')">
     <div class="av${m.gender==='Female'?' f':''}">${ini(m)}</div>
     <div style="min-width:0">
-      <div class="mn">${m.first} ${m.last}</div>
-      <div class="mm">${m.age?m.age+'yr · ':''}${m.tenure?m.tenure+'yr member':''}${!m.age&&!m.tenure?(m.email||''):''}
+      <div class="mn">${esc(m.first)} ${esc(m.last)}</div>
+      <div class="mm">${m.age?m.age+'yr · ':''}${m.tenure?m.tenure+'yr member':''}${!m.age&&!m.tenure?esc(m.email||''):''}
       </div>
     </div></div>`).join('');
   if(filtered.length>200) ul.innerHTML+=`<div class="no-results" style="font-style:italic">Showing 200 of ${filtered.length} — refine search</div>`;
@@ -56,7 +57,7 @@ function showMember(id){
   <div class="mc-avatar${m.gender==='Female'?' f':''}">${ini(m)}</div>
   <div>
     <div class="mc-name">${val(m.suffix)?val(m.suffix)+' ':''}${m.first} ${m.last}</div>
-    <div class="mc-sub">${val(m.email)?'<a href="mailto:'+m.email+'">'+m.email+'</a>':'No email on file'}</div>
+    <div class="mc-sub">${val(m.email)?'<a href="mailto:'+esc(m.email)+'">'+esc(m.email)+'</a>':'No email on file'}</div>
     <div class="mc-badges">
       <span class="badge ${m.gender==='Female'?'bf':'bm'}">${m.gender||'Unknown'}</span>
       ${m.age?'<span class="badge bt">Age '+m.age+'</span>':''}
@@ -68,8 +69,8 @@ function showMember(id){
 <div class="mc-grid">
   <div class="mc-section">
     <div class="sct">Contact</div>
-    <div class="fr"><span class="fl">Email</span><span class="fv">${val(m.email)?'<a href="mailto:'+m.email+'">'+m.email+'</a>':'<span class=em>Not on file</span>'}</span></div>
-    <div class="fr"><span class="fl">Phone</span><span class="fv${!val(m.phone)?' em':''}">${val(m.phone)||'Not on file'}</span></div>
+    <div class="fr"><span class="fl">Email</span><span class="fv">${val(m.email)?'<a href="mailto:'+esc(m.email)+'">'+esc(m.email)+'</a>':'<span class=em>Not on file</span>'}</span></div>
+    <div class="fr"><span class="fl">Phone</span><span class="fv${!val(m.phone)?' em':''}">${esc(val(m.phone))||'Not on file'}</span></div>
     <div class="fr"><span class="fl">Gender</span><span class="fv">${val(m.gender)||'—'}</span></div>
   </div>
   <div class="mc-section">
@@ -98,8 +99,8 @@ function showMember(id){
   ${hasSz?`<div class="mc-section full">
     <div class="sct">Sizing preferences</div>
     <div class="eq-grid">
-      ${val(m.apparel_size)?'<div class="eq-item"><div class="eq-type">Apparel</div><div class="eq-brand">'+m.apparel_size+'</div></div>':''}
-      ${val(m.shoe_size)?'<div class="eq-item"><div class="eq-type">Shoe size</div><div class="eq-brand">'+m.shoe_size+'</div></div>':''}
+      ${val(m.apparel_size)?'<div class="eq-item"><div class="eq-type">Apparel</div><div class="eq-brand">'+esc(m.apparel_size)+'</div></div>':''}
+      ${val(m.shoe_size)?'<div class="eq-item"><div class="eq-type">Shoe size</div><div class="eq-brand">'+esc(m.shoe_size)+'</div></div>':''}
     </div>
   </div>`:''}
 </div>`;

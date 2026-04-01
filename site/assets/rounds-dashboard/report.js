@@ -571,6 +571,241 @@ function rpt_buildHTML(year, months, title, subtitle) {
   </body></html>`;
 }
 
+// ── Filtered report helpers ──────────────────────────────────────────────────
+
+function rpt_filterSummary() {
+  const parts = [];
+  // Year
+  if (S.year === 'all') parts.push('All Years');
+  else parts.push(String(S.year));
+  // Period
+  if (S.periodType === 'fy' && S.period) {
+    const fy = parseInt(S.period.replace('fy',''));
+    parts.push('FY' + fy + ' (Jul ' + (fy-1) + ' – Jun ' + fy + ')');
+  } else if (S.periodType === 'q' && S.period) {
+    parts.push(S.period.toUpperCase());
+  } else if (S.periodType === 'season' && S.period) {
+    parts.push(S.period.charAt(0).toUpperCase() + S.period.slice(1));
+  } else if (S.periodType === 'month' && S.period) {
+    parts.push(REPORT_MONTHS[parseInt(S.period)-1] || S.period);
+  }
+  // Month filters
+  if (S.months.size < 12) parts.push(S.months.size + ' months selected');
+  // Day filters
+  if (S.days.size < 7) parts.push(S.days.size + ' days selected');
+  // Exclude 3pm
+  if (S.exclude3pm) parts.push('Excl. after 3pm');
+  return parts.join(' · ');
+}
+
+function rpt_generateFiltered() {
+  const RAW = window.ROUNDS_DASHBOARD_RAW;
+  const modal = document.getElementById('rpt-modal');
+  if (modal) modal.remove();
+
+  // Determine active months from S state
+  const activeMos = getActiveMos(); // returns array of month numbers 1-12
+  const monthNames = activeMos.map(m => REPORT_MONTHS[m-1]);
+
+  // Handle FY spanning two calendar years
+  if (S.periodType === 'fy' && S.period) {
+    const fy = parseInt(S.period.replace('fy',''));
+    const priorYear = fy - 1;
+    const priorMonths = [7,8,9,10,11,12].map(m => REPORT_MONTHS[m-1]);
+    const curMonths = [1,2,3,4,5,6].map(m => REPORT_MONTHS[m-1]);
+
+    // Aggregate across both halves
+    const dataPrior = rpt_aggregateMonths(priorYear, priorMonths);
+    const dataCur = rpt_aggregateMonths(fy, curMonths);
+
+    // Combine
+    const KEYS = ['am','pm','total','after3','guests','members','mgr_intro','interstate',
+                  'intl','industry','memb_intro','memb_unaccomp','corporate',
+                  'event','non_playing','voucher','recip','comp'];
+    KEYS.forEach(k => dataPrior.totals[k] = (dataPrior.totals[k]||0) + (dataCur.totals[k]||0));
+    REPORT_DAYS.forEach(d => KEYS.forEach(k => dataPrior.byDay[d][k] = (dataPrior.byDay[d][k]||0) + (dataCur.byDay[d][k]||0)));
+    dataPrior.cap.am += dataCur.cap.am;
+    dataPrior.cap.pm += dataCur.cap.pm;
+    dataPrior.cap.after3 += dataCur.cap.after3;
+    dataPrior.cap.total += dataCur.cap.total;
+
+    const title = 'FY' + fy + ' (Jul ' + priorYear + ' – Jun ' + fy + ')';
+    const subtitle = title;
+    // Build using a custom approach since rpt_buildHTML expects a single year
+    const html = rpt_buildFilteredHTML(dataPrior, title, subtitle);
+    const w = window.open('', '_blank');
+    w.document.write(html);
+    w.document.close();
+    return;
+  }
+
+  // For non-FY: iterate across active years
+  const years = S.year === 'all' ? Object.keys(RAW).map(Number).sort() : [S.year];
+
+  if (years.length === 1) {
+    // Single year — use standard report builder
+    const year = years[0];
+    const title = rpt_filterSummary();
+    const subtitle = title;
+    const html = rpt_buildHTML(year, monthNames, title, subtitle);
+    const w = window.open('', '_blank');
+    w.document.write(html);
+    w.document.close();
+  } else {
+    // Multi-year: aggregate all years together
+    const KEYS = ['am','pm','total','after3','guests','members','mgr_intro','interstate',
+                  'intl','industry','memb_intro','memb_unaccomp','corporate',
+                  'event','non_playing','voucher','recip','comp'];
+    const combined = { totals:{}, byDay:{}, cap:{am:0,pm:0,after3:0,total:0} };
+    KEYS.forEach(k => combined.totals[k] = 0);
+    REPORT_DAYS.forEach(d => { combined.byDay[d] = {}; KEYS.forEach(k => combined.byDay[d][k] = 0); });
+
+    years.forEach(year => {
+      const agg = rpt_aggregateMonths(year, monthNames);
+      KEYS.forEach(k => combined.totals[k] += agg.totals[k] || 0);
+      REPORT_DAYS.forEach(d => KEYS.forEach(k => combined.byDay[d][k] += agg.byDay[d]?.[k] || 0));
+      combined.cap.am += agg.cap.am;
+      combined.cap.pm += agg.cap.pm;
+      combined.cap.after3 += agg.cap.after3;
+      combined.cap.total += agg.cap.total;
+    });
+
+    const title = rpt_filterSummary();
+    const subtitle = title;
+    const html = rpt_buildFilteredHTML(combined, title, subtitle);
+    const w = window.open('', '_blank');
+    w.document.write(html);
+    w.document.close();
+  }
+}
+
+// Build report HTML from pre-aggregated data (for multi-year / FY reports)
+function rpt_buildFilteredHTML(data, title, subtitle) {
+  const dateStr = new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'});
+  const t = data.totals, c = data.cap;
+  const guestRatio = t.total > 0 ? (t.guests / t.total * 100).toFixed(1) + '%' : '—';
+  const occPct = pct(t.am + t.pm, c.total);
+
+  const css = `
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1e2230;background:#fff;padding:20px 32px}
+    @media print{body{padding:10px 20px}.no-print{display:none!important}@page{margin:1.5cm}}
+    .rpt-header{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:14px;border-bottom:3px solid #2b335c;margin-bottom:20px}
+    .rpt-title h1{font-size:18px;font-weight:700;color:#2b335c;letter-spacing:.2px}
+    .rpt-title h2{font-size:13px;font-weight:400;color:#5a585c;margin-top:3px}
+    .rpt-meta{text-align:right;font-size:10px;color:#898b8d;line-height:1.7}
+    .rpt-meta strong{color:#2b335c}
+    .kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+    .kpi{background:#f5f6f9;border-radius:6px;padding:12px 16px;border-left:3px solid #2b335c}
+    .kpi-val{font-size:22px;font-weight:700;color:#2b335c}
+    .kpi-lbl{font-size:10px;color:#898b8d;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+    .kpi-sub{font-size:10px;color:#5a585c;margin-top:4px}
+    .rpt-section{margin-bottom:28px}
+    .rpt-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#fff;background:#2b335c;padding:5px 10px;margin-bottom:10px;border-radius:3px}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .rpt-table{border-collapse:collapse;width:100%;font-size:11px}
+    .rpt-table.half{max-width:520px}
+    .rpt-table th{background:#2b335c;color:#fff;padding:5px 8px;text-align:center;font-weight:600;font-size:10px}
+    .rpt-table td{padding:5px 8px;border-bottom:1px solid #e4e5e6}
+    .rpt-table tbody tr:hover{background:#f5f6f9}
+    .rpt-table .day-cell{font-weight:600;color:#2b335c;text-align:left}
+    .rpt-table .num{text-align:right}
+    .rpt-table .bold{font-weight:700}
+    .rpt-table .dim{color:#898b8d}
+    .rpt-table .occ-col{text-align:right;font-weight:600}
+    .total-row{background:#eef0f5!important;font-weight:700}
+    .total-row td{border-top:2px solid #2b335c;border-bottom:none}
+    .occ-bar-wrap{height:4px;background:#e4e5e6;border-radius:2px;margin-top:3px;width:80px;display:inline-block;vertical-align:middle;margin-left:6px}
+    .occ-bar{height:4px;border-radius:2px}
+    .usage-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+    .usage-day{width:90px;font-weight:600;color:#2b335c;font-size:11px}
+    .usage-bar-wrap{flex:1;height:14px;background:#e4e5e6;border-radius:3px;overflow:hidden}
+    .usage-bar{height:14px;background:#2b335c;border-radius:3px}
+    .usage-pct{width:45px;text-align:right;font-size:11px;font-weight:600;color:#3d4678}
+    .usage-num{width:45px;text-align:right;font-size:10px;color:#898b8d}
+    .guest-summary{display:flex;gap:12px;margin-bottom:4px}
+    .guest-pill{background:#f5f6f9;border-radius:6px;padding:10px 16px;border-left:3px solid #2b335c;flex:1}
+    .guest-pill.mem{border-color:#3d7a5c}
+    .guest-pill.gst{border-color:#5a6090}
+    .gp-val{font-size:20px;font-weight:700;color:#2b335c}
+    .gp-lbl{font-size:10px;color:#898b8d;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+    .gp-pct{color:#5a6090;font-weight:600}
+    .print-btn{display:inline-flex;align-items:center;gap:6px;background:#2b335c;color:#fff;border:none;border-radius:4px;padding:8px 18px;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:20px}
+    .print-btn:hover{background:#1e2540}
+    .rpt-footer{margin-top:28px;padding-top:12px;border-top:1px solid #e4e5e6;font-size:9px;color:#898b8d;display:flex;justify-content:space-between}
+  `;
+
+  // Build day occupancy table inline (can't use rpt_dayOccTable since it needs year/months for capacity)
+  let dayRows = '';
+  REPORT_DAYS.forEach(day => {
+    const v = data.byDay[day];
+    const am = v.am||0, pm = v.pm||0, total = am+pm;
+    dayRows += `<tr>
+      <td class="day-cell">${day}</td>
+      <td class="num">${fmt(am)}</td>
+      <td class="num">${fmt(pm)}</td>
+      <td class="num dim">${fmt(Math.round(v.after3||0))}</td>
+      <td class="num bold">${fmt(v.total||0)}</td>
+      <td class="num">${fmt(v.members||0)}</td>
+      <td class="num">${fmt(v.guests||0)}</td>
+    </tr>`;
+  });
+  dayRows += `<tr class="total-row">
+    <td class="day-cell">Total</td>
+    <td class="num">${fmt(t.am)}</td>
+    <td class="num">${fmt(t.pm)}</td>
+    <td class="num dim">${fmt(Math.round(t.after3||0))}</td>
+    <td class="num bold">${fmt(t.total)}</td>
+    <td class="num">${fmt(t.members)}</td>
+    <td class="num">${fmt(t.guests)}</td>
+  </tr>`;
+
+  return `<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8"><title>${title}</title>
+  <style>${css}</style>
+  </head><body>
+  <button class="print-btn no-print" onclick="window.print()">Print / Save as PDF</button>
+  <div class="rpt-header">
+    <div class="rpt-title">
+      <h1>The Victoria Golf Club</h1>
+      <h2>Golf Operations Report — ${title}</h2>
+    </div>
+    <div class="rpt-meta">
+      <div>Prepared for: <strong>General Manager</strong></div>
+      <div>Report period: <strong>${subtitle}</strong></div>
+      <div>Generated: <strong>${dateStr}</strong></div>
+    </div>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kpi-val">${fmt(t.total)}</div><div class="kpi-lbl">Total Rounds</div></div>
+    <div class="kpi"><div class="kpi-val">${fmt(t.members)}</div><div class="kpi-lbl">Member Rounds</div><div class="kpi-sub">${pct(t.members, t.total)} of total</div></div>
+    <div class="kpi"><div class="kpi-val">${fmt(t.guests)}</div><div class="kpi-lbl">Guest Rounds</div><div class="kpi-sub">${guestRatio} of total</div></div>
+    <div class="kpi"><div class="kpi-val">${occPct}</div><div class="kpi-lbl">Occupancy</div><div class="kpi-sub">${fmt(t.am+t.pm)} of ${fmt(c.total)} spots</div></div>
+  </div>
+  <div class="rpt-section">
+    <div class="rpt-section-title">Rounds by Day of Week</div>
+    <table class="rpt-table">
+      <thead><tr><th class="day-cell">Day</th><th>AM</th><th>PM</th><th>After 3pm</th><th>Total</th><th>Members</th><th>Guests</th></tr></thead>
+      <tbody>${dayRows}</tbody>
+    </table>
+  </div>
+  <div class="two-col">
+    <div class="rpt-section">
+      <div class="rpt-section-title">Daily Round Usage</div>
+      ${rpt_usageRanking(data)}
+    </div>
+    <div class="rpt-section">
+      <div class="rpt-section-title">Round Composition</div>
+      ${rpt_guestBreakdown(data)}
+    </div>
+  </div>
+  <div class="rpt-footer">
+    <span>The Victoria Golf Club — Golf Operations</span>
+    <span>${title} · Generated ${dateStr}</span>
+  </div>
+  </body></html>`;
+}
+
 // ── Modal UI ─────────────────────────────────────────────────────────────────
 
 function openReportModal(type) {
@@ -579,6 +814,33 @@ function openReportModal(type) {
 
   const existingModal = document.getElementById('rpt-modal');
   if (existingModal) existingModal.remove();
+
+  // Filtered report — show current filter summary and generate directly
+  if (type === 'filtered') {
+    const modal = document.createElement('div');
+    modal.id = 'rpt-modal';
+    modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center`;
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:8px;padding:24px;width:340px;box-shadow:0 8px 32px rgba(0,0,0,.25)">
+        <h3 style="font-size:14px;font-weight:700;color:#2b335c;margin-bottom:4px">
+          Generate Report from Current Filters
+        </h3>
+        <p style="font-size:11px;color:#898b8d;margin-bottom:16px">${rpt_filterSummary()}</p>
+        <div style="display:flex;gap:8px">
+          <button onclick="document.getElementById('rpt-modal').remove()"
+            style="flex:1;padding:8px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;font-size:12px">
+            Cancel
+          </button>
+          <button onclick="rpt_generateFiltered()"
+            style="flex:2;padding:8px;border:none;border-radius:4px;background:#2b335c;color:#fff;font-weight:700;cursor:pointer;font-size:12px">
+            Generate Report
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    return;
+  }
 
   const yearOpts = years.map(y => `<option value="${y}">${y}</option>`).join('');
 

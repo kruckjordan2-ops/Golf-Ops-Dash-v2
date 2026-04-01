@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VGC Pace of Play</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="icon" type="image/png" href="../shared/assets/vgc-crest.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="stylesheet" href="../shared/fonts.css">
 <style>
 :root{
@@ -120,16 +121,13 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
 <header class="hdr">
   <div class="hdr-inner">
     <a class="back-link" href="index.html">&#8592; Hub</a>
-    <svg width="36" height="36" viewBox="0 0 52 52" fill="none">
-      <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
-      <path d="M13 15 L26 37 L39 15" fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
-      <path d="M32 20 A9 9 0 1 0 32 32" fill="none" stroke="#898b8d" stroke-width="2.2" stroke-linecap="round"/>
-    </svg>
+    <img class="hdr-logo" src="../shared/assets/vgc-crest-white.png" alt="VGC" style="width:36px;height:36px;object-fit:contain">
     <div class="hdr-title"><h1>Pace of Play</h1><p>The Victoria Golf Club</p></div>
   </div>
   <div class="hdr-right">
     <span class="hdr-pill" id="dataInfo">Loading...</span>
     <span class="hdr-pill">App + Scorecard</span>
+    <button class="hdr-pill" style="cursor:pointer;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8)" onclick="openReportModal()">Report</button>
   </div>
 </header>
 
@@ -330,5 +328,6 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
 <script src="assets/data/pace_data.js"></script>
 <script src="assets/data/member-lookup.data.js"></script>
 <script src="assets/pace-of-play/app.js"></script>
+<script src="assets/pace-of-play/report.js"></script>
 </body>
 </html>

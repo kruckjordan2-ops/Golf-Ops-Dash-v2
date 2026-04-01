@@ -963,8 +963,9 @@ def build_site():
         else:
             print(f"  ⚠  Missing: {filename} (run build after adding data files)")
 
-    if CNAME_SRC.exists():
-        shutil.copy2(CNAME_SRC, SITE / "CNAME")
+    # CNAME not needed for Netlify hosting
+    # if CNAME_SRC.exists():
+    #     shutil.copy2(CNAME_SRC, SITE / "CNAME")
 
 
 # ── MAIN ──────────────────────────────────────────────────────────────────────

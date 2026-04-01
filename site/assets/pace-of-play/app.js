@@ -171,7 +171,7 @@ function renderMembers() {
   }).join('');
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">No members match your filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">No members match your filters.</td></tr>';
   }
 }
 

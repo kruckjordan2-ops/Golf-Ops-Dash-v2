@@ -315,7 +315,7 @@ function allocate(dailies) {
  * @returns {{ front: hole[], back: hole[] }}
  */
 function getSeq(td, h19, startHole) {
-  const find = n => td.h.find(x => x.n === n);
+  const find = n => td.h.find(x => x.n === n) || { n, D: 0, PM: 0, PF: 0, SIM: 0, SIF: 0, SIX: 0 };
   const h19d = { ...find(19) };
   const rep = parseInt(h19);
 
@@ -910,7 +910,7 @@ let cur = 'mp2';
 function show(id) {
   cur = id;
   document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-  el('card_' + id).classList.add('active');
+  const card = el('card_' + id); if (card) card.classList.add('active');
   document.querySelectorAll('.tb:not(.pr)').forEach(b => {
     const ids = ['mp2','mp4','sp1','sp2','sp2m','sp4a','fours','ls2','ls4','lssoc'];
     b.classList.toggle('active', ids.some(x => x === id && b.textContent.trim() ===
@@ -928,7 +928,8 @@ function show(id) {
 // ════════════════════════════════════════════════════════
 
 function upd() {
-  const tkey = v('d_tee'), td = TEE[tkey] || TEE.Blue;
+  const tkey = v('d_tee'), td = TEE[tkey] || TEE.Blue || TEE[Object.keys(TEE)[0]];
+  if (!td) return;
   const idx = v('d_idx'), h19 = v('d_h19'), sh = v('d_start');
   const gs = [v('p1g'), v('p2g'), v('p3g'), v('p4g')];
   const g1 = gs[0];
@@ -947,11 +948,13 @@ function upd() {
 
   // Shotgun start note
   const noteEl = el('d_start_note');
-  if (parseInt(sh) > 1) {
-    noteEl.style.display = 'block';
-    noteEl.textContent = '⛳ Shotgun: ' + allH.map(h => h.n).join(' → ');
-  } else {
-    noteEl.style.display = 'none';
+  if (noteEl) {
+    if (parseInt(sh) > 1) {
+      noteEl.style.display = 'block';
+      noteEl.textContent = '⛳ Shotgun: ' + allH.map(h => h.n).join(' → ');
+    } else {
+      noteEl.style.display = 'none';
+    }
   }
 
   // Calculate daily handicaps and shot allocations for all 4 players

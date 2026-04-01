@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VGC Rounds Dashboard</title>
+<link rel="icon" type="image/png" href="../shared/assets/vgc-crest.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="stylesheet" href="../shared/fonts.css">
 <link rel="stylesheet" href="assets/rounds-dashboard/styles.css">
@@ -54,6 +55,9 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
   border-radius:3px;padding:3px 10px;font-size:.65rem;color:rgba(255,255,255,.8);
   letter-spacing:.4px;text-transform:uppercase;
 }
+.back-link{font-size:.65rem;font-weight:600;color:rgba(255,255,255,.5);
+  text-decoration:none;letter-spacing:.5px;text-transform:uppercase;transition:color .15s}
+.back-link:hover{color:rgba(255,255,255,.85)}
 
 /* ─── LAYOUT ─── */
 .app{display:flex;margin-top:56px;min-height:calc(100vh - 56px)}
@@ -271,6 +275,7 @@ canvas{max-height:230px}
 
 <div class="hdr">
   <div class="hdr-brand">
+    <a class="back-link" href="index.html">&#8592; Hub</a>
     <img class="hdr-logo" src="../shared/assets/vgc-crest-white.png" alt="VGC">
     <div class="hdr-title">
       <h1>The Victoria Golf Club</h1>
@@ -389,7 +394,8 @@ canvas{max-height:230px}
   <div class="sidebar-section">
     <div class="sidebar-label">Reports</div>
     <button class="reset-btn" style="margin-bottom:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);width:100%;text-align:left;padding:7px 10px;font-size:.68rem;letter-spacing:.3px" onclick="openReportModal('monthly')">📋 Monthly Report</button>
-    <button class="reset-btn" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);width:100%;text-align:left;padding:7px 10px;font-size:.68rem;letter-spacing:.3px" onclick="openReportModal('quarterly')">📊 Quarterly Report</button>
+    <button class="reset-btn" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);width:100%;text-align:left;padding:7px 10px;font-size:.68rem;letter-spacing:.3px;margin-bottom:6px" onclick="openReportModal('quarterly')">📊 Quarterly Report</button>
+    <button class="reset-btn" style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);width:100%;text-align:left;padding:7px 10px;font-size:.68rem;letter-spacing:.3px;font-weight:700" onclick="openReportModal('filtered')">📄 Current Filters Report</button>
   </div>
 
 </aside>

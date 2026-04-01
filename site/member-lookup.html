@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VGC Member Lookup</title>
+<link rel="icon" type="image/png" href="../shared/assets/vgc-crest.png">
 <link rel="stylesheet" href="../shared/fonts.css">
 <link rel="stylesheet" href="assets/member-lookup/styles.css">
 <style>
@@ -80,12 +81,7 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
 </head>
 <body>
   <div class="gate-card">
-    <svg class="gate-logo" width="48" height="48" viewBox="0 0 52 52" fill="none">
-      <ellipse cx="26" cy="26" rx="23" ry="23" fill="none" stroke="#898b8d" stroke-width="1" opacity="0.5"/>
-      <path d="M13 15 L26 37 L39 15" fill="none" stroke="#2b335c" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/>
-      <path d="M32 20 A9 9 0 1 0 32 32" fill="none" stroke="#898b8d" stroke-width="2.2" stroke-linecap="round"/>
-      <path d="M32 26 L37 26 L37 32" fill="none" stroke="#898b8d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+    <img class="gate-logo" src="../shared/assets/vgc-crest-white.png" alt="VGC" style="width:48px;height:48px;object-fit:contain">
     <div class="gate-title">VGC Golf Operations</div>
     <div class="gate-sub">The Victoria Golf Club &mdash; Staff Access</div>
     <div class="gate-rule"></div>
@@ -109,6 +105,7 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
   <div class="hdr-right">
     <span class="hdr-pill">1,399 Members</span>
     <span class="hdr-pill">Golf Genius Export</span>
+    <button class="hdr-pill" style="cursor:pointer;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8)" onclick="openReportModal()">Report</button>
   </div>
 </header>
 
@@ -169,6 +166,7 @@ body{font-family:'Open Sans',Arial,sans-serif;background:var(--bg);color:var(--t
 
 <script src="assets/data/member-lookup.data.js"></script>
 <script src="assets/member-lookup/app.js"></script>
+<script src="assets/member-lookup/report.js"></script>
 
 <script>
 // Pre-fill search if navigated from Spend Tracking tool

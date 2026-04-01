@@ -312,7 +312,7 @@ function populateDemoDropdowns() {
 
 function getFiltered() {
   var out = DATA.filter(function(m) {
-    if (S.search && m.name.toLowerCase().indexOf(S.search.toLowerCase()) === -1) return false;
+    if (S.search && (!m.name || m.name.toLowerCase().indexOf(S.search.toLowerCase()) === -1)) return false;
     if (S.segment !== 'all' && getSegment(m.total) !== S.segment) return false;
     if (m.total < S.minSpend) return false;
     if (S.categoryFocus && getCategoryFocus(m) !== S.categoryFocus) return false;
