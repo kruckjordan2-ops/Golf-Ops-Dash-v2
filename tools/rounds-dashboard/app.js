@@ -696,31 +696,95 @@ function buildMonthlyTable(){
 // ═══════════════════════════════════════════════════════
 // OCCUPANCY PAGE
 // ═══════════════════════════════════════════════════════
+
+// Compute weighted occupancy from occ_report (book/spots, not avg of avgs)
+// mos: array of month numbers; field: 'am','pm','total'
+function calcOcc(y,field,mos){
+  let book=0,spots=0;
+  const months=(mos||[1,2,3,4,5,6,7,8,9,10,11,12]).map(m=>MONTHS[m-1]);
+  for(const mn of months){
+    for(const d of DAYS){
+      const v=RAW[y]?.occ_report?.[mn]?.[d];
+      if(!v)continue;
+      if(field==='am'){book+=v.am_book||0;spots+=v.am_spots||0;}
+      else if(field==='pm'){book+=v.pm_book||0;spots+=v.pm_spots||0;}
+      else{book+=v.total_book||0;spots+=v.total_spots||0;}
+    }
+  }
+  return spots?book/spots:0;
+}
+// Occupancy excluding after-3pm rounds from total
+function calcOccExcl3pm(y,mos){
+  let book=0,spots=0;
+  const months=(mos||[1,2,3,4,5,6,7,8,9,10,11,12]).map(m=>MONTHS[m-1]);
+  for(const mn of months){
+    for(const d of DAYS){
+      const v=RAW[y]?.occ_report?.[mn]?.[d];
+      if(!v)continue;
+      const after3=RAW[y]?.pivot?.[mn]?.[d]?.after3||0;
+      book+=Math.max(0,(v.total_book||0)-after3);
+      spots+=v.total_spots||0;
+    }
+  }
+  return spots?book/spots:0;
+}
+// Month-level weighted occupancy (for line charts)
+function calcOccMonth(y,m,field){
+  let book=0,spots=0;
+  const mn=MONTHS[m-1];
+  for(const d of DAYS){
+    const v=RAW[y]?.occ_report?.[mn]?.[d];
+    if(!v)continue;
+    if(field==='am'){book+=v.am_book||0;spots+=v.am_spots||0;}
+    else if(field==='pm'){book+=v.pm_book||0;spots+=v.pm_spots||0;}
+    else{book+=v.total_book||0;spots+=v.total_spots||0;}
+  }
+  return spots?book/spots:null;
+}
+
 function buildOccKPIs(){
-  const kpis=YEARS.map(y=>({y,am:yVal(y,'occ_am'),pm:yVal(y,'occ_pm'),tot:yVal(y,'occ_total')}));
-  document.getElementById('occKpiRow').innerHTML=kpis.map(({y,am,pm,tot})=>`
-    <div class="kpi" style="border-left-color:${YC[y]}">
-      <div class="kpi-lbl">${y}${y===2026?' YTD':''}</div>
-      <div class="kpi-val">${fmtPct(tot)}</div>
-      <div class="kpi-sub">AM ${fmtPct(am)} · PM ${pm?fmtPct(pm):'N/A'}</div>
-    </div>`).join('');
+  const years=getYears();
+  document.getElementById('occKpiRow').innerHTML=years.map(y=>{
+    const mos=getMosForYear(y);
+    const tot=calcOcc(y,'total',mos);
+    const am=calcOcc(y,'am',mos);
+    const pm=calcOcc(y,'pm',mos);
+    const excl=calcOccExcl3pm(y,mos);
+    const isFY=S.periodType==='fy'&&S.period;
+    const lbl=isFY?`FY${parseInt(S.period.replace('fy',''))} (${y})`:y+(y===CURRENT_YEAR?' YTD':'');
+    return `<div class="kpi" style="border-left-color:${YC[y]}">
+      <div class="kpi-lbl">${lbl}</div>
+      <div class="kpi-val">${tot?(tot*100).toFixed(1)+'%':'—'}</div>
+      <div class="kpi-sub">AM ${am?(am*100).toFixed(1)+'%':'—'} · PM ${pm?(pm*100).toFixed(1)+'%':'—'}</div>
+      <div class="kpi-sub" style="margin-top:2px;color:var(--silver-dark)">Excl. after-3pm: ${excl?(excl*100).toFixed(1)+'%':'—'}</div>
+    </div>`;
+  }).join('');
 }
 
 function buildOccMonthChart(){
-  const mos=getActiveMos();
-  const labels=mos.map(m=>MO[m-1]);
-  mkChart('occMonthChart','line',{
-    labels,
-    datasets:YEARS.map(y=>({
-      label:String(y),
-      data:mos.map(m=>{const v=RAW[y]?.occ_report?.[MONTHS[m-1]];
-        if(!v)return null;
-        const tots=Object.values(v).map(d=>d.total_occ).filter(Boolean);
-        return tots.length?(tots.reduce((a,b)=>a+b,0)/tots.length*100).toFixed(1):null;
-      }),
-      borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:4,borderWidth:2,spanGaps:false
-    }))
-  },{scales:{x:SC.x,y:{...SC.y,ticks:{callback:v=>v+'%'},suggestedMin:50,suggestedMax:100}}});
+  const fyS=getFYSeries();
+  if(fyS){
+    const fyYear=parseInt(S.period.replace('fy',''));
+    mkChart('occMonthChart','line',{
+      labels:fyS.map(pt=>pt.label),
+      datasets:[
+        {label:`FY${fyYear} Total`,data:fyS.map(pt=>{const v=calcOccMonth(pt.y,pt.m,'total');return v?(v*100).toFixed(1):null;}),
+          borderColor:P[0],backgroundColor:'transparent',tension:.35,pointRadius:4,borderWidth:2,spanGaps:false},
+        {label:`FY${fyYear} AM`,data:fyS.map(pt=>{const v=calcOccMonth(pt.y,pt.m,'am');return v?(v*100).toFixed(1):null;}),
+          borderColor:P[1],backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:1.5,spanGaps:false,borderDash:[4,3]},
+      ]
+    },{scales:{x:SC.x,y:{...SC.y,ticks:{callback:v=>v+'%'},suggestedMin:50,suggestedMax:100}}});
+  } else {
+    const mos=getActiveMos(); const years=getYears();
+    mkChart('occMonthChart','line',{
+      labels:mos.map(m=>MO[m-1]),
+      datasets:years.map(y=>({
+        label:String(y),
+        data:mos.map(m=>{const v=calcOccMonth(y,m,'total');return v?(v*100).toFixed(1):null;}),
+        borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:4,borderWidth:2,spanGaps:false
+      }))
+    },{scales:{x:SC.x,y:{...SC.y,ticks:{callback:v=>v+'%'},suggestedMin:50,suggestedMax:100}}});
+  }
 }
 
 function buildOccDayGrid(){
@@ -752,32 +816,24 @@ function buildOccDayGrid(){
 }
 
 function buildOccAmChart(){
-  const mos=getActiveMos();
+  const mos=getActiveMos(); const years=getYears();
   mkChart('occAmChart','line',{
     labels:mos.map(m=>MO[m-1]),
-    datasets:YEARS.map(y=>({
+    datasets:years.map(y=>({
       label:String(y),
-      data:mos.map(m=>{const v=RAW[y]?.occ_report?.[MONTHS[m-1]];
-        if(!v)return null;
-        const vs=Object.values(v).map(d=>d.am_occ).filter(Boolean);
-        return vs.length?(vs.reduce((a,b)=>a+b,0)/vs.length*100).toFixed(1):null;
-      }),
+      data:mos.map(m=>{const v=calcOccMonth(y,m,'am');return v?(v*100).toFixed(1):null;}),
       borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:4,borderWidth:2,spanGaps:false
     }))
   },{scales:{x:SC.x,y:{...SC.y,ticks:{callback:v=>v+'%'},suggestedMin:50}}});
 }
 
 function buildOccPmChart(){
-  const mos=getActiveMos();
+  const mos=getActiveMos(); const years=getYears();
   mkChart('occPmChart','line',{
     labels:mos.map(m=>MO[m-1]),
-    datasets:YEARS.map(y=>({
+    datasets:years.map(y=>({
       label:String(y),
-      data:mos.map(m=>{const v=RAW[y]?.occ_report?.[MONTHS[m-1]];
-        if(!v)return null;
-        const vs=Object.values(v).map(d=>d.pm_occ).filter(Boolean);
-        return vs.length?(vs.reduce((a,b)=>a+b,0)/vs.length*100).toFixed(1):null;
-      }),
+      data:mos.map(m=>{const v=calcOccMonth(y,m,'pm');return v?(v*100).toFixed(1):null;}),
       borderColor:YC[y],backgroundColor:'transparent',tension:.35,pointRadius:4,borderWidth:2,spanGaps:false
     }))
   },{scales:{x:SC.x,y:{...SC.y,ticks:{callback:v=>v+'%'},suggestedMin:30}}});
@@ -1209,10 +1265,7 @@ function buildSeasonOcc(){
     labels:SEASONS.map(s=>s.l),
     datasets:getYearsNoPartial().map(y=>({
       label:String(y),
-      data:SEASONS.map(s=>{
-        const vals=s.m.flatMap(mn=>Object.values(RAW[y]?.occ_report?.[MONTHS[mn-1]]||{}).map(d=>d.total_occ).filter(Boolean));
-        return vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length*100).toFixed(1):null;
-      }),
+      data:SEASONS.map(s=>{const v=calcOcc(y,'total',s.m);return v?(v*100).toFixed(1):null;}),
       borderColor:YC[y],backgroundColor:'transparent',tension:.3,pointRadius:5,borderWidth:2.5,spanGaps:true
     }))
   },{scales:{x:SC.x,y:{...SC.y,ticks:{callback:v=>v+'%'},suggestedMin:60}}});
@@ -1312,12 +1365,14 @@ function buildCmpComp(){
 }
 
 function buildCmpOcc(){
+  const fmt=v=>v?(v*100).toFixed(1):null;
   mkChart('cmpOcc','line',{
     labels:YEARS,
     datasets:[
-      {label:'AM Occ',data:YEARS.map(y=>yVal(y,'occ_am')?(yVal(y,'occ_am')*100).toFixed(1):null),borderColor:P[0],backgroundColor:'transparent',tension:.3,pointRadius:5,borderWidth:2.5,spanGaps:false},
-      {label:'PM Occ',data:YEARS.map(y=>yVal(y,'occ_pm')?(yVal(y,'occ_pm')*100).toFixed(1):null),borderColor:P[2],backgroundColor:'transparent',tension:.3,pointRadius:5,borderWidth:2.5,spanGaps:false},
-      {label:'Total',data:YEARS.map(y=>yVal(y,'occ_total')?(yVal(y,'occ_total')*100).toFixed(1):null),borderColor:P[1],backgroundColor:'transparent',tension:.3,pointRadius:5,borderWidth:2.5,spanGaps:false},
+      {label:'AM Occ',data:YEARS.map(y=>fmt(calcOcc(y,'am'))),borderColor:P[0],backgroundColor:'transparent',tension:.3,pointRadius:5,borderWidth:2.5,spanGaps:false},
+      {label:'PM Occ',data:YEARS.map(y=>fmt(calcOcc(y,'pm'))),borderColor:P[2],backgroundColor:'transparent',tension:.3,pointRadius:5,borderWidth:2.5,spanGaps:false},
+      {label:'Total',data:YEARS.map(y=>fmt(calcOcc(y,'total'))),borderColor:P[1],backgroundColor:'transparent',tension:.3,pointRadius:5,borderWidth:2.5,spanGaps:false},
+      {label:'Excl. After 3pm',data:YEARS.map(y=>fmt(calcOccExcl3pm(y))),borderColor:P[3],backgroundColor:'transparent',tension:.3,pointRadius:5,borderWidth:2,spanGaps:false,borderDash:[4,3]},
     ]
   },{scales:{x:SC.x,y:{...SC.y,ticks:{callback:v=>v+'%'},suggestedMin:60}}});
 }
@@ -1328,13 +1383,17 @@ function buildCmpTable(){
     {l:'Guests',k:'guests'},{l:'Members',k:'members'},{l:'Competition',k:'comp'},
     {l:'Corporate',k:'corporate'},{l:'Event',k:'event'},{l:'Voucher',k:'voucher'},
     {l:'Reciprocal',k:'recip'},{l:'Interstate',k:'interstate'},{l:'International',k:'intl'},
-    {l:'Occ Total',k:'occ_total',fmt:v=>v?fmtPct(v):'—'},{l:'Occ AM',k:'occ_am',fmt:v=>v?fmtPct(v):'—'},
+  ];
+  // Occupancy rows use computed values, not yVal
+  const occMetrics=[
+    {l:'Occ Total',fn:y=>calcOcc(y,'total')},{l:'Occ AM',fn:y=>calcOcc(y,'am')},
+    {l:'Occ PM',fn:y=>calcOcc(y,'pm')},{l:'Occ Excl. After 3pm',fn:y=>calcOccExcl3pm(y)},
   ];
   const tbl=document.getElementById('cmpTable');
   const n=YEARS.length;
   const deltaHdrs=YEARS.slice(1).map((y,i)=>`<th>Δ ${YEARS[i]}→${y}${y===CURRENT_YEAR?' YTD':''}</th>`).join('');
   const hdr=`<thead><tr><th>Metric</th>${YEARS.map(y=>`<th style="color:${YC[y]}">${y}${y===CURRENT_YEAR?' YTD':''}</th>`).join('')}${deltaHdrs}</tr></thead>`;
-  const body='<tbody>'+metrics.map(({l,k,fmt})=>{
+  const roundRows=metrics.map(({l,k,fmt})=>{
     const vals=YEARS.map(y=>yVal(y,k));
     const f=fmt||fmtN;
     const deltas=vals.slice(1).map((v,i)=>{
@@ -1343,8 +1402,18 @@ function buildCmpTable(){
       return `<td class="${cls}">${p!=='—'?(+p>=0?'+':'')+p+'%':'—'}</td>`;
     }).join('');
     return `<tr><td>${l}</td>${vals.map(v=>`<td>${f(v)}</td>`).join('')}${deltas}</tr>`;
-  }).join('')+'</tbody>';
-  tbl.innerHTML=hdr+body;
+  });
+  const occRows=occMetrics.map(({l,fn})=>{
+    const vals=YEARS.map(y=>fn(y));
+    const f=v=>v?(v*100).toFixed(1)+'%':'—';
+    const deltas=vals.slice(1).map((v,i)=>{
+      const p=vals[i]&&v?((v-vals[i])/vals[i]*100).toFixed(1):'—';
+      const cls=p!=='—'&&+p>0?'best':p!=='—'&&+p<0?'worst':'';
+      return `<td class="${cls}">${p!=='—'?(+p>=0?'+':'')+p+'%':'—'}</td>`;
+    }).join('');
+    return `<tr><td>${l}</td>${vals.map(v=>`<td>${f(v)}</td>`).join('')}${deltas}</tr>`;
+  });
+  tbl.innerHTML=hdr+'<tbody>'+roundRows.join('')+occRows.join('')+'</tbody>';
 }
 
 function buildCmpMonthTable(){

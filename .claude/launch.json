@@ -80,6 +80,28 @@
         "tools/competition-data"
       ],
       "port": 8771
+    },
+    {
+      "name": "home",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8772",
+        "--directory",
+        "tools"
+      ],
+      "port": 8772
+    },
+    {
+      "name": "scorecard",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8773"
+      ],
+      "port": 8773
     }
   ]
 }
