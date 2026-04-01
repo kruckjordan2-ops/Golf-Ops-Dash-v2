@@ -812,84 +812,55 @@ function linkLeaderboard() {
 }
 
 function fetchLeaderboard() {
-  // Try JSON API first, then fall back to HTML scrape
-  const jsonUrl = `https://leaderboard.miclub.com.au/api/leaderboard?club=${leaderboardClub}&leaderboardId=${leaderboardId}`;
+  // Scrape the public MiClub leaderboard HTML
+  // Columns: Rank, Rank, Rep, Player, Club, Thru, Total (7 cells)
   const htmlUrl = `https://leaderboard.miclub.com.au/display-leaderboard?club=${leaderboardClub}&leaderboardId=${leaderboardId}`;
 
-  fetch(jsonUrl, { mode: 'cors' })
-    .then(r => { if (!r.ok) throw new Error('API not available'); return r.json(); })
-    .then(data => {
-      if (data && data.players) {
-        data.players.forEach(p => {
-          groups.forEach(g => {
-            const match = g.players.find(gp => gp.code === p.memberCode || gp.name === p.name);
-            if (match) g.hole = p.currentHole || g.hole;
+  fetch(htmlUrl, { mode: 'cors' })
+    .then(r => r.text())
+    .then(html => {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const rows = doc.querySelectorAll('tr');
+      let updated = 0;
+
+      rows.forEach(row => {
+        const cells = [...row.querySelectorAll('td')];
+        if (cells.length !== 7) return; // player rows have exactly 7 cells
+
+        const playerName = cells[3].textContent.trim();
+        const thruVal = parseInt(cells[5].textContent.trim());
+
+        if (!playerName || isNaN(thruVal) || thruVal <= 0) return;
+
+        // Match by name: leaderboard has "Ryan Menezes", groups have "Ryan Menezes" or similar
+        const nameParts = playerName.split(/\s+/);
+        const surname = nameParts[nameParts.length - 1].toLowerCase();
+        const firstName = nameParts[0].toLowerCase();
+
+        groups.forEach(g => {
+          const match = g.players.find(gp => {
+            const gpSurname = gp.name.split(' ').pop().toLowerCase();
+            const gpFirst = gp.name.split(' ')[0].toLowerCase();
+            return gpSurname === surname && gpFirst === firstName;
           });
+          if (match) {
+            g.hole = thruVal;
+            updated++;
+          }
         });
-        render();
-      }
+      });
+
+      if (updated > 0) render();
+      document.getElementById('lbStatus').textContent = updated > 0
+        ? `Live: ${updated} players synced`
+        : 'Linked (waiting for scores)';
+      document.getElementById('lbStatus').style.color = updated > 0 ? 'var(--green)' : 'var(--muted)';
     })
     .catch(() => {
-      // Fall back to HTML scrape of public leaderboard
-      fetch(htmlUrl, { mode: 'cors' })
-        .then(r => r.text())
-        .then(html => {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-          const rows = doc.querySelectorAll('tr');
-          let updated = 0;
-
-          rows.forEach(row => {
-            const cells = [...row.querySelectorAll('td')];
-            if (cells.length < 5) return;
-
-            // Public leaderboard: cells are [Rank, Rank, Rep, PlayerName, Club, Total]
-            // During live play, player name cell may contain "Thru X" or hole indicator
-            const playerCell = cells[3];
-            const lastCell = cells[cells.length - 1];
-            if (!playerCell) return;
-
-            const playerText = playerCell.textContent.trim();
-            const totalText = lastCell.textContent.trim();
-
-            // Check if there's a "thru" indicator (shown during live rounds)
-            // The total column or an extra column may show holes completed
-            // Also check the player cell for embedded hole info
-            const thruMatch = playerText.match(/thru\s+(\d+)/i)
-                           || row.textContent.match(/thru\s+(\d+)/i);
-
-            if (!thruMatch) return; // no live hole data for this player
-
-            const currentHole = parseInt(thruMatch[1]);
-            const name = playerText.replace(/\s*thru\s+\d+/i, '').replace(/\s*\[.*?\]/, '').trim();
-
-            // Match against our groups by name (fuzzy: surname match)
-            const nameParts = name.split(/\s+/);
-            const surname = nameParts[nameParts.length - 1].toLowerCase();
-
-            groups.forEach(g => {
-              const match = g.players.find(gp => {
-                const gpSurname = gp.name.split(' ').pop().toLowerCase();
-                const gpFirst = gp.name.split(' ')[0].toLowerCase();
-                return gpSurname === surname && (nameParts[0].toLowerCase() === gpFirst || nameParts.length === 1);
-              });
-              if (match && currentHole > 0) {
-                g.hole = currentHole;
-                updated++;
-              }
-            });
-          });
-
-          if (updated > 0) render();
-          document.getElementById('lbStatus').textContent = updated > 0
-            ? `Live: ${updated} players synced`
-            : 'Linked (no live hole data)';
-        })
-        .catch(() => {
-          console.log('Leaderboard fetch failed — using estimated holes');
-          document.getElementById('lbStatus').textContent = 'Fetch failed';
-          document.getElementById('lbStatus').style.color = 'var(--amber)';
-        });
+      console.log('Leaderboard fetch failed — using estimated holes');
+      document.getElementById('lbStatus').textContent = 'Fetch failed';
+      document.getElementById('lbStatus').style.color = 'var(--amber)';
     });
 }
 

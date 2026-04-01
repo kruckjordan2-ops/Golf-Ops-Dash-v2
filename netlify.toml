@@ -1,3 +1,0 @@
-[build]
-  publish = "site"
-  command = "echo 'Site pre-built — serving site/ directory'"
