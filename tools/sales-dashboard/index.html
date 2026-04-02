@@ -33,6 +33,12 @@
 <!-- ═══════════════ SIDEBAR ═══════════════ -->
 <aside class="sidebar">
 
+  <!-- YEAR -->
+  <div class="sidebar-section">
+    <div class="sidebar-label">Year</div>
+    <div class="seg-row" id="yearButtons"></div>
+  </div>
+
   <!-- SEARCH -->
   <div class="sidebar-section">
     <div class="sidebar-label">Search PLU Group</div>
@@ -47,7 +53,7 @@
       <button class="seg-btn" onclick="setCategory('fnb',this)">F&amp;B</button>
     </div>
     <div class="seg-row" style="margin-top:3px">
-      <button class="seg-btn" onclick="setCategory('shop',this)">Pro Shop</button>
+      <button class="seg-btn" onclick="setCategory('proshop',this)">Pro Shop</button>
       <button class="seg-btn" onclick="setCategory('golf',this)">Golf</button>
     </div>
   </div>
@@ -77,9 +83,10 @@
 
   <div class="tabbar">
     <div class="tab active" onclick="showTab('overview',this)">Overview</div>
+    <div class="tab" onclick="showTab('trends',this)">Trends</div>
     <div class="tab" onclick="showTab('plu',this)">PLU Groups</div>
     <div class="tab" onclick="showTab('deepdive',this)">Category Deep-Dive</div>
-    <div class="tab" onclick="showTab('contribution',this)">Member Contribution</div>
+    <div class="tab" onclick="showTab('items',this)">Items</div>
   </div>
 
   <!-- ── PAGE: OVERVIEW ── -->
@@ -91,9 +98,32 @@
     </div>
     <div class="g2">
       <div class="card"><div class="card-hdr">Category Revenue Comparison</div><canvas id="catBarChart"></canvas></div>
-      <div class="card"><div class="card-hdr">Revenue per Transaction<span class="sub">by category</span></div><canvas id="rptChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Gross Profit by Category</div><canvas id="gpChart"></canvas></div>
     </div>
     <div class="g3" id="overviewInsights"></div>
+  </div>
+
+  <!-- ── PAGE: TRENDS ── -->
+  <div class="page" id="pg-trends">
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Total Revenue by Year</div><canvas id="trendTotalChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Category Revenue by Year</div><canvas id="trendCatChart"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-hdr">Gross Profit by Year</div><canvas id="trendGPChart"></canvas></div>
+      <div class="card"><div class="card-hdr">Quantity Sold by Year</div><canvas id="trendQtyChart"></canvas></div>
+    </div>
+    <div class="full">
+      <div class="card">
+        <div class="card-hdr">Top Movers<span class="sub">biggest year-over-year change (latest full year vs prior)</span></div>
+        <div class="scroll-x">
+          <table class="tbl">
+            <thead><tr><th style="text-align:left">PLU Group</th><th>Category</th><th>Prior Year</th><th>Latest Year</th><th>Change</th><th>Change %</th></tr></thead>
+            <tbody id="moversBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ── PAGE: PLU GROUPS ── -->
@@ -108,10 +138,11 @@
             <th style="text-align:center;width:36px">#</th>
             <th onclick="sortBy('name',this)">PLU Group</th>
             <th style="cursor:default">Category</th>
-            <th onclick="sortBy('revenue',this)" class="desc">Revenue</th>
-            <th onclick="sortBy('pct',this)">% Total</th>
-            <th onclick="sortBy('memberCount',this)">Members</th>
-            <th onclick="sortBy('avgPerMember',this)">Avg/Member</th>
+            <th onclick="sortBy('sales',this)" class="desc">Revenue</th>
+            <th onclick="sortBy('qty',this)">Qty</th>
+            <th onclick="sortBy('cost',this)">Cost</th>
+            <th onclick="sortBy('gp',this)">Gross Profit</th>
+            <th onclick="sortBy('gpPct',this)">GP%</th>
             <th style="cursor:default"></th>
           </tr>
         </thead>
@@ -124,7 +155,7 @@
   <div class="page" id="pg-deepdive">
     <div class="cat-selector">
       <button class="cat-sel-btn active-fnb" id="ddFnb" onclick="setDeepDive('fnb')">F&amp;B</button>
-      <button class="cat-sel-btn" id="ddShop" onclick="setDeepDive('shop')">Pro Shop</button>
+      <button class="cat-sel-btn" id="ddShop" onclick="setDeepDive('proshop')">Pro Shop</button>
       <button class="cat-sel-btn" id="ddGolf" onclick="setDeepDive('golf')">Golf</button>
     </div>
     <div class="kpi-row-4" id="ddKPIs"></div>
@@ -134,45 +165,37 @@
     </div>
     <div class="full">
       <div class="card">
-        <div class="card-hdr">Top 10 Members<span class="sub" id="ddCatLabel">in F&amp;B</span></div>
+        <div class="card-hdr">Top Items<span class="sub" id="ddCatLabel">in F&amp;B</span></div>
         <div class="scroll-x">
           <table class="tbl">
-            <thead><tr><th style="text-align:center;width:36px">#</th><th>Member</th><th>Category Spend</th><th>Total Spend</th><th>% of Their Total</th></tr></thead>
-            <tbody id="ddMemberBody"></tbody>
+            <thead><tr><th style="text-align:center;width:36px">#</th><th>Item</th><th>PLU Group</th><th>Revenue</th><th>Qty</th></tr></thead>
+            <tbody id="ddItemBody"></tbody>
           </table>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ── PAGE: MEMBER CONTRIBUTION ── -->
-  <div class="page" id="pg-contribution">
-    <div class="kpi-row-4" id="contribKPIs"></div>
-    <div class="g2">
-      <div class="card"><div class="card-hdr">Revenue Concentration<span class="sub">cumulative % of total</span></div><canvas id="concChart"></canvas></div>
-      <div class="card"><div class="card-hdr">Cross-Category Analysis<span class="sub">members by category count</span></div><canvas id="crossCatChart"></canvas></div>
+  <!-- ── PAGE: ITEMS ── -->
+  <div class="page" id="pg-items">
+    <div class="result-bar">
+      <span class="result-count" id="itemCount">Loading...</span>
     </div>
-    <div class="full">
-      <div class="card">
-        <div class="card-hdr">Top 25 Members by Revenue<span class="sub">with category breakdown</span></div>
-        <div class="scroll-x">
-          <table class="tbl">
-            <thead>
-              <tr>
-                <th style="text-align:center;width:36px">#</th>
-                <th>Member</th>
-                <th>Total</th>
-                <th>F&amp;B</th>
-                <th>Pro Shop</th>
-                <th>Golf</th>
-                <th>Transactions</th>
-                <th>Categories</th>
-              </tr>
-            </thead>
-            <tbody id="contribBody"></tbody>
-          </table>
-        </div>
-      </div>
+    <div class="scroll-x">
+      <table class="tbl" id="itemTable">
+        <thead>
+          <tr>
+            <th style="text-align:center;width:36px">#</th>
+            <th onclick="sortItems('desc',this)">Item</th>
+            <th onclick="sortItems('plu',this)">PLU</th>
+            <th style="cursor:default">Group</th>
+            <th style="cursor:default">Category</th>
+            <th onclick="sortItems('sales',this)" class="desc">Revenue</th>
+            <th onclick="sortItems('qty',this)">Qty</th>
+          </tr>
+        </thead>
+        <tbody id="itemBody"></tbody>
+      </table>
     </div>
   </div>
 
@@ -190,7 +213,7 @@
   </div>
 </div>
 
-<script src="../../data/exports/sales_data.js"></script>
+<script src="../../data/exports/yearly_sales.js"></script>
 <script src="app.js"></script>
 <script src="report.js"></script>
 </body>

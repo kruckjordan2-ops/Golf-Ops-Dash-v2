@@ -24,7 +24,7 @@ except ImportError:
     raise
 
 BASE   = Path(__file__).parent
-DATA   = Path("/Users/jordankruck/Desktop/Golf Ops Data For Dashboard")
+DATA   = Path.home() / "Desktop" / "Golf Ops Data For Dashboard"
 TODAY  = date.today().isoformat()
 
 BOOKING_FILE = DATA / "Booking Report (Member & Guest)" / "Booking Report Jan-Mar 2026.xls"

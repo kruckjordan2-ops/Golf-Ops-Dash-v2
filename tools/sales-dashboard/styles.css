@@ -218,6 +218,7 @@ canvas{max-height:260px}
 }
 .cat-badge.fnb{background:var(--fnb-lt);color:var(--fnb);border:1px solid rgba(37,99,235,.2)}
 .cat-badge.shop{background:var(--shop-lt);color:var(--shop);border:1px solid rgba(124,58,237,.2)}
+.cat-badge.proshop{background:var(--shop-lt);color:var(--shop);border:1px solid rgba(124,58,237,.2)}
 .cat-badge.golf{background:var(--golf-lt);color:var(--golf);border:1px solid rgba(5,150,105,.2)}
 .cat-badge.other{background:var(--silver3);color:var(--muted);border:1px solid var(--border)}
 

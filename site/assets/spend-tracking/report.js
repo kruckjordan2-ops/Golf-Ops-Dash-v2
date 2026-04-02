@@ -3,6 +3,7 @@
 //  Opens a print-ready report in a new window.
 // ─────────────────────────────────────────────────────────────────────────────
 
+function rptEsc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function openSpendReport() {
   var filtered = getFiltered();
   if (!filtered.length) { alert('No data to report — adjust your filters.'); return; }
@@ -44,7 +45,7 @@ function openSpendReport() {
   var top20 = sorted.slice(0, 20).map(function(m, i) {
     return '<tr>' +
       '<td style="text-align:center">' + (i + 1) + '</td>' +
-      '<td style="text-align:left;font-weight:600">' + m.name + '</td>' +
+      '<td style="text-align:left;font-weight:600">' + rptEsc(m.name) + '</td>' +
       '<td style="font-weight:700">$' + m.total.toLocaleString('en-AU', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</td>' +
       '<td style="color:#2563eb">$' + m.fnb.toLocaleString('en-AU', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</td>' +
       '<td style="color:#7c3aed">$' + m.proshop.toLocaleString('en-AU', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</td>' +

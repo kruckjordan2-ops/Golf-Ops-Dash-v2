@@ -181,9 +181,9 @@ function buildOverview() {
   const males = all.filter(m=>m.gender==='m');
   const females = all.filter(m=>m.gender==='f');
 
-  const clubAvg = all.reduce((s,m)=>s+m.avgMins,0)/all.length;
-  const maleAvg = males.reduce((s,m)=>s+m.avgMins,0)/males.length;
-  const femaleAvg = females.reduce((s,m)=>s+m.avgMins,0)/females.length;
+  const clubAvg = all.length ? all.reduce((s,m)=>s+m.avgMins,0)/all.length : 0;
+  const maleAvg = males.length ? males.reduce((s,m)=>s+m.avgMins,0)/males.length : 0;
+  const femaleAvg = females.length ? females.reduce((s,m)=>s+m.avgMins,0)/females.length : 0;
 
   const sorted = [...all].sort((a,b)=>b.avgMins-a.avgMins);
   const slowest = sorted[0];
@@ -194,10 +194,10 @@ function buildOverview() {
   document.getElementById('insMaleN').textContent = `${males.length} members tracked`;
   document.getElementById('insFemaleAvg').textContent = fmtMins(femaleAvg);
   document.getElementById('insFemaleN').textContent = `${females.length} members tracked`;
-  document.getElementById('insSlowest').textContent = fmtMins(slowest.avgMins);
-  document.getElementById('insSlowName').textContent = slowest.name;
-  document.getElementById('insFastest').textContent = fmtMins(fastest.avgMins);
-  document.getElementById('insFastName').textContent = fastest.name;
+  document.getElementById('insSlowest').textContent = slowest ? fmtMins(slowest.avgMins) : '—';
+  document.getElementById('insSlowName').textContent = slowest ? slowest.name : '—';
+  document.getElementById('insFastest').textContent = fastest ? fmtMins(fastest.avgMins) : '—';
+  document.getElementById('insFastName').textContent = fastest ? fastest.name : '—';
   document.getElementById('insSlowCount').textContent = all.filter(m=>m.avgMins>=280).length;
 
   // Distribution chart

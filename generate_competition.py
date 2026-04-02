@@ -90,6 +90,8 @@ def clean_cat(raw):
 
 
 def age_bracket(age):
+    if age is None:
+        return "Unknown"
     for label, lo, hi in AGE_BRACKETS:
         if lo <= age <= hi:
             return label
@@ -147,11 +149,11 @@ def main():
         first = str(ref.get("First Name", "")).strip()
         last  = str(ref.get("Last Name", "")).strip()
         raw_cat = str(ref.get("Category", "")).strip()
-        raw_age = ref.get("Age", 0)
+        raw_age = ref.get("Age", None)
         try:
-            age = int(float(raw_age)) if raw_age else 0
+            age = int(float(raw_age)) if raw_age else None
         except (ValueError, TypeError):
-            age = 0
+            age = None
 
         try:
             comp_rounds   = int(float(cr.get("Competition Rounds", 0))) if cr else 0

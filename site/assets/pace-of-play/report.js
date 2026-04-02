@@ -71,6 +71,7 @@ function rpt_getFiltered(){
   });
 }
 
+function rptEsc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function rpt_filterDesc(){
   const parts = [];
   const gender = document.getElementById('genderFilter').value;
@@ -181,7 +182,7 @@ function generatePaceReport(){
     const diff = m.avgMins - ca;
     return `<tr>
       <td style="text-align:center">${i+1}</td>
-      <td class="l">${m.name}</td>
+      <td class="l">${rptEsc(m.name)}</td>
       <td class="r">${m.gender==='f'?'F':'M'}</td>
       <td class="r">${m.rounds}</td>
       <td class="r bold red">${fmtMins(m.avgMins)}</td>
@@ -200,7 +201,7 @@ function generatePaceReport(){
     const diff = m.avgMins - ca;
     return `<tr>
       <td style="text-align:center">${i+1}</td>
-      <td class="l">${m.name}</td>
+      <td class="l">${rptEsc(m.name)}</td>
       <td class="r">${m.gender==='f'?'F':'M'}</td>
       <td class="r">${m.rounds}</td>
       <td class="r bold green">${fmtMins(m.avgMins)}</td>
@@ -220,9 +221,9 @@ function generatePaceReport(){
     const rating = getPaceRating(m.avgMins);
     const cls = rating==='slow'?'red':rating==='watch'?'amber':rating==='fast'?'green':'';
     return `<tr>
-      <td class="l">${m.name}</td>
+      <td class="l">${rptEsc(m.name)}</td>
       <td class="r">${m.gender==='f'?'F':'M'}</td>
-      <td class="r dim">${m.tenure_bucket||'—'}</td>
+      <td class="r dim">${rptEsc(m.tenure_bucket)||'—'}</td>
       <td class="r dim">${m.age_group||'—'}</td>
       <td class="r">${m.rounds}</td>
       <td class="r bold">${fmtMins(m.avgMins)}</td>

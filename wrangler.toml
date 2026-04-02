@@ -1,0 +1,23 @@
+name = "victoria-golf-ops"
+compatibility_date = "2024-09-23"
+
+# ── Static Site (Cloudflare Pages) ──────────────────────────
+# The site/ directory is deployed as static assets
+# Build command runs build.py to generate the site
+[site]
+bucket = "./site"
+
+# ── D1 Database ─────────────────────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "golf-ops-db"
+database_id = ""  # Will be filled after `wrangler d1 create golf-ops-db`
+
+# ── R2 Object Storage (timesheets, Excel uploads, PDFs) ─────
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "golf-ops-uploads"
+
+# ── Build Configuration ─────────────────────────────────────
+[build]
+command = "python3 build.py"

@@ -54,7 +54,7 @@ DATA_TARGETS = {
     "pace-of-play":        "pace_data.js",
     "spend-tracking":      "sales_data.js",
     "booking-analysis":    "booking-analysis.data.js",
-    "sales-dashboard":     "sales_data.js",
+    "sales-dashboard":     "yearly_sales.js",
     "competition-data":    "competition-data.data.js",
 }
 
@@ -666,7 +666,20 @@ def read_sales_xlsx(filepath):
             for si in tree.findall('.//ss:si', NS):
                 shared.append(''.join(t.text or '' for t in si.findall('.//ss:t', NS)))
 
-        sheet_file = 'xl/worksheets/sheet1.xml'
+        # Find the worksheet file (can be sheet.xml or sheet1.xml)
+        sheet_file = None
+        for candidate in ['xl/worksheets/sheet1.xml', 'xl/worksheets/sheet.xml']:
+            if candidate in names:
+                sheet_file = candidate
+                break
+        if not sheet_file:
+            # Fallback: find any sheet xml
+            for n in names:
+                if n.startswith('xl/worksheets/') and n.endswith('.xml') and 'rels' not in n:
+                    sheet_file = n
+                    break
+        if not sheet_file:
+            return []
         sheet = ET.parse(zf.open(sheet_file))
 
         # Build sparse row/col data
@@ -931,6 +944,7 @@ def build_site():
         html = html.replace('src="pace_data.js"',  'src="assets/data/pace_data.js"')
         html = html.replace('src="sales_data.js"', 'src="assets/data/sales_data.js"')
         html = html.replace('src="../../data/exports/sales_data.js"',          'src="assets/data/sales_data.js"')
+        html = html.replace('src="../../data/exports/yearly_sales.js"',        'src="assets/data/yearly_sales.js"')
         html = html.replace('src="../../data/exports/member-lookup.data.js"',  'src="assets/data/member-lookup.data.js"')
 
         html = html.replace('href="../home/index.html"',                'href="index.html"')
@@ -984,6 +998,7 @@ def main():
     process_sales()
     process_members()
     process_bookings()
+    process_yearly_sales()
     process_competition()
     build_site()
 

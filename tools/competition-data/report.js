@@ -43,6 +43,7 @@ const RPT_CSS = `
 function rpt_fmtN(n){ return n==null?'—':Math.round(n).toLocaleString(); }
 function rpt_fmtP(n){ return n==null?'—':(n*100).toFixed(1)+'%'; }
 
+function rptEsc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function rpt_filterDesc(){
   const parts = [];
   if(F.category!=='all') parts.push('Category: '+F.category);
@@ -155,9 +156,9 @@ function generateCompReport(){
   const top20 = [...list].sort((a,b) => b.compRounds - a.compRounds).slice(0,20);
   const topRows = top20.map((m,i) => `<tr>
     <td style="text-align:center">${i+1}</td>
-    <td class="l">${m.name}</td>
-    <td>${m.category}</td>
-    <td class="r">${m.ageBracket||'—'}</td>
+    <td class="l">${rptEsc(m.name)}</td>
+    <td>${rptEsc(m.category)}</td>
+    <td class="r">${rptEsc(m.ageBracket)||'—'}</td>
     <td class="r bold">${rpt_fmtN(m.compRounds)}</td>
     <td class="r">${rpt_fmtN(m.socialRounds)}</td>
     <td class="r">${rpt_fmtN(m.totalRounds)}</td>

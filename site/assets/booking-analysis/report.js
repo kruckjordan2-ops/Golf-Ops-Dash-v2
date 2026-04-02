@@ -39,6 +39,7 @@ const RPT_CSS = `
 function rpt_fmtN(n){ return n==null?'—':Math.round(n).toLocaleString(); }
 function rpt_fmtP(n){ return n==null?'—':(n*100).toFixed(1)+'%'; }
 
+function rptEsc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function rpt_filterDesc(){
   const parts = [];
   if(F.month!=='all')  parts.push('Month: '+F.month);
@@ -189,8 +190,8 @@ function generateBookingReport(){
   members.sort((a,b)=>b.total-a.total);
   const memRows = members.slice(0,30).map((m,i) => `<tr>
     <td style="text-align:center">${i+1}</td>
-    <td class="l">${m.name}</td>
-    <td>${m.category}</td>
+    <td class="l">${rptEsc(m.name)}</td>
+    <td>${rptEsc(m.category)}</td>
     <td class="r bold">${rpt_fmtN(m.total)}</td>
     <td class="r">${rpt_fmtN(m.comp)}</td>
     <td class="r">${rpt_fmtN(m.social)}</td>

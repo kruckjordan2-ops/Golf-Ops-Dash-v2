@@ -19,17 +19,6 @@
 <link rel="stylesheet" href="assets/scorecard-generator/styles.css">
 </head>
 <body>
-  <div class="gate-card">
-    <img class="gate-logo" src="../shared/assets/vgc-crest-white.png" alt="VGC" style="width:48px;height:48px;object-fit:contain">
-    <div class="gate-title">VGC Golf Operations</div>
-    <div class="gate-sub">The Victoria Golf Club &mdash; Staff Access</div>
-    <div class="gate-rule"></div>
-    <input class="gate-input" type="password" id="gateInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkGate()">
-    <button class="gate-btn" onclick="checkGate()">Access Hub</button>
-    <div class="gate-err" id="gateErr"></div>
-  </div>
-</div>
-
 
 
 
@@ -43,6 +32,7 @@
     <span class="tg">MATCHPLAY:</span>
     <button class="tb active" onclick="show('mp2')">2-Ball</button>
     <button class="tb"        onclick="show('mp4')">4-Ball</button>
+    <button class="tb"        onclick="show('cbk')">CB Kelly</button>
 
     <span class="tg">STROKEPLAY:</span>
     <button class="tb" onclick="show('sp1')">Single</button>
@@ -99,6 +89,7 @@
           <option value="Social">Social</option>
           <option value="Charity Day">Charity Day</option>
           <option value="Corporate Day">Corporate Day</option>
+          <option value="CB Kelly">CB Kelly</option>
           <option value="__other__">Other (type below)…</option>
         </select>
       </div>
@@ -269,6 +260,7 @@
     <div class="dr"><div class="dl">Name</div>         <div class="di"><input type="text"   id="p3n"  placeholder="Player 3"   oninput="upd()"></div></div>
     <div class="dr"><div class="dl">GA Handicap</div>  <div class="di"><input type="number" id="p3ga" step="0.1" oninput="upd()"></div></div>
     <div class="dr"><div class="dl">Gender</div>       <div class="di"><select id="p3g" onchange="upd()"><option value="M" selected>Male</option><option value="F">Female</option></select></div></div>
+    <div class="dr"><div class="dl">Golflink #</div>   <div class="di"><input type="text"   id="p3gl" oninput="upd()"></div></div>
     <div class="dr"><div class="dl">Daily H'cap</div>  <div class="dc" id="p3d">–</div></div>
     <div class="dr"><div class="dl">Shots received</div><div class="dshots" id="p3s">–</div></div>
 
@@ -277,6 +269,7 @@
     <div class="dr"><div class="dl">Name</div>         <div class="di"><input type="text"   id="p4n"  placeholder="Player 4"   oninput="upd()"></div></div>
     <div class="dr"><div class="dl">GA Handicap</div>  <div class="di"><input type="number" id="p4ga" step="0.1" oninput="upd()"></div></div>
     <div class="dr"><div class="dl">Gender</div>       <div class="di"><select id="p4g" onchange="upd()"><option value="M" selected>Male</option><option value="F">Female</option></select></div></div>
+    <div class="dr"><div class="dl">Golflink #</div>   <div class="di"><input type="text"   id="p4gl" oninput="upd()"></div></div>
     <div class="dr"><div class="dl">Daily H'cap</div>  <div class="dc" id="p4d">–</div></div>
     <div class="dr"><div class="dl">Shots received</div><div class="dshots" id="p4s">–</div></div>
 
@@ -382,6 +375,34 @@
     </div>
 
 
+    <!-- ══ CB KELLY — Mixed Canadian Foursomes Matchplay ══ -->
+    <div class="card cp" id="card_cbk">
+      <div style="display:flex;align-items:flex-start;gap:0;margin-bottom:2px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:9px;font-weight:700;letter-spacing:.5px;margin-bottom:1px">CB KELLY — Mixed Canadian Foursomes</div>
+          <div id="cbkpairs" style="line-height:1.6;font-size:9px"></div>
+          <div id="cbkstrokes" style="font-size:9px;font-weight:700;margin-top:1px;margin-bottom:1px"></div>
+          <div style="font-size:9.5px;font-weight:700;margin-top:1px">
+            <b>Competition:</b>&nbsp;<span id="cbkcomp" style="font-weight:400"></span>&nbsp;&nbsp;
+            <b>Tee:</b>&nbsp;<span id="cbktee" style="font-weight:400"></span>&nbsp;&nbsp;
+            <b>Date:</b>&nbsp;<span id="cbkdate" style="font-weight:400"></span>&nbsp;&nbsp;
+            <b>Time:</b>&nbsp;<span id="cbktime" style="font-weight:400"></span>
+          </div>
+        </div>
+        <div style="border:2px solid #000;min-width:148px;flex-shrink:0;margin-left:8px">
+          <div style="display:grid;grid-template-columns:1fr 50px;border-bottom:1px solid #000">
+            <div style="font-size:8px;font-weight:700;padding:2px 4px;border-right:1px solid #000;text-align:center">Winners</div>
+            <div style="font-size:8px;font-weight:700;padding:2px 4px;text-align:center">Result</div>
+          </div>
+          <div style="height:28px;display:grid;grid-template-columns:1fr 50px">
+            <div style="border-right:1px solid #000"></div><div></div>
+          </div>
+        </div>
+      </div>
+      <table class="ct ct-fill" id="cbktbl" style="flex:1;table-layout:fixed;width:100%"></table>
+    </div>
+
+
     <!-- ══ SINGLE PLAYER STROKEPLAY ══ -->
     <div class="card cp" id="card_sp1">
       <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:3px">
@@ -405,10 +426,7 @@
           <div class="rh" style="border-top:none">Nett</div><div class="rv"></div>
         </div>
       </div>
-      <div style="display:flex;gap:4px;align-items:flex-start">
-        <div><table class="ct" id="sp1ltbl"></table></div>
-        <div style="flex:1" id="sp1grid"></div>
-      </div>
+      <table class="ct ct-fill" id="sp1tbl" style="flex:1;table-layout:fixed;width:100%"></table>
     </div>
 
 
