@@ -349,6 +349,37 @@ function getSeq(td, h19, startHole) {
 }
 
 
+/**
+ * Build a stroke allocation legend showing colour swatches
+ * @param {number[]} shots - Allocated shots per player
+ * @param {boolean} fourball - true = 4-ball, false = 2-ball
+ * @returns {string} HTML string for the legend, or empty string if no shots
+ */
+function buildStrokeLegend(shots, fourball) {
+  const [sh1, sh2, sh3, sh4] = shots;
+  const anyShots = shots.some(s => s !== null && s > 0);
+  if (!anyShots) return '';
+  const items = [];
+  const add = (col, label, sh) => {
+    if (sh === null || sh === undefined || sh <= 0) return;
+    const dark = darkenHex(col);
+    const solid = `<span style="display:inline-block;width:12px;height:10px;background:${col};border:1px solid ${dark};vertical-align:middle;margin-right:2px"></span>`;
+    items.push(`${solid} ${label} (1 shot)`);
+    if (sh > 18) {
+      const stripe = `<span style="display:inline-block;width:12px;height:10px;background:repeating-linear-gradient(135deg,${col},${col} 3px,${dark} 3px,${dark} 5px);border:1px solid ${dark};vertical-align:middle;margin-right:2px"></span>`;
+      items.push(`${stripe} ${label} (2 shots)`);
+    }
+  };
+  if (fourball) {
+    add(PCOL[0], 'P1', sh1); add(PCOL[1], 'P2', sh2);
+    add(PCOL[2], 'P3', sh3); add(PCOL[3], 'P4', sh4);
+  } else {
+    add(PCOL[0], 'Player 1', sh1); add(PCOL[1], 'Player 2', sh2);
+  }
+  return items.length ? `<div style="font-size:7px;display:flex;gap:8px;justify-content:center;padding:2px 0;flex-wrap:wrap">${items.join('')}</div>` : '';
+}
+
+
 // ════════════════════════════════════════════════════════
 // MATCHPLAY TABLE BUILDER
 // Used for both 2-Ball and 4-Ball matchplay cards
@@ -468,11 +499,16 @@ function buildMatchTbl(front, back, shots, gs, idx, td, fourball) {
     <th style="font-size:7px">Metres</th>
   </tr>`;
 
+  // ── Build match index mapping (18 = first hole played, 17 = second, etc.) ──
+  const allHoles = [...front, ...back];
+  const matchIdxMap = new Map();
+  allHoles.forEach((hole, i) => matchIdxMap.set(hole.n, 18 - i));
+
   // ── Hole rows ──
-  [...front, ...back].forEach((hole, i) => {
+  allHoles.forEach((hole, i) => {
     const par  = getPar(hole, g1);
     const par2 = getPar(hole, g2);
-    const si   = getSI(hole, idx);
+    const si   = idx === 'match' ? matchIdxMap.get(hole.n) : getSI(hole, idx);
     let lBg = '', rBg = '';
 
     if (fourball) {
@@ -605,8 +641,12 @@ function buildSingleTbl(front, back, idx, g1, fP, bP, fD, bD, sr, sl) {
     <th style="font-size:7px">${distLbl()}</th>
   </tr>`;
 
-  [...front, ...back].forEach((hole, i) => {
-    const par = getPar(hole, g1), si = getSI(hole, idx);
+  const stAllHoles = [...front, ...back];
+  const stMatchMap = new Map();
+  stAllHoles.forEach((h, i) => stMatchMap.set(h.n, 18 - i));
+
+  stAllHoles.forEach((hole, i) => {
+    const par = getPar(hole, g1), si = idx === 'match' ? stMatchMap.get(hole.n) : getSI(hole, idx);
     r += `<tr class="hr">
       <td>${dist(hole.D)}</td>
       <td style="font-weight:700">${par}</td>
@@ -702,8 +742,12 @@ function spLeftTbl(front, back, cols, idx, g1, fP, bP, fD, bD) {
   const thRow = `<tr>${cols.map(c => `<th style="font-size:7px;padding:1px 2px">${c === 'Metres' ? distLbl() : c}</th>`).join('')}<th style="border-left:2px solid #000;font-size:7px">Hole</th></tr>`;
 
   let rows = '';
-  [...front, ...back].forEach((hole, i) => {
-    const par = getPar(hole, g1), si = getSI(hole, idx);
+  const spAllHoles = [...front, ...back];
+  const spMatchMap = new Map();
+  spAllHoles.forEach((h, j) => spMatchMap.set(h.n, 18 - j));
+
+  spAllHoles.forEach((hole, i) => {
+    const par = getPar(hole, g1), si = idx === 'match' ? spMatchMap.get(hole.n) : getSI(hole, idx);
     let tds = '';
     cols.forEach(c => {
       if      (c === 'Metres')       tds += `<td>${dist(hole.D)}</td>`;
@@ -809,8 +853,12 @@ function sp4Tbl(front, back, idx, g1, fP, bP, fD, bD, sr, sl) {
     <th style="font-size:7px">Index</th><th>Par</th><th>${distLbl()}</th>
   </tr>`;
 
-  [...front, ...back].forEach((hole, i) => {
-    const par = getPar(hole, g1), si = getSI(hole, idx);
+  const s4AllHoles = [...front, ...back];
+  const s4MatchMap = new Map();
+  s4AllHoles.forEach((h, j) => s4MatchMap.set(h.n, 18 - j));
+
+  s4AllHoles.forEach((hole, i) => {
+    const par = getPar(hole, g1), si = idx === 'match' ? s4MatchMap.get(hole.n) : getSI(hole, idx);
     r += `<tr class="hr">
       <td>${dist(hole.D)}</td><td style="font-weight:700">${par}</td><td>${si ?? ''}</td>
       <td></td><td></td><td></td><td></td><td></td>
@@ -938,8 +986,12 @@ function lsTbl(front, back, idx, g1, fP, bP, fD, bD, sr, sl, mode) {
     <th style="font-size:7px">${distLbl()}</th>
   </tr>`;
 
-  [...front, ...back].forEach((hole, i) => {
-    const par = getPar(hole, g1), si = getSI(hole, idx);
+  const lsAllHoles = [...front, ...back];
+  const lsMatchMap = new Map();
+  lsAllHoles.forEach((h, j) => lsMatchMap.set(h.n, 18 - j));
+
+  lsAllHoles.forEach((hole, i) => {
+    const par = getPar(hole, g1), si = idx === 'match' ? lsMatchMap.get(hole.n) : getSI(hole, idx);
     r += `<tr class="hr">
       <td style="font-weight:700;text-align:center">${hole.n}</td>
       <td>${dist(hole.D)}</td>
@@ -1114,6 +1166,7 @@ function upd() {
   s('m2date', date); s('m2time', time); s('m2tee', tee); s('m2comp', comp);
   el('m2tbl').innerHTML = buildMatchTbl(front, back, [sh1, sh2, null, null], gs, idx, td, false);
   el('m2tbl').style.height = '100%';
+  el('m2legend').innerHTML = buildStrokeLegend([sh1, sh2, null, null], false);
 
   // ── 4-Ball Matchplay ──
   s('m4comp', comp); s('m4tee', tee); s('m4date', date); s('m4time', time);
@@ -1128,6 +1181,7 @@ function upd() {
   ).join('');
   el('m4tbl').innerHTML = buildMatchTbl(front, back, shots, gs, idx, td, true);
   el('m4tbl').style.height = '100%';
+  el('m4legend').innerHTML = buildStrokeLegend(shots, true);
 
   // ── CB Kelly — Mixed Canadian Foursomes Matchplay ──
   const cbkBlueTd = TEE.Blue, cbkRedTd = TEE.Red;
@@ -1173,6 +1227,9 @@ function upd() {
   cbkHtml = cbkHtml.replace('>Player 1<', '>Pair 1<').replace('>Player 2<', '>Pair 2<');
   el('cbktbl').innerHTML = cbkHtml;
   el('cbktbl').style.height = '100%';
+  let cbkLegend = buildStrokeLegend([cbkSh1, cbkSh2, null, null], false);
+  cbkLegend = cbkLegend.replace('Player 1', 'Pair 1').replace('Player 2', 'Pair 2');
+  el('cbklegend').innerHTML = cbkLegend;
 
   // ── Single Strokeplay ──
   s('sp1p1', v('p1n')); s('sp1hc', das[0] ?? ''); s('sp1gl', v('p1gl'));
